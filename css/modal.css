@@ -155,9 +155,16 @@
 }
 
 .guide-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 600;
   color: #fff;
   margin-bottom: 5px;
+}
+
+.guide-icon {
+  flex-shrink: 0;
 }
 
 .guide-desc {
