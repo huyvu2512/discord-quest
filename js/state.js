@@ -22,10 +22,15 @@ savedQuests = savedQuests.filter(q => {
 localStorage.setItem("dqt_quests", JSON.stringify(savedQuests));
 
 let savedRewards = JSON.parse(localStorage.getItem("dqt_rewards") || "[]");
-if (savedRewards.some(r => r.code?.includes('GENSHIN') || r.questName?.includes('Genshin') || r.questName?.includes('Honkai'))) {
-  savedRewards = [];
-  localStorage.removeItem("dqt_rewards");
-}
+savedRewards = savedRewards.filter(r => {
+  if (r.code?.includes('GENSHIN') || r.questName?.includes('Genshin') || r.questName?.includes('Honkai')) return false;
+  const t = (r.type || '').toLowerCase();
+  const qn = (r.questName || '').toLowerCase();
+  if (t.includes('orb') || t.includes('avatar') || t.includes('decoration') || t.includes('profile effect') || t.includes('badge')) return false;
+  if (qn.includes('monopoly') || qn.includes('wizard101') || qn.includes('gravebound') || qn.includes('war thunder') || qn.includes('albion') || qn.includes('dumb ways') || qn.includes('runescape') || qn.includes('phantom blade') || qn.includes('dawnwalker') || qn.includes('backrooms')) return false;
+  return true;
+});
+localStorage.setItem("dqt_rewards", JSON.stringify(savedRewards));
 
 function getTabFromUrl() {
   if (typeof window === "undefined") return "home";

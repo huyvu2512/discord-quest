@@ -202,6 +202,36 @@ export default async function handler(req, res) {
         else if (lowerName.includes('nba')) rewardLabel = 'NBA 2K27 Content Pack';
       }
 
+      // Nhận diện xem nhiệm vụ có tặng Gift Code / Mã quà hay không
+      let hasGiftCode = false;
+      if (code) {
+        hasGiftCode = true;
+      } else if (rewards.length > 0 && rewards.some(r => r.type === 1 || r.messages?.redemption_instructions)) {
+        hasGiftCode = true;
+      }
+
+      const lowerRew = rewardLabel.toLowerCase();
+      const isOrb = lowerRew.includes('orb') || rewards.some(r => r.orb_quantity > 0 || r.type === 0);
+      const isAvatarDeco = lowerRew.includes('avatar') || lowerRew.includes('decoration') || 
+                           lowerRew.includes('profile effect') || lowerRew.includes('badge') ||
+                           lowerName.includes('albion') || lowerName.includes('dumb ways') ||
+                           lowerName.includes('wolverine') || lowerName.includes('runescape') ||
+                           lowerName.includes('phantom blade') || lowerName.includes('dawnwalker') ||
+                           lowerName.includes('backrooms');
+
+      if (isOrb || isAvatarDeco) {
+        hasGiftCode = false;
+      } else if (
+        lowerRew.includes('code') || lowerRew.includes('pack') || lowerRew.includes('bundle') || 
+        lowerRew.includes('tracker') || lowerRew.includes('wings') || lowerRew.includes('skin') || 
+        lowerRew.includes('item') || lowerRew.includes('boost') || lowerRew.includes('dlc') ||
+        lowerName.includes('roblox') || lowerName.includes('apex') || lowerName.includes('star wars') || 
+        lowerName.includes('nba') || lowerName.includes('battlefield') || lowerName.includes('fortnite') ||
+        lowerName.includes('genshin') || lowerName.includes('honkai') || lowerName.includes('warframe')
+      ) {
+        hasGiftCode = true;
+      }
+
       const appId = taskDef.applications?.[0]?.id ?? config.application?.id;
       const expiresAt = config.expires_at || q.expires_at || config.task_config_v2?.expires_at || config.task_config?.expires_at || null;
       const isExpired = expiresAt ? (new Date(expiresAt).getTime() <= Date.now()) : false;
@@ -216,6 +246,7 @@ export default async function handler(req, res) {
         progSec: progSec,
         reward: rewardLabel,
         code: code,
+        hasGiftCode: hasGiftCode,
         status: status,
         applicationId: appId,
         enrolledAt: q.user_status?.enrolled_at || null,

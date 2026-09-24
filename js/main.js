@@ -153,6 +153,8 @@ document.addEventListener("DOMContentLoaded", () => {
       saveState();
       renderCounters();
       if (state.activeTab === "runner") renderRunner();
+      if (state.activeTab === "rewards") renderRewards();
+      if (state.activeTab === "quests") renderQuests();
     }
   }, 6000);
 });
@@ -610,7 +612,7 @@ function renderCounters() {
   if (countRewards) {
     const rewardCount = typeof getRewardItems === "function" 
       ? getRewardItems().length 
-      : state.quests.filter(q => q.status === "completed" || q.status === "claimed" || q.code).length;
+      : state.quests.filter(q => q.hasGiftCode || q.code).length;
     const val = hasAcc ? rewardCount : 0;
     countRewards.textContent = val;
     countRewards.style.display = val > 0 ? "inline-flex" : "none";
@@ -692,7 +694,8 @@ function renderHome() {
   if (badgeQuestCount) badgeQuestCount.textContent = hasAcc ? state.quests.length : "0";
   if (statRunning) statRunning.textContent = runningQuest ? "1" : "0";
   if (statRunningText) statRunningText.textContent = runningQuest ? runningQuest.name : "Chưa chạy";
-  if (statRewards) statRewards.textContent = hasAcc ? state.rewards.length : "0";
+  const giftRewardCount = typeof getRewardItems === "function" ? getRewardItems().length : state.rewards.length;
+  if (statRewards) statRewards.textContent = hasAcc ? giftRewardCount : "0";
   if (statOrbs) statOrbs.textContent = hasAcc ? (activeAcc.orbs ?? 0).toLocaleString() : "0";
 
   // 2. Danh sách nhiệm vụ nổi bật / mới nhất
