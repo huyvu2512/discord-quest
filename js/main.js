@@ -608,7 +608,10 @@ function renderCounters() {
 
   const countRewards = document.getElementById("count-rewards");
   if (countRewards) {
-    const val = hasAcc ? state.rewards.length : 0;
+    const rewardCount = typeof getRewardItems === "function" 
+      ? getRewardItems().length 
+      : state.quests.filter(q => q.status === "completed" || q.status === "claimed" || q.code).length;
+    const val = hasAcc ? rewardCount : 0;
     countRewards.textContent = val;
     countRewards.style.display = val > 0 ? "inline-flex" : "none";
   }
