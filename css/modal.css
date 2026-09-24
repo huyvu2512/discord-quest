@@ -1,0 +1,329 @@
+/* ==========================================================================
+   4. MODALS & TOASTS (css/modal.css)
+   ========================================================================== */
+
+/* Modal Dialog */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-backdrop.open {
+  display: flex;
+}
+
+.modal {
+  width: 100%;
+  max-width: 460px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-close:hover {
+  color: #fff;
+}
+
+.modal-body {
+  padding: 16px 18px;
+}
+
+.form-field {
+  margin-bottom: 12px;
+}
+
+.form-lbl {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-sub);
+  margin-bottom: 5px;
+}
+
+.lbl-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.sub-link {
+  font-size: 11px;
+  color: var(--blurple);
+  text-decoration: none;
+}
+
+.sub-link:hover {
+  text-decoration: underline;
+}
+
+.input-text {
+  width: 100%;
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: #fff;
+  padding: 7px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.input-text:focus {
+  border-color: var(--blurple);
+}
+
+.hint-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.token-result-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(35, 165, 90, 0.08);
+  border: 1px solid rgba(35, 165, 90, 0.3);
+  border-radius: var(--radius);
+  margin-top: 8px;
+}
+
+.token-result-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--blurple);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.token-result-info {
+  min-width: 0;
+}
+
+.token-result-name {
+  font-weight: 600;
+  font-size: 12px;
+  color: #fff;
+}
+
+.token-result-status {
+  font-size: 11px;
+  color: var(--green);
+}
+
+.token-guide-box {
+  background: #141517;
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: var(--radius);
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 10px;
+}
+
+.guide-h {
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.guide-steps {
+  margin: 6px 0 0 16px;
+  line-height: 1.6;
+  color: var(--text-sub);
+}
+
+.guide-steps li {
+  margin-bottom: 4px;
+}
+
+.guide-steps code {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+}
+
+.guide-steps strong {
+  color: var(--text-main);
+}
+
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px;
+  background: var(--bg-sidebar);
+  border-top: 1px solid var(--border);
+}
+
+/* Toast Messages (Placed below top header toolbar) */
+.toast-wrap {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 99999;
+  pointer-events: none;
+  width: auto;
+  max-width: 92vw;
+}
+
+.toast {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(22, 23, 27, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #f2f3f5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  animation: toastSlideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  max-width: 90vw;
+}
+
+.toast.toast-hiding {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.95);
+}
+
+.toast-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toast-icon {
+  flex-shrink: 0;
+}
+
+.toast-success,
+.toast.success {
+  border-color: rgba(87, 242, 135, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 0 16px rgba(87, 242, 135, 0.15);
+}
+.toast-success .toast-icon,
+.toast.success .toast-icon {
+  color: var(--green);
+}
+
+.toast-error,
+.toast.error {
+  border-color: rgba(237, 66, 69, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 0 16px rgba(237, 66, 69, 0.18);
+}
+.toast-error .toast-icon,
+.toast.error .toast-icon {
+  color: var(--red);
+}
+
+.toast-warn,
+.toast.warn {
+  border-color: rgba(254, 231, 92, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 0 16px rgba(254, 231, 92, 0.15);
+}
+.toast-warn .toast-icon,
+.toast.warn .toast-icon {
+  color: var(--amber);
+}
+
+.toast-info,
+.toast.info {
+  border-color: rgba(88, 101, 242, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 0 16px rgba(88, 101, 242, 0.18);
+}
+.toast-info .toast-icon,
+.toast.info .toast-icon {
+  color: var(--blurple);
+}
+
+@keyframes toastSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-backdrop {
+    padding: 8px 8px 0 8px;
+    align-items: flex-end;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.7);
+  }
+
+  .modal-body {
+    overflow-y: auto;
+    max-height: calc(90vh - 120px);
+    padding: 14px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-foot {
+    padding: 10px 14px;
+  }
+
+  .modal-foot .btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 13px;
+  }
+}

@@ -1,0 +1,659 @@
+/* ==========================================================================
+   2. LAYOUT: HEADER, SIDEBAR, MAIN (css/layout.css)
+   ========================================================================== */
+
+/* Header */
+.header {
+  height: 64px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  margin-right: 14px;
+  min-width: 0;
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.logo:hover {
+  opacity: 0.85;
+}
+
+.app-logo {
+  height: 32px;
+  width: 32px;
+  object-fit: contain;
+  display: block;
+}
+
+.logo svg {
+  color: var(--blurple);
+}
+
+.logo-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #fff;
+}
+
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  background: #232529;
+  border: 1px solid #3f4147;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.badge-status:hover {
+  background: #2b2d31;
+  border-color: var(--blurple);
+}
+
+.badge-status:active {
+  transform: scale(0.98);
+}
+
+.dot-online {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px rgba(35, 165, 90, 0.6);
+  flex-shrink: 0;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dot-online.loading-dot {
+  background: var(--amber);
+  box-shadow: 0 0 6px rgba(240, 178, 50, 0.7);
+  animation: pulseDot 0.8s infinite alternate ease-in-out;
+}
+
+.dot-online.error-dot {
+  background: var(--red);
+  box-shadow: 0 0 6px rgba(242, 63, 67, 0.7);
+}
+
+@keyframes pulseDot {
+  from { opacity: 0.35; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1.15); }
+}
+
+.stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.stat-video-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.stat-lbl {
+  color: var(--text-muted);
+}
+
+.stat-val {
+  color: #fff;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.divider-v {
+  width: 1px;
+  height: 24px;
+  background: var(--border-light);
+  margin: 0 4px;
+}
+
+/* App Body Layout */
+.layout {
+  display: flex;
+  min-height: calc(100vh - 64px);
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  color: var(--text-sub);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition);
+}
+
+.nav-icon-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+
+.nav-btn:hover .nav-icon {
+  color: var(--text-main);
+}
+
+.nav-btn.active .nav-icon {
+  color: var(--blurple);
+}
+
+.nav-text {
+  flex: 1;
+  text-align: left;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+}
+
+.nav-btn.active {
+  background: var(--bg-surface);
+  color: #fff;
+  font-weight: 600;
+}
+
+.nav-btn.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.nav-btn .nav-count {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  display: none;
+}
+
+.nav-btn.active .nav-count {
+  background: rgba(88, 101, 242, 0.2);
+  color: #c9cdfb;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-actions .btn {
+  height: 38px;
+  padding: 0 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 7px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* User Profile in Sidebar */
+.account-selector {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  position: relative;
+}
+
+.acc-avatar-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.acc-avatar-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #35373c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.acc-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.acc-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acc-tag {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Main Area */
+.main {
+  flex: 1;
+  padding: 20px 24px;
+  background: var(--bg-app);
+  max-width: 1300px;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.top-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+
+.page-sub {
+  font-size: 12px;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+
+.summary-pill {
+  font-size: 12px;
+  color: var(--text-sub);
+  background: var(--bg-surface);
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+/* ==========================================================================
+   MOBILE & RESPONSIVE ADAPTATIONS (<= 860px)
+   Dòng 1: Logo, IP, Orbs | Dòng 2: 2 nút Quét Quest & Chạy Tất Cả
+   Thanh Tab Dưới Cùng (Bottom Navigation) giống Facebook App
+   ========================================================================== */
+@media (max-width: 860px) {
+  /* Header: 2 dòng tách biệt hoàn toàn */
+  .header {
+    height: auto;
+    padding: 8px 12px 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    background: #17181a;
+  }
+
+  /* DÒNG 1: Logo + IP (trái) và Số dư Orbs (phải) */
+  .header-main-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-right: 0;
+    gap: 8px;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .logo {
+    gap: 5px;
+    flex-shrink: 0;
+  }
+
+  .logo-title {
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  .app-logo {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+
+  .badge-status {
+    padding: 3px 8px;
+    font-size: 11px;
+    gap: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .stat-lbl {
+    display: none;
+  }
+
+  .stat-item {
+    gap: 4px;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .stat-video-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  /* DÒNG 2: 2 nút Quét Quest & Chạy Tất Cả chia đều 50%-50% full chiều ngang */
+  .header-actions {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .header-actions .divider-v {
+    display: none;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    height: 38px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    justify-content: center;
+  }
+
+  /* Layout chính: hiển thị dạng cột */
+  .layout {
+    flex-direction: column;
+    min-height: calc(100vh - 105px);
+  }
+
+  /* THANH TAB DƯỚI CÙNG (BOTTOM NAVIGATION BAR - Giống Facebook Mobile) */
+  .sidebar {
+    position: fixed;
+    top: auto !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto !important;
+    min-height: unset !important;
+    max-height: unset !important;
+    background: rgba(23, 24, 26, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-right: none;
+    border-top: 1px solid #35373c;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)) 4px;
+    z-index: 1000;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
+  }
+
+  .sidebar .account-selector {
+    display: none !important;
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border-radius: 8px;
+    position: relative;
+    text-align: center;
+    background: transparent;
+    color: var(--text-muted);
+  }
+
+  .nav-btn .nav-icon-box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-btn .nav-icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 0;
+    color: var(--text-sub);
+    transition: transform 0.15s ease, color 0.15s ease;
+  }
+
+  .nav-btn .nav-text {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-sub);
+    white-space: nowrap;
+    overflow: visible;
+    text-align: center;
+    letter-spacing: -0.2px;
+    line-height: 1.2;
+  }
+
+  .nav-btn:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .nav-btn.active {
+    background: rgba(88, 101, 242, 0.15);
+  }
+
+  .nav-btn.active .nav-icon {
+    color: var(--blurple);
+    transform: scale(1.08);
+  }
+
+  .nav-btn.active .nav-text {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  @media (max-width: 420px) {
+    .nav-btn {
+      padding: 5px 1px;
+      gap: 2px;
+    }
+    .nav-btn .nav-icon {
+      width: 19px;
+      height: 19px;
+    }
+    .nav-btn .nav-text {
+      font-size: 10px;
+      letter-spacing: -0.3px;
+    }
+  }
+
+  /* Badge đếm thông báo nổi trên góc icon (chuẩn app Facebook / mobile) */
+  .nav-btn .nav-icon-box .nav-count {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    min-width: 15px;
+    height: 15px;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 0 4px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--blurple);
+    color: #fff;
+    border: 2px solid #17181a;
+  }
+
+  /* Vùng nội dung chính: chừa khoảng trống cho thanh tab dưới cùng */
+  .main {
+    padding: 14px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Tiêu đề & nút bấm trên cùng */
+  .top-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .top-row .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .summary-pill {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Thông báo toast trên mobile: đặt ngay dưới thanh công cụ header (105px) */
+  .toast-wrap {
+    top: calc(112px + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: calc(100vw - 20px);
+  }
+
+  .toast {
+    font-size: 11.5px;
+    padding: 7px 14px;
+    max-width: calc(100vw - 24px);
+  }
+}

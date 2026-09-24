@@ -1,0 +1,90 @@
+/* ==========================================================================
+   1. VARIABLES & BASE RESETS (css/variables.css)
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* Discord Dark Theme Colors */
+  --bg-app: #1e1f22;
+  --bg-sidebar: #17181a;
+  --bg-surface: #2b2d31;
+  --bg-surface-hover: #35373c;
+  --bg-input: #1e1f22;
+  
+  --border: #313338;
+  --border-light: #3f4147;
+
+  /* Accent Colors */
+  --blurple: #5865f2;
+  --blurple-hover: #4752c4;
+  --green: #23a55a;
+  --green-bg: rgba(35, 165, 90, 0.12);
+  --amber: #f0b232;
+  --amber-bg: rgba(240, 178, 50, 0.12);
+  --red: #f23f43;
+  --red-bg: rgba(242, 63, 67, 0.12);
+
+  /* Typography */
+  --text-main: #f2f3f5;
+  --text-sub: #949ba4;
+  --text-muted: #80848e;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius: 6px;
+  --transition: all 0.15s ease;
+}
+
+/* ================= Custom Discord Dark Scrollbar ================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #2b2d31 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2b2d31;
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.15s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #35373c;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #4e5058;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hidden { display: none !important; }
+.font-mono { font-family: var(--font-mono) !important; }

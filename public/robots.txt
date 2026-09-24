@@ -1,0 +1,6 @@
+# robots.txt for Discord Quest Dashboard (huyvu2512)
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://discord.huyvu2512.io.vn/sitemap.xml

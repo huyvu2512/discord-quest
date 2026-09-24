@@ -1,0 +1,31 @@
+{
+  "name": "Discord Quest",
+  "short_name": "Discord Quest",
+  "description": "Giải pháp thông minh hỗ trợ tự động hóa tiến trình nhiệm vụ, đồng bộ Orbs và quản lý phần thưởng Discord toàn diện.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#121316",
+  "theme_color": "#5865F2",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["utilities", "games", "productivity"]
+}
