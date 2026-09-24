@@ -184,14 +184,6 @@ window.claimQuest = function(id) {
     }
   }
 
-  // Tự động kiểm tra đồng bộ lại sau khi người dùng thao tác trên Discord
-  setTimeout(() => {
-    if (typeof syncQuestsFromDiscord === 'function') syncQuestsFromDiscord(false);
-  }, 6000);
-  setTimeout(() => {
-    if (typeof syncQuestsFromDiscord === 'function') syncQuestsFromDiscord(false);
-  }, 15000);
-
   saveState();
   if (typeof renderAll === 'function') renderAll();
 };

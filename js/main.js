@@ -981,16 +981,7 @@ async function fetchPublicIP(isManual = false) {
   isFetchingIP = false;
 }
 
-// Tự động đồng bộ trạng thái từ Discord khi người dùng quay lại tab (sau khi nhận quà trên Discord)
-let lastFocusSync = 0;
-window.addEventListener('focus', () => {
-  if (Date.now() - lastFocusSync > 5000) {
-    lastFocusSync = Date.now();
-    if (typeof syncQuestsFromDiscord === 'function' && state.accounts.length > 0) {
-      syncQuestsFromDiscord(false);
-    }
-  }
-});
+// Đồng bộ chỉ chạy 1 lần khi load trang (F5) hoặc khi người dùng chủ động bấm "Quét Quest"
 
 // ==================== PWA INSTALLATION & NATIVE WEB SHARE ====================
 let deferredPwaPrompt = null;
