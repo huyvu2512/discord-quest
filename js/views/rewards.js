@@ -130,7 +130,7 @@ function renderRewards() {
   if (items.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6">
+        <td colspan="5">
           <div class="empty-state">
             <div class="empty-title">Chưa có nhiệm vụ có mã quà</div>
             <div class="empty-desc">Khi tài khoản có nhiệm vụ tặng Gift Code (Roblox, Apex, Star Wars, NBA...), nhiệm vụ sẽ xuất hiện tại đây để bạn bấm Chạy và lấy mã đổi thưởng.</div>
@@ -145,28 +145,23 @@ function renderRewards() {
   tbody.innerHTML = items.map(r => {
     let codeCol = '';
     let statusCol = '';
-    let actionCol = '';
 
     if (r.status === 'running') {
       statusCol = `<span class="tag tag-running">● Đang chạy</span>`;
       codeCol = `
-        <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
           <span style="color: var(--yellow); font-size: 12px; font-weight: 500;">Đang cày (${r.pct}%)</span>
+          <button class="btn btn-secondary btn-sm" onclick="pauseQuest('${r.id}')">Dừng</button>
         </div>
-      `;
-      actionCol = `
-        <button class="btn btn-secondary btn-sm" onclick="pauseQuest('${r.id}')">Tạm dừng</button>
       `;
     } else if (r.status === 'queued') {
       statusCol = `<span class="tag tag-pending">Trong hàng đợi</span>`;
-      codeCol = `<span style="color: var(--text-muted); font-size: 12px;">Chờ đến lượt chạy</span>`;
-      actionCol = `
-        <button class="btn btn-secondary btn-run btn-sm" onclick="startQuest('${r.id}')">Chạy</button>
+      codeCol = `
+        <button class="btn btn-secondary btn-run btn-sm" onclick="startQuest('${r.id}')">Chạy (${r.pct}%)</button>
       `;
     } else if (r.status === 'pending') {
       statusCol = `<span class="tag tag-pending">Chưa làm</span>`;
-      codeCol = `<span style="color: var(--text-muted); font-size: 12px;">Chưa hoàn thành</span>`;
-      actionCol = `
+      codeCol = `
         <button class="btn btn-primary btn-sm" onclick="startQuest('${r.id}')">Chạy</button>
       `;
     } else if (r.status === 'completed') {
@@ -177,18 +172,12 @@ function renderRewards() {
           <span>Lấy Mã trên Discord</span>
         </a>
       `;
-      actionCol = `
-        <a href="${r.redeemLink}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
-          <span>Trang đổi quà</span>
-          <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-        </a>
-      `;
     } else {
       // claimed
       statusCol = `<span class="tag tag-claimed">Đã nhận mã</span>`;
       if (r.code) {
         codeCol = `
-          <div style="display: flex; align-items: center; gap: 6px;">
+          <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
             <span class="font-mono" style="background: rgba(87, 242, 135, 0.1); color: var(--green); border: 1px solid rgba(87, 242, 135, 0.25); padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; letter-spacing: 0.5px; user-select: all;">${escapeHtml(r.code)}</span>
             <button class="btn btn-secondary btn-sm" onclick="copyCode('${escapeHtml(r.code)}')">Copy</button>
           </div>
@@ -201,12 +190,6 @@ function renderRewards() {
           </a>
         `;
       }
-      actionCol = `
-        <a href="${r.redeemLink}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
-          <span>Trang đổi quà</span>
-          <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-        </a>
-      `;
     }
 
     return `
@@ -218,9 +201,8 @@ function renderRewards() {
         <td class="col-hide-mobile">
           <span class="tag tag-completed" style="color: #fff; background: rgba(88, 101, 242, 0.15); border-color: rgba(88, 101, 242, 0.3);">${escapeHtml(r.type)}</span>
         </td>
-        <td>${codeCol}</td>
         <td class="col-hide-mobile">${statusCol}</td>
-        <td style="text-align: right; white-space: nowrap;">${actionCol}</td>
+        <td style="text-align: right; white-space: nowrap;">${codeCol}</td>
       </tr>
     `;
   }).join("");
