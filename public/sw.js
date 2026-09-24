@@ -1,17 +1,14 @@
-// Minimal Service Worker for PWA Home Screen Installation
-const CACHE_NAME = 'discord-quest-v1';
+// Service Worker for Discord Quest PWA
+const CACHE_NAME = 'discord-quest-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
-});
-
-self.addEventListener('fetch', (event) => {
-  // Allow normal network requests
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((key) => caches.delete(key)));
+    }).then(() => self.clients.claim())
   );
 });
