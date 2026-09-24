@@ -1004,8 +1004,8 @@ window.installPWA = async function() {
 
 window.shareApp = async function() {
   const shareData = {
-    title: 'Discord Quest Dashboard',
-    text: 'Bảng điều khiển tự động hóa nhiệm vụ Discord, cày Orbs và nhận thưởng an toàn!',
+    title: 'Discord Quest',
+    text: 'Tự động hóa tiến trình nhiệm vụ, đồng bộ Orbs và quản lý phần thưởng Discord.',
     url: window.location.origin
   };
 

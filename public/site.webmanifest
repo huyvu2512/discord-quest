@@ -1,7 +1,7 @@
 {
   "name": "Discord Quest",
   "short_name": "Discord Quest",
-  "description": "Giải pháp thông minh hỗ trợ tự động hóa tiến trình nhiệm vụ, đồng bộ Orbs và quản lý phần thưởng Discord toàn diện.",
+  "description": "Tự động hóa tiến trình nhiệm vụ, đồng bộ Orbs và quản lý phần thưởng Discord.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
