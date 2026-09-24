@@ -157,20 +157,16 @@
 .guide-h {
   font-weight: 600;
   color: #fff;
+  margin-bottom: 5px;
+}
+
+.guide-desc {
+  line-height: 1.5;
+  color: var(--text-sub);
   margin-bottom: 6px;
 }
 
-.guide-steps {
-  margin: 6px 0 0 16px;
-  line-height: 1.6;
-  color: var(--text-sub);
-}
-
-.guide-steps li {
-  margin-bottom: 4px;
-}
-
-.guide-steps code {
+.guide-desc code, .guide-steps code {
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
   padding: 1px 4px;
@@ -178,8 +174,73 @@
   font-family: var(--font-mono);
 }
 
-.guide-steps strong {
+.guide-desc strong, .guide-steps strong {
   color: var(--text-main);
+}
+
+.guide-code-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.guide-code-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: #5865F2;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: all;
+}
+
+.guide-code-input:focus {
+  border-color: var(--blurple);
+  outline: none;
+}
+
+.btn-copy-code {
+  background: var(--blurple);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.btn-copy-code:hover {
+  opacity: 0.9;
+}
+
+.btn-copy-code:active {
+  transform: scale(0.97);
+}
+
+.guide-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0;
+}
+
+.guide-steps {
+  margin: 4px 0 0 16px;
+  line-height: 1.5;
+  color: var(--text-sub);
+}
+
+.guide-steps li {
+  margin-bottom: 3px;
 }
 
 .modal-foot {

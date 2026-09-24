@@ -765,12 +765,19 @@
         </div>
 
         <div class="token-guide-box hidden" id="token-guide-box">
-          <div class="guide-h">Cách lấy Token qua F12 (Chuẩn 100%):</div>
+          <div class="guide-h">⚡ Cách 1: Chạy Console (Nhanh nhất - 1 click):</div>
+          <div class="guide-desc">Mở Discord web, nhấn <code>F12</code> ➔ tab <strong>Console</strong> ➔ dán lệnh:</div>
+          <div class="guide-code-row">
+            <input type="text" readonly class="guide-code-input" id="code-token-snippet" value="window.webpackChunkdiscord_app.push([[Symbol()],{},r=>{for(let m in r.c){try{let t=r.c[m]?.exports?.default?.getToken?.()||r.c[m]?.exports?.getToken?.();if(typeof t==='string'&&t.length>40){copy(t);console.log('✅ Đã copy token!');break;}}catch{}}}]);" title="Bấm để sao chép">
+            <button type="button" class="btn-copy-code" id="btn-copy-token-snippet">Sao chép</button>
+          </div>
+
+          <div class="guide-divider"></div>
+
+          <div class="guide-h">🌐 Cách 2: Lấy qua Network (Thủ công):</div>
           <ol class="guide-steps">
-            <li>Mở Discord trên trình duyệt web, nhấn <code>F12</code> ➔ chọn tab <strong>Network</strong>.</li>
-            <li>Tại ô lọc (filter), nhập: <code>api/</code> (hoặc bấm vào kênh chat bất kỳ).</li>
-            <li>Bấm vào 1 dòng request bất kỳ ➔ chọn tab <strong>Headers</strong> bên phải.</li>
-            <li>Kéo xuống mục <strong>Request Headers</strong> ➔ copy toàn bộ chuỗi ký tự sau chữ <strong>authorization:</strong></li>
+            <li>Nhấn <code>F12</code> trên Discord ➔ chọn tab <strong>Network</strong> ➔ lọc <code>api/</code></li>
+            <li>Bấm 1 request bất kỳ ➔ chọn tab <strong>Headers</strong> ➔ copy chuỗi sau <strong>authorization:</strong></li>
           </ol>
         </div>
       </div>

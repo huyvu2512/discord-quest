@@ -337,6 +337,21 @@ function bindActionButtons() {
     e.preventDefault();
     document.getElementById("token-guide-box")?.classList.toggle("hidden");
   });
+
+  const copySnippet = () => {
+    const input = document.getElementById("code-token-snippet");
+    if (!input) return;
+    navigator.clipboard.writeText(input.value).then(() => {
+      toast("Đã copy lệnh Console vào Clipboard!", "success");
+    }).catch(() => {
+      input.select();
+      document.execCommand("copy");
+      toast("Đã copy lệnh Console vào Clipboard!", "success");
+    });
+  };
+
+  document.getElementById("btn-copy-token-snippet")?.addEventListener("click", copySnippet);
+  document.getElementById("code-token-snippet")?.addEventListener("click", copySnippet);
 }
 
 // ==================== CÀI ĐẶT HỆ THỐNG ====================
