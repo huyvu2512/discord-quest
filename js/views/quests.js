@@ -22,6 +22,9 @@ function renderQuests() {
   }
 
   const filtered = state.quests.filter(q => {
+    if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord') && q.status !== 'claimed' && q.status !== 'completed') return false;
+    if (q.isExpired && q.status !== 'claimed' && q.status !== 'completed') return false;
+    if (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now() && q.status !== 'claimed' && q.status !== 'completed') return false;
     if (state.filter === "pending" && (q.status === "completed" || q.status === "claimed")) return false;
     if (state.filter === "completed" && q.status !== "completed") return false;
     if (state.filter === "claimed" && q.status !== "claimed") return false;

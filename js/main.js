@@ -875,8 +875,9 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
     const currentRunningId = state.quests.find(q => q.status === "running")?.id;
 
     const rawQuests = data.quests || [];
-    // LỌC BỎ NGAY TỪ KHI QUÉT: Nhiệm vụ hết hạn mà chưa làm thì loại bỏ hoàn toàn
+    // LỌC BỎ NGAY TỪ KHI QUÉT: Nhiệm vụ hết hạn hoặc không hợp lệ mà chưa làm thì loại bỏ hoàn toàn
     const validQuests = rawQuests.filter(q => {
+      if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord') && q.status !== 'claimed' && q.status !== 'completed') return false;
       if (q.status === "claimed" || q.status === "completed") return true;
       if (q.isExpired) return false;
       if (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now()) return false;

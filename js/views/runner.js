@@ -22,10 +22,17 @@ function renderRunner() {
   }
 
   // Sắp xếp: Chưa làm (running, queued, pending) lên đầu -> Xong chưa nhận (completed) ở giữa -> Xong đã nhận (claimed) xuống dưới cùng
-  const activeQuests = [...state.quests].sort((a, b) => {
-    const order = { running: 1, queued: 2, pending: 3, completed: 4, claimed: 5 };
-    return (order[a.status] || 99) - (order[b.status] || 99);
-  });
+  const activeQuests = [...state.quests]
+    .filter(q => {
+      if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord') && q.status !== 'claimed' && q.status !== 'completed') return false;
+      if (q.isExpired && q.status !== 'claimed' && q.status !== 'completed') return false;
+      if (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now() && q.status !== 'claimed' && q.status !== 'completed') return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const order = { running: 1, queued: 2, pending: 3, completed: 4, claimed: 5 };
+      return (order[a.status] || 99) - (order[b.status] || 99);
+    });
   let queueOrder = 1;
 
   if (activeQuests.length === 0) {

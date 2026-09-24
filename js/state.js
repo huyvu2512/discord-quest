@@ -9,9 +9,11 @@ const initialActiveId = savedAccounts.some(a => a.id === savedActiveId)
   : (savedAccounts[0]?.id || null);
 
 let savedQuests = JSON.parse(localStorage.getItem("dqt_quests") || "[]");
-// Tự động dọn sạch dữ liệu clone cũ và toàn bộ nhiệm vụ đã hết hạn khỏi trình duyệt
+// Tự động dọn sạch dữ liệu clone cũ, quest rác excluded và toàn bộ nhiệm vụ đã hết hạn khỏi trình duyệt
 savedQuests = savedQuests.filter(q => {
   if (q.id === 'q1' || q.id === 'q2' || q.name?.includes('Fontaine Discovery') || q.name?.includes('Honkai')) return false;
+  // Dọn sạch 100+ quest rác/ảo bị excluded/hết hạn từ đợt trước
+  if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord') && q.status !== 'claimed' && q.status !== 'completed') return false;
   if (q.status === 'claimed' || q.status === 'completed') return true;
   if (q.isExpired) return false;
   if (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now()) return false;

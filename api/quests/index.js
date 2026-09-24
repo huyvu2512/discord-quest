@@ -123,13 +123,11 @@ export default async function handler(req, res) {
       }
     };
 
-    // 1. Nạp từ Desktop
+    // 1. Nạp từ Desktop (CHỈ LẤY QUESTS KHẢ DỤNG, BỎ HOÀN TOÀN excluded_quests)
     (desktopData.quests || []).forEach(q => mergeQuest(q, 'desktop_active'));
-    (desktopData.excluded_quests || []).forEach(q => mergeQuest(q, 'desktop_excluded'));
 
-    // 2. Nạp từ Web (Quest Home Showcase)
+    // 2. Nạp từ Web (CHỈ LẤY QUESTS KHẢ DỤNG, BỎ HOÀN TOÀN excluded_quests)
     (webData.quests || []).forEach(q => mergeQuest(q, 'web_active'));
-    (webData.excluded_quests || []).forEach(q => mergeQuest(q, 'web_excluded'));
 
     // 3. Nạp từ Claimed/Completed
     const claimedList = Array.isArray(claimedData) ? claimedData : (claimedData.quests || []);
@@ -138,7 +136,7 @@ export default async function handler(req, res) {
     const rawQuests = Array.from(questMap.values());
     const orbsBalance = balanceData.balance ?? 0;
 
-    console.log(`[API /api/quests] Đã quét tổng cộng ${rawQuests.length} Quest từ Discord (Desktop + Web + Claimed)`);
+    console.log(`[API /api/quests] Đã quét ${rawQuests.length} Quest hợp lệ từ Discord (Đã loại bỏ toàn bộ excluded/hết hạn)`);
 
     const formattedQuests = rawQuests.map(q => {
       const config = q.config || {};
@@ -228,7 +226,11 @@ export default async function handler(req, res) {
         discordUrl: `https://discord.com/quests/${q.id}`
       };
     }).filter(q => {
-      // Chỉ loại bỏ nếu nhiệm vụ đã hết hạn thực sự trong quá khứ và chưa từng hoàn tất
+      // 1. Loại bỏ các quest rác/ảo không có tên hoặc không có ứng dụng nhiệm vụ
+      if (q.name === 'Nhiệm vụ Discord' && !q.applicationId && q.status !== 'claimed' && q.status !== 'completed') {
+        return false;
+      }
+      // 2. Loại bỏ các quest đã hết hạn theo thời gian thực
       if (q.isExpired && q.status !== 'claimed' && q.status !== 'completed') {
         return false;
       }
