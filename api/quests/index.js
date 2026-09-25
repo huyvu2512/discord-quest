@@ -123,11 +123,13 @@ export default async function handler(req, res) {
       }
     };
 
-    // 1. Nạp từ Desktop (CHỈ LẤY QUESTS KHẢ DỤNG, BỎ HOÀN TOÀN excluded_quests)
+    // 1. Nạp từ Desktop (Bao gồm cả quests khả dụng và excluded_quests chờ enroll)
     (desktopData.quests || []).forEach(q => mergeQuest(q, 'desktop_active'));
+    (desktopData.excluded_quests || []).forEach(q => mergeQuest(q, 'desktop_excluded'));
 
-    // 2. Nạp từ Web (CHỈ LẤY QUESTS KHẢ DỤNG, BỎ HOÀN TOÀN excluded_quests)
+    // 2. Nạp từ Web (Quest Home Showcase)
     (webData.quests || []).forEach(q => mergeQuest(q, 'web_active'));
+    (webData.excluded_quests || []).forEach(q => mergeQuest(q, 'web_excluded'));
 
     // 3. Nạp từ Claimed/Completed
     const claimedList = Array.isArray(claimedData) ? claimedData : (claimedData.quests || []);
@@ -136,7 +138,7 @@ export default async function handler(req, res) {
     const rawQuests = Array.from(questMap.values());
     const orbsBalance = balanceData.balance ?? 0;
 
-    console.log(`[API /api/quests] Đã quét ${rawQuests.length} Quest hợp lệ từ Discord (Đã loại bỏ toàn bộ excluded/hết hạn)`);
+    console.log(`[API /api/quests] Đã quét ${rawQuests.length} Quest từ Discord (bao gồm active & excluded)`);
 
     const formattedQuests = rawQuests.map(q => {
       const config = q.config || {};
@@ -258,12 +260,13 @@ export default async function handler(req, res) {
       };
     }).filter(q => {
       // 1. Loại bỏ các quest rác/ảo không có tên hoặc không có ứng dụng nhiệm vụ
-      if (q.name === 'Nhiệm vụ Discord' && !q.applicationId && q.status !== 'claimed' && q.status !== 'completed') {
+      if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord') && q.status !== 'claimed' && q.status !== 'completed') {
         return false;
       }
-      // 2. Loại bỏ các quest đã hết hạn theo thời gian thực
-      if (q.isExpired && q.status !== 'claimed' && q.status !== 'completed') {
-        return false;
+      // 2. Loại bỏ các quest chưa làm nhưng đã hết hạn theo thời gian thực (expires_at)
+      if (q.status !== 'claimed' && q.status !== 'completed') {
+        if (q.isExpired) return false;
+        if (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now()) return false;
       }
       return true;
     });

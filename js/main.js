@@ -575,9 +575,10 @@ function resetTokenCheckForm() {
 
 function renderCounters() {
   const hasAcc = state.accounts.length > 0;
-  const totalOrbs = state.accounts.reduce((sum, a) => sum + (a.orbs || 0), 0);
+  const currentAcc = state.accounts.find(a => a.id === state.activeAccId) || state.accounts[0];
+  const activeOrbs = (currentAcc && currentAcc.orbs != null) ? currentAcc.orbs : 0;
   const orbsEl = document.getElementById("nav-orbs");
-  if (orbsEl) orbsEl.textContent = hasAcc ? `${totalOrbs.toLocaleString()} Orbs` : "—";
+  if (orbsEl) orbsEl.textContent = hasAcc ? `${activeOrbs.toLocaleString()} Orbs` : "—";
 
   const runningCount = state.quests.filter(q => q.status === "running").length;
   const queuedCount = state.quests.filter(q => q.status === "queued").length;
