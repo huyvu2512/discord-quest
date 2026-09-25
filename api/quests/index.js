@@ -7,10 +7,22 @@
  * 4. Claimed Quests (@me/claimed - Các nhiệm vụ đã xem xong/chờ nhận thưởng)
  */
 
+const SUPER_PROPERTIES_DESKTOP = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MjE1Iiwib3NfdmVyc2lvbiI6IjEwLjAuMjI2MzEiLCJvc19hcmNoIjoieDY0IiwiYXBwX2FyY2giOiJ4NjQiLCJzeXN0ZW1fbG9jYWxlIjoidmktVk4iLCJjbGllbnRfYnVpbGRfbnVtYmVyIjozNzYwMDAsImNsaWVudF9ldmVudF9zb3VyY2UiOm51bGx9';
+const SUPER_PROPERTIES_WEB = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiQ2hyb21lIiwiZGV2aWNlIjoiIiwic3lzdGVtX2xvY2FsZSI6InZpLVZOIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEzOC4wLjAuMCBTYWZhcmkvNTM3LjM2IiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTM4LjAuMC4wIiwib3NfdmVyc2lvbiI6IjEwIiwicmVmZXJyZXIiOiIiLCJyZWZlcnJpbmdfZG9tYWluIjoiIiwicmVmZXJyZXJfY3VycmVudCI6IiIsInJlZmVycmluZ19kb21haW5fY3VycmVudCI6IiIsInJlbGVhc2VfY2hhbm5lbCI6InN0YWJsZSIsImNsaWVudF9idWlsZF9udW1iZXIiOjM3NjAwMCwiY2xpZW50X2V2ZW50X3NvdXJjZSI6bnVsbH0=';
+
 const DISCORD_HEADERS = (token) => ({
   'Authorization': token.trim(),
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.9215 Chrome/138.0.7204.251 Electron/37.6.0 Safari/537.36',
   'Accept-Language': 'vi,en-US;q=0.9',
+  'X-Super-Properties': SUPER_PROPERTIES_DESKTOP,
+  'X-Discord-Locale': 'vi',
+  'X-Discord-Timezone': 'Asia/Saigon',
+  'Sec-Ch-Ua': '"Chromium";v="138", "Not?A_Brand";v="8"',
+  'Sec-Ch-Ua-Mobile': '?0',
+  'Sec-Ch-Ua-Platform': '"Windows"',
+  'Sec-Fetch-Dest': 'empty',
+  'Sec-Fetch-Mode': 'cors',
+  'Sec-Fetch-Site': 'same-origin',
   'Origin': 'https://discord.com',
   'Referer': 'https://discord.com/channels/@me',
   'Content-Type': 'application/json'
@@ -20,6 +32,15 @@ const DISCORD_WEB_HEADERS = (token) => ({
   'Authorization': token.trim(),
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
   'Accept-Language': 'vi,en-US;q=0.9',
+  'X-Super-Properties': SUPER_PROPERTIES_WEB,
+  'X-Discord-Locale': 'vi',
+  'X-Discord-Timezone': 'Asia/Saigon',
+  'Sec-Ch-Ua': '"Chromium";v="138", "Not?A_Brand";v="8"',
+  'Sec-Ch-Ua-Mobile': '?0',
+  'Sec-Ch-Ua-Platform': '"Windows"',
+  'Sec-Fetch-Dest': 'empty',
+  'Sec-Fetch-Mode': 'cors',
+  'Sec-Fetch-Site': 'same-origin',
   'Origin': 'https://discord.com',
   'Referer': 'https://discord.com/quest-home',
   'Content-Type': 'application/json'
@@ -78,13 +99,33 @@ export default async function handler(req, res) {
 
     // 1. Quét nhiệm vụ Desktop (@me)
     const desktopPromise = fetch('https://discord.com/api/v9/quests/@me', { headers: desktopHeaders })
-      .then(async r => (r.ok ? r.json() : { quests: [], excluded_quests: [] }))
-      .catch(() => ({ quests: [], excluded_quests: [] }));
+      .then(async r => {
+        if (!r.ok) {
+          const txt = await r.text().catch(() => '');
+          console.warn(`[API Quests Desktop] HTTP ${r.status}: ${txt.slice(0, 300)}`);
+          return { quests: [], excluded_quests: [] };
+        }
+        return r.json();
+      })
+      .catch(err => {
+        console.warn('[API Quests Desktop] Lỗi:', err.message);
+        return { quests: [], excluded_quests: [] };
+      });
 
     // 2. Quét nhiệm vụ Web Quest Home (Xem video đối tác, Scopely, PlayStation, v.v.)
     const webPromise = fetch('https://discord.com/api/v9/quests/@me', { headers: webHeaders })
-      .then(async r => (r.ok ? r.json() : { quests: [], excluded_quests: [] }))
-      .catch(() => ({ quests: [], excluded_quests: [] }));
+      .then(async r => {
+        if (!r.ok) {
+          const txt = await r.text().catch(() => '');
+          console.warn(`[API Quests Web] HTTP ${r.status}: ${txt.slice(0, 300)}`);
+          return { quests: [], excluded_quests: [] };
+        }
+        return r.json();
+      })
+      .catch(err => {
+        console.warn('[API Quests Web] Lỗi:', err.message);
+        return { quests: [], excluded_quests: [] };
+      });
 
     // 3. Quét nhiệm vụ đã xong / chờ nhận thưởng / mã quà
     const claimedPromise = fetch('https://discord.com/api/v9/quests/@me/claimed', { headers: desktopHeaders })
