@@ -55,11 +55,36 @@ function getRedeemUrl(quest) {
   return quest.discordUrl || (quest.id ? `https://discord.com/quests/${quest.id}` : 'https://discord.com/quest-home');
 }
 
+function normalizeQuestKey(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
 function getRewardItems() {
   const currentAcc = state.accounts.find(a => a.id === state.activeAccId) || state.accounts[0];
   const accName = currentAcc?.username ? `@${currentAcc.username}` : "Tài khoản";
 
-  const map = new Map();
+  const items = [];
+
+  function findItemIndex(candidate) {
+    return items.findIndex(existing => {
+      // 1. Trùng Quest ID
+      if (candidate.id && existing.id && candidate.id === existing.id) return true;
+      // 2. Trùng chuỗi mã Gift Code
+      if (candidate.code && existing.code && candidate.code.trim().toUpperCase() === existing.code.trim().toUpperCase()) return true;
+      // 3. Trùng tên chuẩn hóa (ví dụ: Apex VS Street Fighter 6 Event <-> Apex, ROBLOX <-> roblox)
+      const nameA = normalizeQuestKey(existing.questName);
+      const nameB = normalizeQuestKey(candidate.questName || candidate.name);
+      if (nameA && nameB) {
+        if (nameA === nameB) return true;
+        if (nameA.length >= 5 && nameB.length >= 5 && (nameA.includes(nameB) || nameB.includes(nameA))) return true;
+      }
+      return false;
+    });
+  }
 
   // 1. Quét từ state.quests:
   // Lấy TẤT CẢ các nhiệm vụ có mã quà (Gift Code) - kể cả ĐÃ XONG hay CHƯA LÀM
@@ -69,9 +94,9 @@ function getRewardItems() {
       const isDone = q.status === "completed" || q.status === "claimed";
       const targetSec = q.targetSec || 900;
       const progSec = isDone ? targetSec : (q.progSec || 0);
-      const pct = isDone ? 100 : Math.min(100, Math.round((progSec / targetSec) * 100));
+      const pct = isDone ? 100 : Math.min(99, Math.floor((progSec / targetSec) * 100));
 
-      map.set(q.id || q.name, {
+      const newItem = {
         id: q.id,
         questName: q.name,
         account: accName,
@@ -84,16 +109,42 @@ function getRewardItems() {
         discordUrl: q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home'),
         redeemLink: redeemLink,
         expiry: "Còn hạn dùng"
-      });
+      };
+
+      const existingIdx = findItemIndex(newItem);
+      if (existingIdx !== -1) {
+        const existing = items[existingIdx];
+        if (newItem.code && !existing.code) existing.code = newItem.code;
+        if (!existing.id && newItem.id) existing.id = newItem.id;
+        if (existing.type === "Gift Code" && newItem.type !== "Gift Code") existing.type = newItem.type;
+        const statusScore = s => (s === 'running' ? 5 : s === 'claimed' ? 4 : s === 'completed' ? 3 : s === 'queued' ? 2 : 1);
+        if (statusScore(newItem.status) > statusScore(existing.status)) existing.status = newItem.status;
+      } else {
+        items.push(newItem);
+      }
     }
   });
 
-  // 2. Gộp thêm từ state.rewards nếu có mã được lưu thủ công (chỉ lấy mã hợp lệ)
+  // 2. Gộp thêm từ state.rewards (chỉ bổ sung nếu chưa có trong state.quests):
   (state.rewards || []).forEach(r => {
-    const key = r.id || r.code || r.questName;
     if (isGiftCodeQuest(r)) {
-      if (!map.has(key)) {
-        map.set(key, {
+      const candidate = {
+        id: r.id,
+        questName: r.questName || r.name,
+        code: r.code || null
+      };
+
+      const existingIdx = findItemIndex(candidate);
+      if (existingIdx !== -1) {
+        // Đã có từ quests -> đồng bộ mã code vào quest đó nếu quest chưa có mã
+        const existing = items[existingIdx];
+        if (r.code && !existing.code) {
+          existing.code = r.code;
+          const targetQ = (state.quests || []).find(q => q.id === existing.id);
+          if (targetQ && !targetQ.code) targetQ.code = r.code;
+        }
+      } else {
+        items.push({
           id: r.id,
           questName: r.questName,
           account: r.account || accName,
@@ -105,15 +156,13 @@ function getRewardItems() {
           redeemLink: r.link || "https://discord.com/quest-home",
           expiry: r.expiry || "Còn hạn dùng"
         });
-      } else if (r.code && !map.get(key).code) {
-        map.get(key).code = r.code;
       }
     }
   });
 
   // Sắp xếp: Đang chạy -> Trong hàng đợi -> Chưa chạy -> Hoàn thành (chờ nhận) -> Đã nhận mã
   const order = { running: 1, queued: 2, pending: 3, completed: 4, claimed: 5 };
-  return Array.from(map.values()).sort((a, b) => {
+  return items.sort((a, b) => {
     return (order[a.status] || 99) - (order[b.status] || 99);
   });
 }
@@ -167,7 +216,7 @@ function renderRewards() {
     } else if (r.status === 'completed') {
       statusCol = `<span class="tag tag-completed">Chờ lấy mã</span>`;
       codeCol = `
-        <a href="${r.discordUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;" title="Mở Discord để lấy mã Gift Code">
+        <a href="${r.discordUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 12px; font-size: 12px; border-radius: 6px;" title="Mở Discord để lấy mã Gift Code">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
           <span>Lấy Mã trên Discord</span>
         </a>
@@ -175,19 +224,34 @@ function renderRewards() {
     } else {
       // claimed
       statusCol = `<span class="tag tag-claimed">Đã nhận mã</span>`;
+      const linkUrl = r.redeemLink || r.discordUrl;
+      const linkTitle = (r.redeemLink && !r.redeemLink.includes('discord.com'))
+        ? `Mở trang đổi quà ${escapeHtml(r.questName)}`
+        : 'Xem trên Discord';
+
       if (r.code) {
         codeCol = `
           <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
-            <span class="font-mono" style="background: rgba(87, 242, 135, 0.1); color: var(--green); border: 1px solid rgba(87, 242, 135, 0.25); padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; letter-spacing: 0.5px; user-select: all;">${escapeHtml(r.code)}</span>
-            <button class="btn btn-secondary btn-sm" onclick="copyCode('${escapeHtml(r.code)}')">Copy</button>
+            <div class="discord-code-widget" title="Mã quà: ${escapeHtml(r.code)}">
+              <span class="discord-code-text" title="${escapeHtml(r.code)}">${escapeHtml(r.code)}</span>
+              <button class="discord-code-copy-btn" onclick="copyRewardCode(this, '${escapeHtml(r.code)}', event)">Sao chép</button>
+            </div>
+            <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="${linkTitle}">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+            </a>
           </div>
         `;
       } else {
         codeCol = `
-          <a href="${r.discordUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;" title="Mở Discord để xem chuỗi mã Gift Code">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-            <span>Xem Mã trên Discord</span>
-          </a>
+          <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
+            <button class="btn btn-primary btn-sm" id="btn-fetch-code-${r.id}" onclick="fetchRewardCode('${r.id}')" style="display: inline-flex; align-items: center; gap: 5px; height: 36px; padding: 0 12px; font-size: 12px; border-radius: 6px;" title="Lấy trực tiếp chuỗi mã Gift Code từ Discord API">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+              <span>Lấy Mã Quà</span>
+            </button>
+            <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="${linkTitle}">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+            </a>
+          </div>
         `;
       }
     }
@@ -208,7 +272,85 @@ function renderRewards() {
   }).join("");
 }
 
+window.copyRewardCode = function(btn, text, evt) {
+  if (evt) evt.stopPropagation();
+  navigator.clipboard.writeText(text);
+  toast(`Đã sao chép mã: ${text}`, "success");
+  if (btn) {
+    const origText = btn.textContent;
+    btn.textContent = "Đã chép";
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = origText;
+      btn.classList.remove("copied");
+    }, 1500);
+  }
+};
+
 window.copyCode = function(text) {
   navigator.clipboard.writeText(text);
-  toast(`Đã chép mã: ${text}`, "success");
+  toast(`Đã sao chép mã: ${text}`, "success");
+};
+
+window.fetchRewardCode = async function(questId) {
+  const currentAcc = state.accounts.find(a => a.id === state.activeAccId) || state.accounts[0];
+  if (!currentAcc || !currentAcc.token) {
+    toast("Không tìm thấy Discord Token", "error");
+    return;
+  }
+
+  const btn = document.getElementById(`btn-fetch-code-${questId}`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner" style="width: 12px; height: 12px; border-width: 2px;"></span> Đang lấy...`;
+  }
+
+  try {
+    const res = await fetch(`/api/quests/reward-code?questId=${questId}&token=${encodeURIComponent(currentAcc.token)}`);
+    const data = await res.json();
+
+    if (data.success && data.code) {
+      // Cập nhật vào state.quests
+      const targetQuest = (state.quests || []).find(q => q.id === questId);
+      if (targetQuest) {
+        targetQuest.code = data.code;
+        targetQuest.status = 'claimed';
+      }
+
+      // Cập nhật hoặc lưu vào state.rewards
+      if (!Array.isArray(state.rewards)) state.rewards = [];
+      const existingRew = state.rewards.find(r => r.id === questId);
+      if (existingRew) {
+        existingRew.code = data.code;
+      } else if (targetQuest) {
+        state.rewards.push({
+          id: targetQuest.id,
+          questName: targetQuest.name,
+          account: currentAcc.username ? `@${currentAcc.username}` : "Tài khoản",
+          type: targetQuest.reward || "Gift Code",
+          code: data.code,
+          claimedAt: data.claimedAt || new Date().toISOString()
+        });
+      }
+
+      if (typeof saveState === 'function') saveState();
+      toast(`Lấy mã thành công: ${data.code}`, "success");
+      if (typeof addLog === 'function') {
+        addLog("success", `[Mã quà] Đã lấy mã cho quest "${targetQuest?.name || questId}": ${data.code}`);
+      }
+      renderRewards();
+    } else {
+      toast(data.error || "Chưa có mã quà hoặc quest chưa hoàn tất", "warn");
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Lấy Mã Thất Bại</span>`;
+      }
+    }
+  } catch (err) {
+    toast(`Lỗi kết nối: ${err.message}`, "error");
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<span>Thử lại</span>`;
+    }
+  }
 };

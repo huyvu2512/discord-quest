@@ -21,6 +21,12 @@ function renderQuests() {
     return;
   }
 
+  // MẶC ĐỊNH KHI ĐANG TẢI/ĐỒNG BỘ TỪ DISCORD: Hiện Skeleton shimmer, load xong API mới hiện danh sách
+  if (state.isSyncingQuests) {
+    showTableSkeleton("quests-tbody", 4, 6);
+    return;
+  }
+
   const filtered = state.quests.filter(q => {
     if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord') && q.status !== 'claimed' && q.status !== 'completed') return false;
     if (q.isExpired && q.status !== 'claimed' && q.status !== 'completed') return false;
@@ -49,8 +55,47 @@ function renderQuests() {
 
   // Sắp xếp: Chưa làm (running, queued, pending) lên đầu -> Xong chưa nhận (completed) ở giữa -> Xong đã nhận (claimed) xuống dưới cùng
   const sortedFiltered = [...filtered].sort((a, b) => {
+    // 1. Phân nhóm trạng thái chính
     const order = { running: 1, queued: 2, pending: 3, completed: 4, claimed: 5 };
-    return (order[a.status] || 99) - (order[b.status] || 99);
+    const statusDiff = (order[a.status] || 99) - (order[b.status] || 99);
+    if (statusDiff !== 0) return statusDiff;
+
+    // 2. TRONG MỤC CHƯA LÀM (running / queued / pending):
+    if (a.status === 'running' || a.status === 'queued' || a.status === 'pending') {
+      const isVideoA = a.taskType?.includes('VIDEO') ? 0 : 1;
+      const isVideoB = b.taskType?.includes('VIDEO') ? 0 : 1;
+      if (isVideoA !== isVideoB) return isVideoA - isVideoB;
+
+      if (isVideoA === 0 && (a.targetSec !== b.targetSec)) {
+        return (a.targetSec || 0) - (b.targetSec || 0);
+      }
+
+      const timeA = a.startsAt ? new Date(a.startsAt).getTime() : 0;
+      const timeB = b.startsAt ? new Date(b.startsAt).getTime() : 0;
+      if (timeA !== timeB) return timeB - timeA;
+
+      return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+    }
+
+    // 3. TRONG MỤC CHƯA NHẬN (completed - chờ claim):
+    if (a.status === 'completed') {
+      const timeA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+      const timeB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+      if (timeA !== timeB) return timeB - timeA;
+
+      return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+    }
+
+    // 4. TRONG MỤC ĐÃ NHẬN (claimed - hoàn tất):
+    if (a.status === 'claimed') {
+      const timeA = a.claimedAt ? new Date(a.claimedAt).getTime() : (a.completedAt ? new Date(a.completedAt).getTime() : 0);
+      const timeB = b.claimedAt ? new Date(b.claimedAt).getTime() : (b.completedAt ? new Date(b.completedAt).getTime() : 0);
+      if (timeA !== timeB) return timeB - timeA;
+
+      return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+    }
+
+    return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
   });
 
   tbody.innerHTML = sortedFiltered.map(q => {

@@ -21,6 +21,12 @@ function renderRunner() {
     return;
   }
 
+  // MẶC ĐỊNH KHI ĐANG TẢI/ĐỒNG BỘ TỪ DISCORD: Hiện Skeleton shimmer, load xong API mới hiện danh sách
+  if (state.isSyncingQuests) {
+    showTableSkeleton("runner-tbody", 4, 6);
+    return;
+  }
+
   // Sắp xếp: Chưa làm (running, queued, pending) lên đầu -> Xong chưa nhận (completed) ở giữa -> Xong đã nhận (claimed) xuống dưới cùng
   const activeQuests = [...state.quests]
     .filter(q => {
@@ -30,8 +36,53 @@ function renderRunner() {
       return true;
     })
     .sort((a, b) => {
+      // 1. Phân nhóm trạng thái chính:
+      // 1: running (đang chạy) -> 2: queued (hàng đợi) -> 3: pending (chưa làm) -> 4: completed (chờ nhận quà) -> 5: claimed (đã nhận)
       const order = { running: 1, queued: 2, pending: 3, completed: 4, claimed: 5 };
-      return (order[a.status] || 99) - (order[b.status] || 99);
+      const statusDiff = (order[a.status] || 99) - (order[b.status] || 99);
+      if (statusDiff !== 0) return statusDiff;
+
+      // 2. TRONG MỤC CHƯA LÀM (running / queued / pending):
+      if (a.status === 'running' || a.status === 'queued' || a.status === 'pending') {
+        // 2.1 Ưu tiên Xem Video trước (18s / 1-2 phút) lên trên cùng trước các game PC 15 phút
+        const isVideoA = a.taskType?.includes('VIDEO') ? 0 : 1;
+        const isVideoB = b.taskType?.includes('VIDEO') ? 0 : 1;
+        if (isVideoA !== isVideoB) return isVideoA - isVideoB;
+
+        // 2.2 Nếu cùng là video: ưu tiên thời lượng nhanh hơn (18s trước 134s)
+        if (isVideoA === 0 && (a.targetSec !== b.targetSec)) {
+          return (a.targetSec || 0) - (b.targetSec || 0);
+        }
+
+        // 2.3 Nhiệm vụ mới nhất lên trên: theo startsAt hoặc ID Snowflake Discord
+        const timeA = a.startsAt ? new Date(a.startsAt).getTime() : 0;
+        const timeB = b.startsAt ? new Date(b.startsAt).getTime() : 0;
+        if (timeA !== timeB) return timeB - timeA;
+
+        return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+      }
+
+      // 3. TRONG MỤC CHƯA NHẬN (completed - chờ nhận quà):
+      if (a.status === 'completed') {
+        // Nhiệm vụ mới hoàn thành gần đây nhất lên trên cùng
+        const timeA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+        const timeB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+        if (timeA !== timeB) return timeB - timeA;
+
+        return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+      }
+
+      // 4. TRONG MỤC ĐÃ NHẬN (claimed - hoàn tất):
+      if (a.status === 'claimed') {
+        // Nhiệm vụ mới nhận gần đây nhất lên trên cùng, nhiệm vụ cũ đẩy xuống dưới
+        const timeA = a.claimedAt ? new Date(a.claimedAt).getTime() : (a.completedAt ? new Date(a.completedAt).getTime() : 0);
+        const timeB = b.claimedAt ? new Date(b.claimedAt).getTime() : (b.completedAt ? new Date(b.completedAt).getTime() : 0);
+        if (timeA !== timeB) return timeB - timeA;
+
+        return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+      }
+
+      return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
     });
   let queueOrder = 1;
 
@@ -55,7 +106,7 @@ function renderRunner() {
     if (isDone) {
       q.progSec = q.targetSec;
     }
-    const pct = isDone ? 100 : Math.min(100, Math.round((q.progSec / q.targetSec) * 100));
+    const pct = isDone ? 100 : Math.min(99, Math.floor((q.progSec / q.targetSec) * 100));
     const remain = isDone ? 0 : Math.max(0, q.targetSec - q.progSec);
 
     let statusTag = "";
@@ -108,11 +159,15 @@ function renderRunner() {
   }).join("");
 }
 
-// Bắt đầu 1 quest (chỉ cho phép 1 quest chạy tại 1 thời điểm)
-window.startQuest = async function(id) {
+// Bắt đầu 1 quest (chạy đơn lẻ theo yêu cầu người dùng, không tự động nối đuôi)
+window.startQuest = function(id) {
+  // Tắt chế độ Chạy Tất Cả
+  state.isRunningAll = false;
+
+  // Đưa toàn bộ các quest khác đang chạy hoặc trong hàng đợi về pending
   state.quests.forEach(q => {
-    if (q.status === "running" && q.id !== id) {
-      q.status = "queued";
+    if ((q.status === "running" || q.status === "queued") && q.id !== id) {
+      q.status = "pending";
     }
   });
 
@@ -120,31 +175,15 @@ window.startQuest = async function(id) {
   if (!target) return;
   target.status = "running";
 
-  const acc = state.accounts.find(a => a.id === state.activeAccId) || state.accounts[0];
-  if (acc && acc.token && !target.enrolledAt) {
-    addLog("info", `[Nhận nhiệm vụ] Đang gửi POST /quests/${target.id}/enroll...`);
-    try {
-      const res = await fetch("/api/quests/enroll", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: acc.token, questId: target.id })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        target.enrolledAt = new Date().toISOString();
-        addLog("success", `[Nhận nhiệm vụ] Đã nhận quest "${target.name}" trên Discord.`);
-      } else {
-        addLog("error", `[Nhận nhiệm vụ] Thất bại cho "${target.name}": ${data.error || 'Bỏ qua'}`);
-      }
-    } catch (err) {
-      addLog("error", `Lỗi kết nối enroll: ${err.message}`);
-    }
-  }
-
   addLog("info", `[Bắt đầu] Đã kích hoạt chạy "${target.name}".`);
   toast(`Bắt đầu chạy: ${target.name}`, "info");
   saveState();
   if (typeof renderAll === 'function') renderAll();
+
+  // Kích hoạt ngay nhịp tick tập trung trong main.js (có mutex chống gọi kép / chồng chéo)
+  if (typeof window.triggerRunnerTick === 'function') {
+    window.triggerRunnerTick();
+  }
 };
 
 window.prioritizeQuest = function(id) {
@@ -152,9 +191,10 @@ window.prioritizeQuest = function(id) {
 };
 
 window.pauseQuest = function(id) {
+  state.isRunningAll = false;
   const target = state.quests.find(x => x.id === id);
   if (!target) return;
-  target.status = "queued";
+  target.status = "pending";
   addLog("warn", `[Tạm dừng] Đã tạm dừng "${target.name}".`);
   toast(`Đã tạm dừng quest`, "warn");
   saveState();
@@ -172,18 +212,4 @@ window.claimQuest = function(id) {
 
   addLog("info", `[Nhận quà] Đã mở link Discord cho "${q.name}". Sau khi bạn nhận quà trên Discord, web sẽ tự đồng bộ trạng thái từ API.`);
   toast(`Đang mở Discord để nhận quà...`, "info");
-
-  // Tự động chuyển tiếp quest tiếp theo nếu có quest đang chờ trong hàng đợi
-  const nextInQueue = state.quests.find(item => item.status === "queued" || item.status === "pending");
-  if (nextInQueue && !state.quests.some(item => item.status === "running")) {
-    nextInQueue.status = "running";
-    addLog("info", `[Hàng đợi] Tự động chuyển sang quest tiếp theo: "${nextInQueue.name}"...`);
-    toast(`Chuyển sang: ${nextInQueue.name}`, "info");
-    if (typeof window.startQuest === 'function') {
-      window.startQuest(nextInQueue.id);
-    }
-  }
-
-  saveState();
-  if (typeof renderAll === 'function') renderAll();
 };

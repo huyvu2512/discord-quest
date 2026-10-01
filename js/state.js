@@ -25,12 +25,27 @@ let savedRewards = JSON.parse(localStorage.getItem("dqt_rewards") || "[]");
 savedRewards = savedRewards.filter(r => {
   if (r.code?.includes('GENSHIN') || r.questName?.includes('Genshin') || r.questName?.includes('Honkai')) return false;
   const t = (r.type || '').toLowerCase();
-  const qn = (r.questName || '').toLowerCase();
+  const qn = (r.questName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   if (t.includes('orb') || t.includes('avatar') || t.includes('decoration') || t.includes('profile effect') || t.includes('badge')) return false;
-  if (qn.includes('monopoly') || qn.includes('wizard101') || qn.includes('gravebound') || qn.includes('war thunder') || qn.includes('albion') || qn.includes('dumb ways') || qn.includes('runescape') || qn.includes('phantom blade') || qn.includes('dawnwalker') || qn.includes('backrooms')) return false;
+  if (qn.includes('monopoly') || qn.includes('wizard101') || qn.includes('gravebound') || qn.includes('warthunder') || qn.includes('albion') || qn.includes('dumbways') || qn.includes('runescape') || qn.includes('phantomblade') || qn.includes('dawnwalker') || qn.includes('backrooms')) return false;
+
+  // Nếu trong savedQuests đã có quest này, đồng bộ mã code sang quest chính rồi xóa bản ghi thừa khỏi savedRewards để tránh lặp
+  const matchQ = savedQuests.find(q => {
+    const normQ = (q.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return (q.id && r.id && q.id === r.id) || 
+           (q.code && r.code && q.code.trim().toUpperCase() === r.code.trim().toUpperCase()) || 
+           (normQ && qn && (normQ === qn || normQ.includes(qn) || qn.includes(normQ)));
+  });
+
+  if (matchQ) {
+    if (r.code && !matchQ.code) matchQ.code = r.code;
+    return false; // Loại bỏ bản ghi thừa khỏi savedRewards
+  }
+
   return true;
 });
 localStorage.setItem("dqt_rewards", JSON.stringify(savedRewards));
+localStorage.setItem("dqt_quests", JSON.stringify(savedQuests));
 
 function getTabFromUrl() {
   if (typeof window === "undefined") return "home";
@@ -49,6 +64,7 @@ const state = {
   search: "",
   isRunningAll: false,
   isCheckingToken: false,
+  isSyncingQuests: false,
   verifiedTokenData: null,
   logs: []
 };

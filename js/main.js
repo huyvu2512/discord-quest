@@ -16,6 +16,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   updateNavGating();
+
+  // MẶC ĐỊNH KHI VỪA VÀO WEB: Bật trạng thái đồng bộ để hiện Skeleton, chỉ hiện danh sách khi API tải xong
+  if (state.accounts.length > 0) {
+    state.isSyncingQuests = true;
+  }
+
   renderAll();
   checkSessionOnStartup();
   syncQuestsFromDiscord(false);
@@ -29,9 +35,10 @@ document.addEventListener("DOMContentLoaded", () => {
     window.switchTabTo(tab, false);
   });
 
-  // Vòng lặp tiến trình thật: CHỈ GỬI TIẾN TRÌNH CHO ĐÚNG 1 QUEST ĐANG CHẠY (Lần lượt)
+  // Vòng lặp tiến trình thật: CHỈ GỬI TIẾN TRÌNH CHO ĐÚNG 1 QUEST ĐANG CHẠY (Lần lượt, Đơn luồng)
   let isSendingProgress = false;
-  setInterval(async () => {
+
+  async function runSingleProgressTick() {
     if (state.accounts.length === 0 || isSendingProgress) return;
 
     const current = state.quests.find(q => q.status === "running");
@@ -42,49 +49,76 @@ document.addEventListener("DOMContentLoaded", () => {
 
     isSendingProgress = true;
     try {
-      // 1. Tự động enroll nếu quest chưa được ghi nhận đã enroll
+      // 1. Tự động enroll nếu quest chưa được ghi nhận đã enroll trên Discord
+      // LƯU Ý QUAN TRỌNG: Nhiệm vụ xem video (WATCH_VIDEO) trên Discord KHÔNG CẦN VÀ KHÔNG DÙNG /enroll!
+      // Discord phát video trực tiếp và chỉ gửi /video-progress (như DevTools thực tế đã chứng minh).
+      // Chỉ gửi POST /enroll cho các nhiệm vụ Game PC, Console hoặc Stream!
+      const isVideo = current.taskType === 'WATCH_VIDEO' || current.taskType === 'WATCH_VIDEO_ON_MOBILE' || (typeof current.taskType === 'string' && current.taskType.includes('VIDEO'));
+
+      // Bắt buộc phải enroll trước khi gửi tiến độ (kể cả Video hay Game).
+      // Giống như cơ chế của các dự án T3 (Orion, Vencord), Discord yêu cầu phải nhận quest (enroll)
+      // thì endpoint /video-progress mới tồn tại và nhận timestamp, nếu không Discord sẽ trả về 404 Not Found.
       if (!current.enrolledAt) {
-        addLog("info", `[Auto] Tự động nhận Quest "${current.name}" trên Discord...`);
+        addLog("info", `[Auto] Nhận Quest "${current.name}" trên Discord...`);
         const enrollRes = await fetch("/api/quests/enroll", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: acc.token, questId: current.id })
+          body: JSON.stringify({
+            token: acc.token,
+            questId: current.id,
+            trafficMetadataSealed: current.trafficMetadataSealed
+          })
         });
-        const enrollData = await enrollRes.json();
-        if (enrollRes.ok && enrollData.success) {
-          current.enrolledAt = new Date().toISOString();
-          addLog("success", `[Auto] Nhận Quest "${current.name}" thành công.`);
-        } else {
-          // Bắt trường hợp Quest đã hết hạn hoặc không thể nhận trên Discord -> XÓA HẲN KHỎI DANH SÁCH
-          const isExp = enrollData.isExpired || enrollData.error?.includes("hết hạn") || enrollData.error?.includes("expired") || enrollData.code === 260017;
-          addLog("error", `[Đã lọc bỏ] "${current.name}" ${isExp ? 'đã hết hạn trên Discord' : (enrollData.error || 'không thể tham gia')}. Đã xóa khỏi danh sách.`);
-          
-          // Xóa ngay lập tức khỏi state.quests để không còn xuất hiện trong nhóm nhiệm vụ
-          state.quests = state.quests.filter(item => item.id !== current.id);
+        const enrollData = await enrollRes.json().catch(() => ({}));
 
-          // Tự động kích hoạt quest hợp lệ tiếp theo trong hàng đợi
-          const nextQ = state.quests.find(q => (q.status === "queued" || q.status === "pending") && !q.isExpired);
-          if (nextQ) {
-            nextQ.status = "running";
-            addLog("info", `[Hàng đợi] Tự động chuyển sang: "${nextQ.name}"...`);
-          } else {
-            const btnRun = document.getElementById("btn-run-all");
-            const btnStop = document.getElementById("btn-stop-all");
-            btnRun?.classList.remove("hidden");
-            btnStop?.classList.add("hidden");
-            addLog("info", `[Auto] Đã hoàn tất hoặc không còn quest hợp lệ trong hàng đợi.`);
+        // Bắt trường hợp dính HTTP 429 Rate Limit từ Discord
+        if (enrollData.status === 429 || enrollData.isRateLimited) {
+          current.status = "pending";
+          state.isRunningAll = false;
+          const btnRun = document.getElementById("btn-run-all");
+          const btnStop = document.getElementById("btn-stop-all");
+          btnRun?.classList.remove("hidden");
+          btnStop?.classList.add("hidden");
+
+          addLog("warn", `[Rate Limit] Discord giới hạn tốc độ: ${enrollData.error || 'Vui lòng chờ ít giây rồi thử lại'}. Đã tạm dừng.`);
+          toast(enrollData.error || "Discord đang giới hạn thao tác (Rate Limit)", "warn");
+          return;
+        }
+
+        if (enrollRes.ok && (enrollData.success || enrollData.alreadyEnrolled || enrollData.code === 260017)) {
+          current.enrolledAt = new Date().toISOString();
+          addLog("success", `[Auto] Nhận Quest "${current.name}" thành công (đã tham gia).`);
+        } else {
+          // Bắt trường hợp Quest không thể tham gia -> Tạm dừng, KHÔNG xóa quest khỏi danh sách
+          current.status = "pending";
+          addLog("error", `[Không thể nhận] "${current.name}": ${enrollData.error || 'Lỗi tham gia quest'}. Đã tạm dừng.`);
+          toast(`Không thể nhận "${current.name}": ${enrollData.error || 'Lỗi Discord'}`, "warn");
+
+          // CHỈ TỰ ĐỘNG CHUYỂN SANG QUEST TIẾP THEO KHI ĐANG BẬT "CHẠY TẤT CẢ"
+          if (state.isRunningAll) {
+            const nextQ = state.quests.find(q => q.status === "queued" && !q.isExpired);
+            if (nextQ) {
+              nextQ.status = "running";
+              addLog("info", `[Hàng đợi] Tự động chuyển sang: "${nextQ.name}"...`);
+            } else {
+              state.isRunningAll = false;
+              const btnRun = document.getElementById("btn-run-all");
+              const btnStop = document.getElementById("btn-stop-all");
+              btnRun?.classList.remove("hidden");
+              btnStop?.classList.add("hidden");
+              addLog("info", `[Auto] Đã hoàn tất hoặc không còn quest hợp lệ trong hàng đợi.`);
+            }
           }
-          saveState();
-          renderCounters();
-          if (state.activeTab === "runner") renderRunner();
-          if (state.activeTab === "quests") renderQuests();
-          return; // Dừng lại, không gửi heartbeat vô ích
+          return; // Dừng lại, không gửi heartbeat
         }
       }
 
       // 2. Gửi tiến độ thật (Heartbeat hoặc Video Progress)
-      const nextTimestamp = Math.min(current.targetSec, current.progSec + 7);
-      const isTerminal = nextTimestamp >= current.targetSec;
+      const nextTimestamp = isVideo ? Math.min(current.targetSec, current.progSec + 6) : current.progSec;
+
+      // QUAN TRỌNG: Luôn gửi terminal: false khi đang chạy để giữ session sống và Discord tiếp tục tích lũy thời gian.
+      // Tuyệt đối KHÔNG gửi terminal: true trước khi Discord xác nhận hoàn thành (tránh bị kẹt ở 14m 59s / 899s).
+      const isTerminal = false;
 
       const progRes = await fetch("/api/quests/progress", {
         method: "POST",
@@ -95,55 +129,85 @@ document.addEventListener("DOMContentLoaded", () => {
           taskType: current.taskType,
           applicationId: current.applicationId,
           timestamp: nextTimestamp,
-          terminal: isTerminal
+          terminal: isTerminal,
+          trafficMetadataSealed: current.trafficMetadataSealed
         })
       });
 
-      const progData = await progRes.json();
+      const progData = await progRes.json().catch(() => ({}));
+
+      // Bắt HTTP 429 khi gửi tiến trình
+      if (progData.status === 429 || progData.isRateLimited) {
+        current.status = "pending";
+        state.isRunningAll = false;
+        const btnRun = document.getElementById("btn-run-all");
+        const btnStop = document.getElementById("btn-stop-all");
+        btnRun?.classList.remove("hidden");
+        btnStop?.classList.add("hidden");
+
+        addLog("warn", `[Rate Limit] Gửi tiến độ chạm giới hạn Discord: ${progData.error || 'Vui lòng chờ ít giây'}. Đã tạm dừng.`);
+        toast(progData.error || "Discord đang giới hạn thao tác (Rate Limit)", "warn");
+        return;
+      }
+
       if (progRes.ok && progData.success) {
         const uStatus = progData.user_status;
-        const discordProg = uStatus?.progress?.[current.taskType]?.value;
+        let discordProg = uStatus?.progress?.[current.taskType]?.value;
+        if (typeof discordProg !== 'number' && uStatus?.progress) {
+          const firstProg = Object.values(uStatus.progress)[0];
+          if (firstProg && typeof firstProg.value === 'number') {
+            discordProg = firstProg.value;
+          }
+        }
         if (typeof discordProg === 'number') {
           current.progSec = Math.min(current.targetSec, discordProg);
-        } else {
+        } else if (isVideo) {
           current.progSec = nextTimestamp;
         }
 
-        const isCompleted = uStatus?.completed_at || (current.progSec >= current.targetSec);
+        const isCompleted = Boolean(uStatus?.completed_at) || (current.progSec >= current.targetSec);
 
         if (isCompleted) {
           current.status = "completed";
           current.progSec = current.targetSec;
+
           addLog("success", `★ Hoàn thành nhiệm vụ "${current.name}" (100%)!`);
           toast(`Hoàn thành: "${current.name}"! Bấm "Nhận quà ↗" để mở Discord`, "success");
 
-          // Tự động chuyển tiếp sang quest tiếp theo trong hàng đợi
-          const nextQ = state.quests.find(item => (item.status === "queued" || item.status === "pending") && item.id !== current.id);
-          if (nextQ) {
-            nextQ.status = "running";
-            addLog("info", `[Hàng đợi] Tự động chuyển tiếp sang: "${nextQ.name}"...`);
-            toast(`Bắt đầu: ${nextQ.name}`, "info");
-            if (typeof window.startQuest === 'function') {
-              window.startQuest(nextQ.id);
+          // CHỈ TỰ ĐỘNG CHUYỂN TIẾP KHI NGƯỜI DÙNG BẬT CHẾ ĐỘ "CHẠY TẤT CẢ" (state.isRunningAll === true)
+          if (state.isRunningAll) {
+            const nextQ = state.quests.find(item => item.status === "queued" && item.id !== current.id && !item.isExpired);
+            if (nextQ) {
+              nextQ.status = "running";
+              addLog("info", `[Hàng đợi] Tự động chuyển tiếp sang: "${nextQ.name}"...`);
+              toast(`Bắt đầu: ${nextQ.name}`, "info");
+            } else {
+              state.isRunningAll = false;
+              const btnRun = document.getElementById("btn-run-all");
+              const btnStop = document.getElementById("btn-stop-all");
+              btnRun?.classList.remove("hidden");
+              btnStop?.classList.add("hidden");
+              addLog("success", `★ Toàn bộ nhiệm vụ trong hàng đợi đã hoàn tất!`);
             }
           } else {
-            addLog("success", `★ Toàn bộ nhiệm vụ trong hàng đợi đã hoàn tất!`);
+            // Khi chạy đơn lẻ 1 quest -> Xong là DỪNG LẠI hoàn toàn, không tự ý chạy quest khác!
+            addLog("info", `[Hoàn thành] Đã xong nhiệm vụ "${current.name}". Bạn có thể chọn nhiệm vụ tiếp theo.`);
           }
         } else {
-          addLog("info", `[Tiến độ] "${current.name}": ${fmtSec(current.progSec)} / ${fmtSec(current.targetSec)}`);
+          addLog("info", `[Tiến độ${isVideo ? ' Video' : ''}] "${current.name}": ${fmtSec(current.progSec)} / ${fmtSec(current.targetSec)}`);
         }
       } else {
         addLog("error", `[Tiến độ] Gửi thất bại cho "${current.name}": ${progData.error || 'Chưa thể cập nhật tiến trình'}`);
-        // Nếu nhiệm vụ gặp lỗi không hợp lệ hoặc hết hạn -> XÓA HẲN
-        if (progData.error?.includes("hết hạn") || progData.error?.includes("expired") || progData.status === 400) {
-          addLog("error", `[Đã lọc bỏ] "${current.name}" đã hết hạn trên Discord. Đã xóa khỏi danh sách.`);
-          state.quests = state.quests.filter(item => item.id !== current.id);
-          const nextQ = state.quests.find(q => (q.status === "queued" || q.status === "pending") && !q.isExpired);
+        current.status = "pending"; // Tạm dừng quest, tuyệt đối KHÔNG xóa khỏi danh sách
+        toast(`Tạm dừng "${current.name}": ${progData.error || 'Lỗi Discord'}`, "warn");
+        if (state.isRunningAll) {
+          const nextQ = state.quests.find(q => q.status === "queued" && !q.isExpired);
           if (nextQ) {
             nextQ.status = "running";
             addLog("info", `[Hàng đợi] Tự động chuyển tiếp sang: "${nextQ.name}"...`);
+          } else {
+            state.isRunningAll = false;
           }
-          if (state.activeTab === "quests") renderQuests();
         }
       }
     } catch (err) {
@@ -156,7 +220,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (state.activeTab === "rewards") renderRewards();
       if (state.activeTab === "quests") renderQuests();
     }
-  }, 6000);
+  }
+
+  // Khởi chạy nhịp tick thủ công ngay lập tức khi bấm nút (có mutex bảo vệ chống gọi kép)
+  window.triggerRunnerTick = function() {
+    if (!isSendingProgress) {
+      runSingleProgressTick();
+    }
+  };
+
+  // Định kỳ lặp lại gửi tiến độ mỗi 6 giây
+  setInterval(runSingleProgressTick, 6000);
 });
 
 // Chuyển tab với hiệu ứng Skeleton Loading & Điều hướng URL theo miền /
@@ -233,6 +307,7 @@ function bindActionButtons() {
       return;
     }
 
+    state.isRunningAll = true;
     let hasRunning = state.quests.some(q => q.status === "running");
 
     state.quests.forEach(q => {
@@ -256,6 +331,7 @@ function bindActionButtons() {
   });
 
   btnStopAll?.addEventListener("click", () => {
+    state.isRunningAll = false;
     state.quests.forEach(q => {
       if (q.status === "running" || q.status === "queued") {
         q.status = "pending";
@@ -586,7 +662,7 @@ function renderCounters() {
   const btnRunAll = document.getElementById("btn-run-all");
   const btnStopAll = document.getElementById("btn-stop-all");
   if (btnRunAll && btnStopAll) {
-    if (runningCount > 0) {
+    if (state.isRunningAll) {
       btnRunAll.classList.add("hidden");
       btnStopAll.classList.remove("hidden");
     } else {
@@ -623,6 +699,8 @@ function renderCounters() {
   if (sumProgress) {
     if (!hasAcc) {
       sumProgress.textContent = "Chưa kết nối tài khoản";
+    } else if (state.isSyncingQuests) {
+      sumProgress.innerHTML = `<span class="skeleton" style="width: 220px; height: 12px; display: inline-block; vertical-align: middle;"></span>`;
     } else {
       const done = state.quests.filter(q => q.status === "completed" || q.status === "claimed").length;
       sumProgress.textContent = `${runningCount} đang chạy • ${queuedCount} trong hàng đợi • ${done}/${state.quests.length} xong`;
@@ -742,7 +820,7 @@ function renderHome() {
           actionBtn = `<button class="btn btn-primary btn-sm" onclick="claimQuest('${q.id}')">Nhận quà</button>`;
         } else if (q.status === "claimed") {
           tagHtml = `<span class="tag tag-claimed">Hoàn thành</span>`;
-          actionBtn = `<span style="font-size: 11px; color: var(--text-muted); padding: 4px 6px;">Hoàn thành</span>`;
+          actionBtn = `<span class="col-hide-mobile" style="font-size: 11px; color: var(--text-muted); padding: 4px 6px;">Hoàn thành</span>`;
         }
 
         const iconLetter = (q.name || "Q").trim().charAt(0).toUpperCase();
@@ -863,10 +941,22 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
   const acc = state.accounts.find(a => a.id === state.activeAccId) || state.accounts[0];
   if (!acc || !acc.token) return;
 
+  state.isSyncingQuests = true;
+  renderCounters();
+
+  // Luôn hiển thị Skeleton Shimmer khi đang tải/đồng bộ, tuyệt đối KHÔNG hiện danh sách cũ
+  if (state.activeTab === "runner") showTableSkeleton("runner-tbody", 4, 6);
+  if (state.activeTab === "quests") showTableSkeleton("quests-tbody", 4, 6);
+
   addLog("info", `[Đồng bộ] Gửi GET /api/quests (@${acc.username})...`);
 
   try {
-    const res = await fetch(`/api/quests?token=${encodeURIComponent(acc.token)}`);
+    let customIds = [];
+    try {
+      customIds = JSON.parse(localStorage.getItem('custom_quest_ids') || '[]');
+    } catch {}
+    const customParam = customIds.length > 0 ? `&customIds=${encodeURIComponent(customIds.join(','))}` : '';
+    const res = await fetch(`/api/quests?token=${encodeURIComponent(acc.token)}${customParam}`);
     const data = await res.json();
 
     if (!res.ok || !data.success) {
@@ -878,9 +968,6 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
     // Cập nhật số dư Orbs thật từ Discord
     acc.orbs = data.balance ?? acc.orbs ?? 0;
 
-    // Giữ trạng thái running cục bộ nếu người dùng đang chủ động chạy một quest chưa xong
-    const currentRunningId = state.quests.find(q => q.status === "running")?.id;
-
     const rawQuests = data.quests || [];
     // LỌC BỎ NGAY TỪ KHI QUÉT: Nhiệm vụ hết hạn hoặc không hợp lệ mà chưa làm thì loại bỏ hoàn toàn
     const validQuests = rawQuests.filter(q => {
@@ -891,9 +978,15 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
       return true;
     });
 
+    const currentRunningId = state.quests.find(q => q.status === "running")?.id;
+    const currentQueuedIds = new Set(state.quests.filter(q => q.status === "queued").map(q => q.id));
+
+    // Nạp danh sách nhiệm vụ mới chuẩn từ API (đã được sắp xếp ổn định từ Backend)
     state.quests = validQuests.map(nq => {
       if (currentRunningId === nq.id && nq.status !== "completed" && nq.status !== "claimed") {
         nq.status = "running";
+      } else if (currentQueuedIds.has(nq.id) && nq.status !== "completed" && nq.status !== "claimed") {
+        nq.status = "queued";
       }
       return nq;
     });
@@ -913,14 +1006,15 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
       }
     });
 
-    saveState();
-    renderAll();
-
     addLog("success", `[Đồng bộ] Đã tải ${state.quests.length} Quest & ${acc.orbs.toLocaleString()} Orbs từ Discord.`);
     if (showToasts) toast(`Đã đồng bộ ${state.quests.length} quest từ Discord!`, "success");
   } catch (err) {
     addLog("error", `[Đồng bộ] Lỗi mạng: ${err.message}`);
     if (showToasts) toast("Lỗi kết nối khi đồng bộ Quest", "error");
+  } finally {
+    state.isSyncingQuests = false;
+    saveState();
+    renderAll();
   }
 };
 

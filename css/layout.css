@@ -618,7 +618,15 @@
   .main {
     padding: 14px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px;
     width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
     overflow-x: hidden;
+  }
+
+  .tab-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   /* Tiêu đề & nút bấm trên cùng */

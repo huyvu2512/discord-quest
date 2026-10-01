@@ -6,6 +6,8 @@ import logoutHandler from './api/auth/logout.js';
 import questsHandler from './api/quests/index.js';
 import enrollHandler from './api/quests/enroll.js';
 import progressHandler from './api/quests/progress.js';
+import lookupHandler from './api/quests/lookup.js';
+import rewardCodeHandler from './api/quests/reward-code.js';
 
 function readJsonBody(req) {
   return new Promise((resolve) => {
@@ -85,6 +87,12 @@ export default defineConfig({
           }
           if (pathname === '/api/quests/progress') {
             return progressHandler(req, res);
+          }
+          if (pathname === '/api/quests/lookup') {
+            return lookupHandler(req, res);
+          }
+          if (pathname === '/api/quests/reward-code') {
+            return rewardCodeHandler(req, res);
           }
           if (pathname === '/api/quests') {
             return questsHandler(req, res);
