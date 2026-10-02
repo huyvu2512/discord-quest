@@ -155,6 +155,12 @@ Hệ thống cung cấp **10 endpoint** API Serverless. Chi tiết đầy đủ 
 
 ---
 
+## Tuyên bố miễn trừ
+
+Dự án này là sản phẩm cộng đồng mã nguồn mở, **không liên kết, không được tài trợ và không được chứng thực** bởi Discord Inc. "Discord" là nhãn hiệu đã đăng ký của Discord Inc. Mọi tên game, logo và nhãn hiệu đề cập trong dự án thuộc về chủ sở hữu tương ứng.
+
+Việc sử dụng dự án này hoàn toàn thuộc trách nhiệm của người dùng. Tác giả không chịu trách nhiệm cho bất kỳ hậu quả nào phát sinh từ việc sử dụng công cụ này.
+
 ## Giấy phép
 
-Dự án được phát hành theo giấy phép [MIT License](./LICENSE). Bản quyền thuộc về **Huy Vũ (@huyvu2512)**.
+Mã nguồn được phát hành theo giấy phép [MIT License](./LICENSE).
