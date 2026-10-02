@@ -258,11 +258,41 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Khởi chạy nhịp tick thủ công ngay lập tức khi bấm nút (có mutex bảo vệ chống gọi kép)
-  window.triggerRunnerTick = function() {
-    if (!isSendingProgress) {
-      runSingleProgressTick();
+  // Lấy khoảng thời gian delay động từ Cài đặt người dùng (dqt_settings)
+  function getRunnerDelayMs(current) {
+    try {
+      const raw = localStorage.getItem("dqt_settings");
+      const s = raw ? JSON.parse(raw) : {};
+      const isVideo = current ? (current.taskType === 'WATCH_VIDEO' || current.taskType === 'WATCH_VIDEO_ON_MOBILE' || (typeof current.taskType === 'string' && current.taskType.includes('VIDEO'))) : true;
+      let baseSec = isVideo ? (parseInt(s.videoInterval, 10) || 7) : (parseInt(s.gameInterval, 10) || 60);
+      if (s.randomJitter !== false) {
+        // Lệch ngẫu nhiên ±1s cho video, ±2s cho game để giả lập người thật
+        const delta = isVideo ? (Math.random() * 2 - 1) : (Math.random() * 4 - 2);
+        baseSec = Math.max(3, baseSec + delta);
+      }
+      return Math.round(baseSec * 1000);
+    } catch {
+      return 6000;
     }
+  }
+
+  let progressTimer = null;
+  function scheduleNextProgressTick(delayMs) {
+    if (progressTimer) clearTimeout(progressTimer);
+    const current = state.quests.find(q => q.status === "running");
+    const delay = typeof delayMs === 'number' ? delayMs : (current ? getRunnerDelayMs(current) : 5000);
+    progressTimer = setTimeout(async () => {
+      await runSingleProgressTick();
+      scheduleNextProgressTick();
+    }, delay);
+  }
+
+  // Khởi chạy nhịp tick động
+  scheduleNextProgressTick(3000);
+
+  // Gắn hàm global để khi lưu cài đặt có thể cập nhật nhịp tick ngay
+  window.rescheduleProgressTick = function() {
+    scheduleNextProgressTick(1000);
   };
 
   // Nhịp cập nhật thời gian thực từng giây (1s) cho giao diện người dùng
@@ -286,8 +316,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, 1000);
 
-  // Định kỳ lặp lại gửi tiến độ lên Discord mỗi 6 giây
-  setInterval(runSingleProgressTick, 6000);
+  // Khởi chạy nhịp tick thủ công ngay lập tức khi bấm nút (có mutex bảo vệ chống gọi kép)
+  window.triggerRunnerTick = function() {
+    if (!isSendingProgress) {
+      if (progressTimer) clearTimeout(progressTimer);
+      runSingleProgressTick().finally(() => {
+        scheduleNextProgressTick();
+      });
+    }
+  };
 });
 
 // Chuyển tab với hiệu ứng Skeleton Loading & Điều hướng URL theo miền /
@@ -604,6 +641,9 @@ function bindSettings() {
     localStorage.setItem("dqt_settings", JSON.stringify(s));
     toast("Đã lưu cài đặt hệ thống!", "success");
     addLog("info", `[Cài đặt] Đã lưu: AutoClaim=${s.autoClaim ? 'Bật' : 'Tắt'}, Video=${s.videoInterval}s, Game=${s.gameInterval}s`);
+    if (typeof window.rescheduleProgressTick === 'function') {
+      window.rescheduleProgressTick();
+    }
   });
 
   btnReset?.addEventListener("click", () => {

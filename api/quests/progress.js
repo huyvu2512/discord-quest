@@ -37,6 +37,18 @@ const DISCORD_WEB_HEADERS = (token) => ({
   'Content-Type': 'application/json'
 });
 
+const SUPER_PROPERTIES_MOBILE = 'eyJvcyI6IkFuZHJvaWQiLCJicm93c2VyIjoiRGlzY29yZCBBbmRyb2lkIiwiZGV2aWNlIjoiU2Ftc3VuZyBHYWxheHkgUzI0Iiwic3lzdGVtX2xvY2FsZSI6InZpLVZOIiwiY2xpZW50X3ZlcnNpb24iOiIyMjUuMCIsInJlbGVhc2VfY2hhbm5lbCI6Imdvb2dsZVJlbGVhc2UiLCJkZXZpY2VfdmVuZG9yX2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiIiwiY2xpZW50X2J1aWxkX251bWJlciI6MjI1MDAwMDAwfQ==';
+
+const DISCORD_MOBILE_HEADERS = (token) => ({
+  'Authorization': token.trim(),
+  'User-Agent': 'Discord-Android/225000000; Mozilla/5.0 (Linux; Android 14; SM-S928B Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/138.0.7204.251 Mobile Safari/537.36',
+  'Accept-Language': 'vi,en-US;q=0.9',
+  'X-Super-Properties': SUPER_PROPERTIES_MOBILE,
+  'X-Discord-Locale': 'vi',
+  'X-Discord-Timezone': 'Asia/Saigon',
+  'Content-Type': 'application/json'
+});
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method Not Allowed' });
@@ -174,6 +186,30 @@ export default async function handler(req, res) {
       }
       if (retryRes.ok) {
         discordRes = retryRes;
+      }
+    }
+
+    // Fallback nếu video-progress vẫn chưa thành công, thử tiếp với Mobile headers
+    if (!discordRes.ok && isVideo) {
+      const mobHeaders = DISCORD_MOBILE_HEADERS(token);
+      const retryResMob = await fetch(discordUrl, {
+        method: 'POST',
+        headers: mobHeaders,
+        body: JSON.stringify(payload)
+      });
+      if (retryResMob.status === 429) {
+        const rateLimitData = await retryResMob.json().catch(() => ({}));
+        const retryAfter = rateLimitData.retry_after || 5;
+        return res.status(200).json({
+          success: false,
+          status: 429,
+          retryAfter: retryAfter,
+          isRateLimited: true,
+          error: `Bạn đang bị Discord giới hạn tốc độ thao tác (Rate Limit). Thử lại sau ${Math.ceil(retryAfter)}s.`
+        });
+      }
+      if (retryResMob.ok) {
+        discordRes = retryResMob;
       }
     }
 

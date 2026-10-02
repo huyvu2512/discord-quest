@@ -37,6 +37,18 @@ const DISCORD_WEB_HEADERS = (token) => ({
   'Content-Type': 'application/json'
 });
 
+const SUPER_PROPERTIES_MOBILE = 'eyJvcyI6IkFuZHJvaWQiLCJicm93c2VyIjoiRGlzY29yZCBBbmRyb2lkIiwiZGV2aWNlIjoiU2Ftc3VuZyBHYWxheHkgUzI0Iiwic3lzdGVtX2xvY2FsZSI6InZpLVZOIiwiY2xpZW50X3ZlcnNpb24iOiIyMjUuMCIsInJlbGVhc2VfY2hhbm5lbCI6Imdvb2dsZVJlbGVhc2UiLCJkZXZpY2VfdmVuZG9yX2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiIiwiY2xpZW50X2J1aWxkX251bWJlciI6MjI1MDAwMDAwfQ==';
+
+const DISCORD_MOBILE_HEADERS = (token) => ({
+  'Authorization': token.trim(),
+  'User-Agent': 'Discord-Android/225000000; Mozilla/5.0 (Linux; Android 14; SM-S928B Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/138.0.7204.251 Mobile Safari/537.36',
+  'Accept-Language': 'vi,en-US;q=0.9',
+  'X-Super-Properties': SUPER_PROPERTIES_MOBILE,
+  'X-Discord-Locale': 'vi',
+  'X-Discord-Timezone': 'Asia/Saigon',
+  'Content-Type': 'application/json'
+});
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method Not Allowed' });
@@ -71,7 +83,7 @@ export default async function handler(req, res) {
   try {
     const isTargeted = Boolean(traffic_metadata_sealed);
 
-    // Chuẩn Discord Desktop & Web: Thử tối đa 2 lần (Location 11 Desktop -> Location 13 Web)
+    // Chuẩn Discord Desktop, Web & Mobile: Thử lần lượt (Location 11 Desktop -> Location 13 Web -> Mobile)
     const attempts = [
       {
         headers: DISCORD_HEADERS(token),
@@ -86,6 +98,15 @@ export default async function handler(req, res) {
         headers: DISCORD_WEB_HEADERS(token),
         payload: {
           location: 13,
+          is_targeted: isTargeted,
+          metadata_sealed: metadata_sealed,
+          traffic_metadata_sealed: traffic_metadata_sealed || null
+        }
+      },
+      {
+        headers: DISCORD_MOBILE_HEADERS(token),
+        payload: {
+          location: 11,
           is_targeted: isTargeted,
           metadata_sealed: metadata_sealed,
           traffic_metadata_sealed: traffic_metadata_sealed || null
