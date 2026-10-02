@@ -55,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!current.enrolledAt) {
         addLog("info", `[Auto] Nhận Quest "${current.name}" trên Discord...`);
         let enrollSuccess = false;
+        let enrollErrMsg = "";
         try {
           const enrollRes = await fetch("/api/quests/enroll", {
             method: "POST",
@@ -88,40 +89,25 @@ document.addEventListener("DOMContentLoaded", () => {
             current.enrolledAt = new Date().toISOString();
             addLog("success", `[Auto] Nhận Quest "${current.name}" thành công (đã tham gia).`);
           } else {
-            addLog("info", `[Auto] Chuẩn bị phát tiến trình cho "${current.name}"...`);
+            enrollErrMsg = enrollData.error || "Discord từ chối nhận quest";
           }
-        } catch {
-          addLog("info", `[Auto] Chuẩn bị phát tiến trình cho "${current.name}"...`);
+        } catch (e) {
+          enrollErrMsg = e.message || "Lỗi mạng khi nhận quest";
         }
 
         if (!enrollSuccess) {
-          if (isVideo) {
-            // Nhiệm vụ video: Discord không bắt buộc enroll trước qua API enroll, tiếp tục gửi tiến trình video
-            current.enrolledAt = new Date().toISOString();
-          } else {
-            // Nhiệm vụ game nếu không thể tham gia thì mới tạm dừng
-            current.status = "pending";
-            addLog("error", `[Không thể nhận] "${current.name}". Đã tạm dừng.`);
-            toast(`Không thể nhận "${current.name}"`, "warn");
+          current.status = "pending";
+          current.enrolledAt = null;
+          addLog("error", `[Không thể nhận] "${current.name}": ${enrollErrMsg}. Đã tạm dừng.`);
+          toast(`Không thể nhận "${current.name}"`, "warn");
 
-            if (state.isRunningAll) {
-              const nextQ = state.quests.find(q => q.status === "queued" && !q.isExpired);
-              if (nextQ) {
-                nextQ.status = "running";
-                nextQ._runStartedAt = Date.now();
-                nextQ._baseProgSec = nextQ.progSec || 0;
-                addLog("info", `[Hàng đợi] Tự động chuyển sang: "${nextQ.name}"...`);
-              } else {
-                state.isRunningAll = false;
-                const btnRun = document.getElementById("btn-run-all");
-                const btnStop = document.getElementById("btn-stop-all");
-                btnRun?.classList.remove("hidden");
-                btnStop?.classList.add("hidden");
-                addLog("info", `[Auto] Đã hoàn tất hoặc không còn quest hợp lệ trong hàng đợi.`);
-              }
-            }
-            return; // Dừng lại, không gửi heartbeat/progress
-          }
+          // Ngắt ngay chế độ chạy hàng đợi để không chuỗi sập làm bùng nổ 429 Rate Limit
+          state.isRunningAll = false;
+          const btnRun = document.getElementById("btn-run-all");
+          const btnStop = document.getElementById("btn-stop-all");
+          btnRun?.classList.remove("hidden");
+          btnStop?.classList.add("hidden");
+          return; // Dừng lại, tuyệt đối KHÔNG gửi tiến trình khi chưa đăng ký thành công
         }
       }
 
@@ -249,17 +235,18 @@ document.addEventListener("DOMContentLoaded", () => {
         addLog("error", `[Tiến độ] Gửi thất bại cho "${current.name}": ${progData.error || 'Chưa thể cập nhật tiến trình'}`);
         current.status = "pending"; // Tạm dừng quest, tuyệt đối KHÔNG xóa khỏi danh sách
         toast(`Tạm dừng "${current.name}": ${progData.error || 'Lỗi Discord'}`, "warn");
-        if (state.isRunningAll) {
-          const nextQ = state.quests.find(q => q.status === "queued" && !q.isExpired);
-          if (nextQ) {
-            nextQ.status = "running";
-            nextQ._runStartedAt = Date.now();
-            nextQ._baseProgSec = nextQ.progSec || 0;
-            addLog("info", `[Hàng đợi] Tự động chuyển tiếp sang: "${nextQ.name}"...`);
-          } else {
-            state.isRunningAll = false;
-          }
+
+        const errText = String(progData.error || '').toLowerCase();
+        if (errText.includes('không đăng ký') || errText.includes('not enrolled') || progData.status === 404) {
+          current.enrolledAt = null;
         }
+
+        // Tạm dừng hàng đợi để tránh lặp sang quest tiếp theo gây rate limit hàng loạt
+        state.isRunningAll = false;
+        const btnRun = document.getElementById("btn-run-all");
+        const btnStop = document.getElementById("btn-stop-all");
+        btnRun?.classList.remove("hidden");
+        btnStop?.classList.add("hidden");
       }
     } catch (err) {
       console.warn("Lỗi gửi tiến độ:", err);

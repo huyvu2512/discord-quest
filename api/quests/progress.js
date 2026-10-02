@@ -155,8 +155,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // Fallback nếu video-progress với Desktop headers chưa thành công, thử thêm với Web headers
-    if (!discordRes.ok && isVideo) {
+    // Fallback nếu video-progress với Desktop headers chưa thành công (chỉ thử khi không phải lỗi 404 chưa enroll)
+    if (!discordRes.ok && discordRes.status !== 404 && isVideo) {
       const webHeaders = DISCORD_WEB_HEADERS(token, buildNum);
       const retryRes = await fetch(discordUrl, {
         method: 'POST',
@@ -179,8 +179,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // Fallback nếu video-progress vẫn chưa thành công, thử tiếp với Mobile headers
-    if (!discordRes.ok && isVideo) {
+    // Fallback nếu video-progress vẫn chưa thành công (chỉ thử khi không phải lỗi 404 chưa enroll)
+    if (!discordRes.ok && discordRes.status !== 404 && isVideo) {
       const mobHeaders = DISCORD_MOBILE_HEADERS(token);
       const retryResMob = await fetch(discordUrl, {
         method: 'POST',

@@ -43,61 +43,74 @@ export default async function handler(req, res) {
     const isTargeted = Boolean(traffic_metadata_sealed);
     const isMobileTask = taskType === 'WATCH_VIDEO_ON_MOBILE' || taskType?.includes('MOBILE');
 
-    // Chuẩn Discord Desktop, Web & Mobile:
-    const attempts = [
-      {
-        headers: isMobileTask ? DISCORD_MOBILE_HEADERS(token) : DISCORD_HEADERS(token, buildNum),
-        payload: {
-          location: 11,
-          is_targeted: isTargeted,
-          metadata_sealed: metadata_sealed,
-          traffic_metadata_sealed: traffic_metadata_sealed || null
-        }
-      },
-      {
-        headers: isMobileTask ? DISCORD_IOS_HEADERS(token) : DISCORD_WEB_HEADERS(token, buildNum),
-        payload: {
+    // 1. Attempt 1: Chuẩn nền tảng của Quest (Desktop hoặc Mobile)
+    const primaryHeaders = isMobileTask ? DISCORD_MOBILE_HEADERS(token) : DISCORD_HEADERS(token, buildNum);
+    const primaryPayload = {
+      location: 11,
+      is_targeted: isTargeted,
+      ...(metadata_sealed ? { metadata_sealed } : {}),
+      ...(traffic_metadata_sealed ? { traffic_metadata_sealed } : {})
+    };
+
+    const resDiscord = await fetch(`https://discord.com/api/v9/quests/${questId}/enroll`, {
+      method: 'POST',
+      headers: primaryHeaders,
+      body: JSON.stringify(primaryPayload)
+    });
+
+    if (resDiscord.status === 429) {
+      const rateLimitData = await resDiscord.json().catch(() => ({}));
+      const retryAfter = rateLimitData.retry_after || 5;
+      return res.status(200).json({
+        success: false,
+        status: 429,
+        retryAfter: retryAfter,
+        isRateLimited: true,
+        error: `Bị Discord giới hạn tốc độ thao tác (Rate Limit, ${Math.ceil(retryAfter)}s).`
+      });
+    }
+
+    if (resDiscord.ok) {
+      const data = await resDiscord.json().catch(() => ({}));
+      return res.status(200).json({
+        success: true,
+        message: 'Nhận Quest thành công',
+        user_status: data
+      });
+    }
+
+    const errText = await resDiscord.text();
+    let errMsg = errText;
+    let errCode = null;
+    try {
+      const parsed = JSON.parse(errText);
+      errMsg = parsed.message || errText;
+      errCode = parsed.code;
+    } catch {}
+
+    // Đã nhận trước đó (code 260017) -> Thành công
+    if (errCode === 260017 || errMsg.toLowerCase().includes('already enrolled')) {
+      return res.status(200).json({
+        success: true,
+        message: 'Quest đã được nhận từ trước',
+        alreadyEnrolled: true
+      });
+    }
+
+    // 2. Attempt 2 (Fallback duy nhất): Thử qua Web Location 13 nếu request đầu không thành công
+    if (!isMobileTask && (resDiscord.status === 400 || resDiscord.status === 404)) {
+      const fallbackRes = await fetch(`https://discord.com/api/v9/quests/${questId}/enroll`, {
+        method: 'POST',
+        headers: DISCORD_WEB_HEADERS(token, buildNum),
+        body: JSON.stringify({
           location: 13,
           is_targeted: isTargeted,
-          metadata_sealed: metadata_sealed,
-          traffic_metadata_sealed: traffic_metadata_sealed || null
-        }
-      },
-      {
-        headers: DISCORD_MOBILE_HEADERS(token),
-        payload: {
-          location: 11,
-          is_targeted: isTargeted,
-          metadata_sealed: metadata_sealed,
-          traffic_metadata_sealed: traffic_metadata_sealed || null
-        }
-      },
-      {
-        headers: DISCORD_IOS_HEADERS(token),
-        payload: {
-          location: 11,
-          is_targeted: isTargeted,
-          metadata_sealed: metadata_sealed,
-          traffic_metadata_sealed: traffic_metadata_sealed || null
-        }
-      }
-    ];
-
-    let lastRes = null;
-    let lastData = null;
-
-    for (const attempt of attempts) {
-      const resDiscord = await fetch(`https://discord.com/api/v9/quests/${questId}/enroll`, {
-        method: 'POST',
-        headers: attempt.headers,
-        body: JSON.stringify(attempt.payload)
+          ...(traffic_metadata_sealed ? { traffic_metadata_sealed } : {})
+        })
       });
 
-      lastRes = resDiscord;
-
-      // 1. Xử lý HTTP 429 (Giới hạn tốc độ) NGAY LẬP TỨC: Dừng ngay, không retry
-      if (resDiscord.status === 429) {
-        const rateLimitData = await resDiscord.json().catch(() => ({}));
+      if (fallbackRes.status === 429) {
+        const rateLimitData = await fallbackRes.json().catch(() => ({}));
         const retryAfter = rateLimitData.retry_after || 5;
         return res.status(200).json({
           success: false,
@@ -108,8 +121,8 @@ export default async function handler(req, res) {
         });
       }
 
-      if (resDiscord.ok) {
-        const data = await resDiscord.json().catch(() => ({}));
+      if (fallbackRes.ok) {
+        const data = await fallbackRes.json().catch(() => ({}));
         return res.status(200).json({
           success: true,
           message: 'Nhận Quest thành công',
@@ -117,42 +130,31 @@ export default async function handler(req, res) {
         });
       }
 
-      const errText = await resDiscord.text();
-      let errMsg = errText;
-      let errCode = null;
+      const fbErrText = await fallbackRes.text();
       try {
-        const parsed = JSON.parse(errText);
-        errMsg = parsed.message || errText;
-        errCode = parsed.code;
+        const fbParsed = JSON.parse(fbErrText);
+        if (fbParsed.code === 260017 || fbParsed.message?.toLowerCase().includes('already enrolled')) {
+          return res.status(200).json({
+            success: true,
+            message: 'Quest đã được nhận từ trước',
+            alreadyEnrolled: true
+          });
+        }
+        errMsg = fbParsed.message || errMsg;
+        errCode = fbParsed.code || errCode;
       } catch {}
-
-      // Nếu quest đã được nhận trước đó (code 260017 hoặc message tương ứng) -> Thành công
-      const isAlreadyEnrolled = errCode === 260017 || 
-        errMsg.toLowerCase().includes('already enrolled') || 
-        errMsg.toLowerCase().includes('đã tham gia') ||
-        errMsg.toLowerCase().includes('đã nhận');
-
-      if (isAlreadyEnrolled) {
-        return res.status(200).json({
-          success: true,
-          message: 'Quest đã được nhận từ trước',
-          alreadyEnrolled: true
-        });
-      }
-
-      lastData = { errText, errMsg, errCode };
     }
 
-    const isExpired = lastData?.errMsg?.toLowerCase().includes('hết hạn') || 
-      lastData?.errMsg?.toLowerCase().includes('expired') || 
-      lastData?.errCode === 260018;
+    const isExpired = errMsg?.toLowerCase().includes('hết hạn') || 
+      errMsg?.toLowerCase().includes('expired') || 
+      errCode === 260018;
 
     return res.status(200).json({
       success: false,
-      status: lastRes?.status || 400,
-      code: lastData?.errCode,
+      status: resDiscord.status || 400,
+      code: errCode,
       isExpired: isExpired,
-      error: lastData?.errMsg || 'Không thể nhận nhiệm vụ trên Discord'
+      error: errMsg || 'Không thể nhận nhiệm vụ trên Discord'
     });
   } catch (err) {
     return res.status(200).json({ success: false, error: err.message });
