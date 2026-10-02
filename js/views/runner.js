@@ -257,9 +257,8 @@ window.claimQuest = async function(id, btn) {
     const data = await res.json().catch(() => ({}));
 
     if (data.requireCaptcha) {
-      addLog("warn", `[Nhận quà] Discord yêu cầu Captcha cho "${q.name}". Đang mở trang Discord...`);
-      toast("Discord yêu cầu xác thực Captcha! Đang mở trang Discord...", "warning");
-      window.open(url, '_blank', 'noopener,noreferrer');
+      addLog("warn", `[Nhận quà] Discord yêu cầu xác thực Captcha cho "${q.name}".`);
+      toast(`Discord yêu cầu Captcha: "${q.name}"`, "warning");
       return;
     }
 

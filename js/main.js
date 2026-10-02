@@ -75,8 +75,8 @@ document.addEventListener("DOMContentLoaded", () => {
           btnStop?.classList.add("hidden");
 
           const waitSec = Math.ceil(enrollData.retryAfter || 5);
-          addLog("warn", `[Rate Limit] Discord giới hạn tốc độ (chờ ${waitSec}s): ${enrollData.error || 'Vui lòng chờ ít giây rồi thử lại'}. Đã tạm dừng.`);
-          toast(enrollData.error || `Discord đang giới hạn thao tác (Rate Limit: ${waitSec}s)`, "warn");
+          addLog("warn", `[Rate Limit] Discord giới hạn tốc độ (chờ ${waitSec}s). Đã tạm dừng.`);
+          toast(`Discord giới hạn thao tác (chờ ${waitSec}s)`, "warn");
           return;
         }
 
@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnStop?.classList.add("hidden");
 
         const waitSec = Math.ceil(progData.retryAfter || 5);
-        addLog("warn", `[Rate Limit] Gửi tiến độ chạm giới hạn Discord (chờ ${waitSec}s): ${progData.error || 'Vui lòng chờ ít giây'}. Đã tạm dừng.`);
+        addLog("warn", `[Rate Limit] Gửi tiến độ chạm giới hạn Discord (chờ ${waitSec}s). Đã tạm dừng.`);
         toast(`Discord giới hạn thao tác: Thử lại sau ${waitSec}s`, "warn");
         return;
       }
@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
           delete current._baseProgSec;
 
           addLog("success", `★ Hoàn thành nhiệm vụ "${current.name}" (100%)!`);
-          toast(`Hoàn thành: "${current.name}"! Bấm "Nhận quà ↗" để mở Discord`, "success");
+          toast(`Hoàn thành: "${current.name}"!`, "success");
 
           // CHỈ TỰ ĐỘNG CHUYỂN TIẾP KHI NGƯỜI DÙNG BẬT CHẾ ĐỘ "CHẠY TẤT CẢ" (state.isRunningAll === true)
           if (state.isRunningAll) {
@@ -225,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           } else {
             // Khi chạy đơn lẻ 1 quest -> Xong là DỪNG LẠI hoàn toàn, không tự ý chạy quest khác!
-            addLog("info", `[Hoàn thành] Đã xong nhiệm vụ "${current.name}". Bạn có thể chọn nhiệm vụ tiếp theo.`);
+            addLog("info", `[Hoàn thành] Đã xong nhiệm vụ "${current.name}".`);
           }
         } else {
           addLog("info", `[Tiến độ${isVideo ? ' Video' : ''}] "${current.name}": ${fmtSec(current.progSec)} / ${fmtSec(current.targetSec)}`);
@@ -769,7 +769,7 @@ async function checkSessionOnStartup() {
 
     if (data.expired || res.status === 401) {
       addLog("warn", `[HỆ THỐNG] Phiên của @${acc.username} đã hết hạn. Đã tự động đăng xuất.`);
-      toast(`Phiên của @${acc.username} đã hết hạn. Vui lòng kết nối lại.`, "warn");
+      toast(`Phiên của @${acc.username} đã hết hạn.`, "warn");
       
       // Tự động xóa tài khoản hết hạn khỏi bộ nhớ
       state.accounts = state.accounts.filter(a => a.id !== acc.id);
