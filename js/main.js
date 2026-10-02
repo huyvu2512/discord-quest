@@ -369,7 +369,7 @@ window.switchTabTo = function(tab, updateHistory = true) {
   // Kích hoạt Skeleton loading cho bảng tương ứng
   if (tab === "accounts") showTableSkeleton("accounts-tbody", 2, 6);
   if (tab === "quests") showTableSkeleton("quests-tbody", 4, 7);
-  if (tab === "rewards") showTableSkeleton("rewards-tbody", 2, 6);
+  if (tab === "rewards") showTableSkeleton("rewards-tbody", 3, 5);
 
   setTimeout(() => {
     renderAll();
@@ -463,8 +463,9 @@ function bindActionButtons() {
     btn.classList.add("loading");
     btn.innerHTML = `<span class="spinner"></span> Đang quét...`;
 
-    // Hiển thị Skeleton loading trên bảng Quest
+    // Hiển thị Skeleton loading trên bảng Quest & Mã quà
     showTableSkeleton("quests-tbody", 4, 7);
+    showTableSkeleton("rewards-tbody", 3, 5);
 
     await window.syncQuestsFromDiscord(true);
 
@@ -864,19 +865,26 @@ function renderCounters() {
 
   const countAll = document.getElementById("count-all");
   if (countAll) {
-    const val = hasAcc ? state.quests.length : 0;
-    countAll.textContent = val;
-    countAll.style.display = val > 0 ? "inline-flex" : "none";
+    if (!hasAcc || state.isSyncingQuests) {
+      countAll.style.display = "none";
+    } else {
+      const val = state.quests.length;
+      countAll.textContent = val;
+      countAll.style.display = val > 0 ? "inline-flex" : "none";
+    }
   }
 
   const countRewards = document.getElementById("count-rewards");
   if (countRewards) {
-    const rewardCount = typeof getRewardItems === "function" 
-      ? getRewardItems().length 
-      : state.quests.filter(q => q.hasGiftCode || q.code).length;
-    const val = hasAcc ? rewardCount : 0;
-    countRewards.textContent = val;
-    countRewards.style.display = val > 0 ? "inline-flex" : "none";
+    if (!hasAcc || state.isSyncingQuests) {
+      countRewards.style.display = "none";
+    } else {
+      const rewardCount = typeof getRewardItems === "function" 
+        ? getRewardItems().length 
+        : state.quests.filter(q => q.hasGiftCode || q.code).length;
+      countRewards.textContent = rewardCount;
+      countRewards.style.display = rewardCount > 0 ? "inline-flex" : "none";
+    }
   }
 
   const sumProgress = document.getElementById("summary-progress-text");
@@ -952,12 +960,24 @@ function renderHome() {
   const availableQuests = state.quests.filter(q => q.status !== "completed" && q.status !== "claimed");
   const runningQuest = state.quests.find(q => q.status === "running");
 
-  if (statQuests) statQuests.textContent = hasAcc ? availableQuests.length : "0";
-  if (badgeQuestCount) badgeQuestCount.textContent = hasAcc ? state.quests.length : "0";
+  if (statQuests) {
+    if (!hasAcc) statQuests.textContent = "0";
+    else if (state.isSyncingQuests) statQuests.innerHTML = `<span class="skeleton" style="width: 28px; height: 18px; display: inline-block;"></span>`;
+    else statQuests.textContent = availableQuests.length;
+  }
+  if (badgeQuestCount) {
+    if (!hasAcc || state.isSyncingQuests) badgeQuestCount.textContent = "0";
+    else badgeQuestCount.textContent = state.quests.length;
+  }
   if (statRunning) statRunning.textContent = runningQuest ? "1" : "0";
   if (statRunningText) statRunningText.textContent = runningQuest ? runningQuest.name : "Chưa chạy";
+  
   const giftRewardCount = typeof getRewardItems === "function" ? getRewardItems().length : state.rewards.length;
-  if (statRewards) statRewards.textContent = hasAcc ? giftRewardCount : "0";
+  if (statRewards) {
+    if (!hasAcc) statRewards.textContent = "0";
+    else if (state.isSyncingQuests) statRewards.innerHTML = `<span class="skeleton" style="width: 28px; height: 18px; display: inline-block;"></span>`;
+    else statRewards.textContent = giftRewardCount;
+  }
   if (statOrbs) statOrbs.textContent = hasAcc ? (activeAcc.orbs ?? 0).toLocaleString() : "0";
 
   // 2. Danh sách nhiệm vụ nổi bật / mới nhất
@@ -971,6 +991,14 @@ function renderHome() {
           <div class="home-empty-title">Chưa kết nối tài khoản Discord</div>
           <div class="home-empty-desc">Thêm Token của bạn để quét danh sách nhiệm vụ thật từ Discord.</div>
           <button class="btn btn-primary btn-sm" onclick="window.switchTabTo('accounts')">+ Thêm Token Ngay</button>
+        </div>
+      `;
+    } else if (state.isSyncingQuests) {
+      questsPreview.innerHTML = `
+        <div style="padding: 12px 0; display: flex; flex-direction: column; gap: 8px;">
+          <div class="skeleton" style="width: 100%; height: 38px; border-radius: 6px;"></div>
+          <div class="skeleton" style="width: 100%; height: 38px; border-radius: 6px;"></div>
+          <div class="skeleton" style="width: 100%; height: 38px; border-radius: 6px;"></div>
         </div>
       `;
     } else if (state.quests.length === 0) {
@@ -1129,6 +1157,7 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
 
   // Luôn hiển thị Skeleton Shimmer khi đang tải/đồng bộ, tuyệt đối KHÔNG hiện danh sách cũ
   if (state.activeTab === "quests" || state.activeTab === "runner") showTableSkeleton("quests-tbody", 4, 7);
+  if (state.activeTab === "rewards") showTableSkeleton("rewards-tbody", 3, 5);
 
   addLog("info", `[Đồng bộ] Gửi GET /api/quests (@${acc.username})...`);
 

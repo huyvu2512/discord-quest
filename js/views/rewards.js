@@ -46,6 +46,11 @@ function normalizeQuestKey(str) {
 }
 
 function getRewardItems() {
+  // Khi đang đồng bộ quest từ Discord: Tuyệt đối không nạp mã trước để giữ tính đồng bộ với danh sách Quest
+  if (state.isSyncingQuests) {
+    return [];
+  }
+
   const currentAcc = state.accounts.find(a => a.id === state.activeAccId) || state.accounts[0];
   const accName = currentAcc?.username ? `@${currentAcc.username}` : "Tài khoản";
 
@@ -175,6 +180,12 @@ window.isGiftCodeQuest = isGiftCodeQuest;
 function renderRewards() {
   const tbody = document.getElementById("rewards-tbody");
   if (!tbody) return;
+
+  // Khi đang tải/đồng bộ quest từ Discord: Hiển thị Skeleton loading và chờ đồng bộ hoàn tất
+  if (state.isSyncingQuests) {
+    showTableSkeleton("rewards-tbody", 3, 5);
+    return;
+  }
 
   const items = getRewardItems();
 
