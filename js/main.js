@@ -111,11 +111,25 @@ document.addEventListener("DOMContentLoaded", () => {
       // 2. Gửi tiến độ thật (Heartbeat hoặc Video Progress)
       let nextTimestamp;
       if (isVideo) {
-        // Nhịp chuẩn Discord Video Player: Tăng tiến độ theo thời gian thực mỗi nhịp tick (6s) kèm chút sai số tự nhiên (jitter)
-        const jitter = (Math.random() * 0.4 - 0.2); // dao động nhẹ ±0.2s
-        const step = Math.max(1, 6 + jitter);
-        const calculatedTs = (current.progSec || 0) + step;
-        nextTimestamp = Number(Math.min(current.targetSec, calculatedTs).toFixed(4));
+        if (!current._runStartedAt) {
+          current._runStartedAt = Date.now();
+          current._baseProgSec = current.progSec || 0;
+        }
+
+        // Tính toán đúng thời gian thực tế đã trôi qua kể từ khi bắt đầu chạy
+        const elapsedRealSec = Math.floor((Date.now() - current._runStartedAt) / 1000);
+        
+        // Không gửi ping ảo nếu vừa mới bấm chạy dưới 5 giây (trừ khi đã có tiến độ trước đó)
+        if (elapsedRealSec < 5 && (current.progSec || 0) === 0) {
+          return;
+        }
+
+        const realSec = Math.min(current.targetSec, (current._baseProgSec || 0) + elapsedRealSec);
+        current.progSec = realSec;
+
+        // Jitter nhẹ ±0.15s cho số lẻ thập phân tự nhiên giống video player Discord
+        const jitter = (Math.random() * 0.3 - 0.15);
+        nextTimestamp = Number(Math.min(current.targetSec, Math.max(1, realSec + jitter)).toFixed(4));
       } else {
         nextTimestamp = current.progSec;
       }
@@ -166,8 +180,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (typeof discordProg === 'number') {
           current.progSec = Math.min(current.targetSec, discordProg);
+          current._baseProgSec = current.progSec;
+          current._runStartedAt = Date.now();
         } else if (isVideo) {
-          current.progSec = nextTimestamp;
+          current.progSec = Math.min(current.targetSec, Math.floor(nextTimestamp));
         }
 
         const isCompleted = Boolean(uStatus?.completed_at) || (current.progSec >= current.targetSec);
@@ -175,6 +191,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isCompleted) {
           current.status = "completed";
           current.progSec = current.targetSec;
+          delete current._runStartedAt;
+          delete current._baseProgSec;
 
           addLog("success", `★ Hoàn thành nhiệm vụ "${current.name}" (100%)!`);
           toast(`Hoàn thành: "${current.name}"! Bấm "Nhận quà ↗" để mở Discord`, "success");
@@ -234,7 +252,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Định kỳ lặp lại gửi tiến độ mỗi 6 giây
+  // Nhịp cập nhật thời gian thực từng giây (1s) cho giao diện người dùng
+  setInterval(() => {
+    const current = state.quests.find(q => q.status === "running");
+    if (!current) return;
+
+    if (!current._runStartedAt) {
+      current._runStartedAt = Date.now();
+      current._baseProgSec = current.progSec || 0;
+    }
+
+    const elapsedRealSec = Math.floor((Date.now() - current._runStartedAt) / 1000);
+    const calculatedSec = Math.min(current.targetSec, (current._baseProgSec || 0) + elapsedRealSec);
+
+    if (calculatedSec !== current.progSec && calculatedSec <= current.targetSec) {
+      current.progSec = calculatedSec;
+      if (state.activeTab === "runner" && typeof renderRunner === "function") {
+        renderRunner();
+      }
+    }
+  }, 1000);
+
+  // Định kỳ lặp lại gửi tiến độ lên Discord mỗi 6 giây
   setInterval(runSingleProgressTick, 6000);
 });
 

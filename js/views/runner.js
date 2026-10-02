@@ -174,6 +174,8 @@ window.startQuest = function(id) {
   const target = state.quests.find(x => x.id === id);
   if (!target) return;
   target.status = "running";
+  target._runStartedAt = Date.now();
+  target._baseProgSec = target.progSec || 0;
 
   addLog("info", `[Bắt đầu] Đã kích hoạt chạy "${target.name}".`);
   toast(`Bắt đầu chạy: ${target.name}`, "info");
@@ -195,6 +197,8 @@ window.pauseQuest = function(id) {
   const target = state.quests.find(x => x.id === id);
   if (!target) return;
   target.status = "pending";
+  delete target._runStartedAt;
+  delete target._baseProgSec;
   addLog("warn", `[Tạm dừng] Đã tạm dừng "${target.name}".`);
   toast(`Đã tạm dừng quest`, "warn");
   saveState();
