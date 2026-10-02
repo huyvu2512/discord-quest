@@ -1,5 +1,14 @@
 import { defineConfig } from 'vite';
 import fs from 'fs';
+import ipHandler from './api/ip.js';
+import verifyHandler from './api/auth/verify.js';
+import refreshHandler from './api/auth/refresh.js';
+import logoutHandler from './api/auth/logout.js';
+import questsHandler from './api/quests/index.js';
+import enrollHandler from './api/quests/enroll.js';
+import progressHandler from './api/quests/progress.js';
+import lookupHandler from './api/quests/lookup.js';
+import rewardCodeHandler from './api/quests/reward-code.js';
 
 function readJsonBody(req) {
   return new Promise((resolve) => {
@@ -59,47 +68,33 @@ export default defineConfig({
             req.body = await readJsonBody(req);
           }
 
-          // Điều phối các route API chuẩn Vercel Serverless (Dynamic import chống cache khi dev)
-          try {
-            if (pathname === '/api/ip') {
-              const mod = await import(`./api/ip.js?t=${Date.now()}`);
-              return mod.default(req, res);
-            }
-            if (pathname === '/api/auth/verify') {
-              const mod = await import(`./api/auth/verify.js?t=${Date.now()}`);
-              return mod.default(req, res);
-            }
-            if (pathname === '/api/auth/refresh') {
-              const mod = await import(`./api/auth/refresh.js?t=${Date.now()}`);
-              return mod.default(req, res);
-            }
-            if (pathname === '/api/auth/logout') {
-              const mod = await import(`./api/auth/logout.js?t=${Date.now()}`);
-              return mod.default(req, res);
-            }
-            if (pathname === '/api/quests/enroll') {
-              const mod = await import(`./api/quests/enroll.js?t=${Date.now()}`);
-              return mod.default(req, res);
-            }
-            if (pathname === '/api/quests/progress') {
-              const mod = await import(`./api/quests/progress.js?t=${Date.now()}`);
-              return mod.default(req, res);
-            }
-            if (pathname === '/api/quests/lookup') {
-              const mod = await import(`./api/quests/lookup.js?t=${Date.now()}`);
-              return mod.default(req, res);
-            }
-            if (pathname === '/api/quests/reward-code') {
-              const mod = await import(`./api/quests/reward-code.js?t=${Date.now()}`);
-              return mod.default(req, res);
-            }
-            if (pathname === '/api/quests') {
-              const mod = await import(`./api/quests/index.js?t=${Date.now()}`);
-              return mod.default(req, res);
-            }
-          } catch (apiErr) {
-            console.error('[Dev API Error]:', apiErr);
-            return res.status(500).json({ success: false, error: apiErr.message });
+          // Điều phối các route API chuẩn Vercel Serverless
+          if (pathname === '/api/ip') {
+            return ipHandler(req, res);
+          }
+          if (pathname === '/api/auth/verify') {
+            return verifyHandler(req, res);
+          }
+          if (pathname === '/api/auth/refresh') {
+            return refreshHandler(req, res);
+          }
+          if (pathname === '/api/auth/logout') {
+            return logoutHandler(req, res);
+          }
+          if (pathname === '/api/quests/enroll') {
+            return enrollHandler(req, res);
+          }
+          if (pathname === '/api/quests/progress') {
+            return progressHandler(req, res);
+          }
+          if (pathname === '/api/quests/lookup') {
+            return lookupHandler(req, res);
+          }
+          if (pathname === '/api/quests/reward-code') {
+            return rewardCodeHandler(req, res);
+          }
+          if (pathname === '/api/quests') {
+            return questsHandler(req, res);
           }
 
           next();
