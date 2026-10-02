@@ -132,19 +132,12 @@
             </div>
             <span class="nav-text">Tài khoản</span>
           </button>
-          <button class="nav-btn" data-tab="runner" id="nav-btn-runner" title="Tiến độ Auto">
-            <div class="nav-icon-box">
-              <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.48 2.54l2.6 1.53c.56-1.24.88-2.62.88-4.07 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.04-4.09l-2.45-1.45C16.14 17.84 14.22 19 12 19zm-1-11v6l5-3-5-3z"/></svg>
-              <span class="nav-count" id="count-running">0</span>
-            </div>
-            <span class="nav-text">Tiến độ</span>
-          </button>
-          <button class="nav-btn" data-tab="quests" id="nav-btn-quests" title="Tất cả Quest">
+          <button class="nav-btn" data-tab="quests" id="nav-btn-quests" title="Quest">
             <div class="nav-icon-box">
               <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
               <span class="nav-count" id="count-all">0</span>
             </div>
-            <span class="nav-text">Quests</span>
+            <span class="nav-text">Quest</span>
           </button>
           <button class="nav-btn" data-tab="rewards" id="nav-btn-rewards" title="Mã Code / Quà">
             <div class="nav-icon-box">
@@ -209,9 +202,9 @@
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
                   <span>Thêm Token</span>
                 </button>
-                <button class="btn btn-secondary" onclick="window.switchTabTo('runner')">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                  <span>Tiến Độ</span>
+                <button class="btn btn-secondary" onclick="window.switchTabTo('quests')">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                  <span>Quest</span>
                 </button>
               </div>
             </div>
@@ -232,7 +225,7 @@
                 </div>
               </div>
 
-              <div class="card stat-card stat-card-running" onclick="window.switchTabTo('runner')">
+              <div class="card stat-card stat-card-running" onclick="window.switchTabTo('quests')">
                 <div class="stat-card-header">
                   <span class="stat-card-label">Tiến Trình Chạy</span>
                   <div class="stat-icon-wrap icon-green">
@@ -400,7 +393,7 @@
                       <span class="step-text">Bấm "Quét Nhiệm Vụ" để tải dữ liệu</span>
                       <svg class="step-link-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                     </div>
-                    <div class="home-step-row" onclick="window.switchTabTo('runner')">
+                    <div class="home-step-row" onclick="window.switchTabTo('quests')">
                       <span class="step-num">3</span>
                       <span class="step-text">Bấm "Chạy Tất Cả" để bắt đầu auto</span>
                       <svg class="step-link-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -442,15 +435,15 @@
           </div>
         </section>
 
-        <!-- ================= TAB 2: TIẾN ĐỘ AUTO ================= -->
-        <section class="tab-content" id="tab-runner">
+        <!-- ================= TAB 2: QUEST ================= -->
+        <section class="tab-content" id="tab-quests">
           <div class="top-row">
             <div>
-              <h2 class="page-title">Tiến Độ Tự Động</h2>
+              <h2 class="page-title">Quest</h2>
               <p class="page-sub">Các nhiệm vụ đang gửi tiến trình hoặc chờ nhận thưởng.</p>
             </div>
             <div class="summary-pill">
-              <span id="summary-progress-text">1 đang chạy • 2 trong hàng đợi • 2/5 xong</span>
+              <span id="summary-progress-text">0 đang chạy • 0 trong hàng đợi • 0/0 xong</span>
             </div>
           </div>
 
@@ -461,43 +454,9 @@
                   <th>Nhiệm vụ</th>
                   <th class="col-hide-mobile">Hình thức</th>
                   <th>Phần thưởng</th>
+                  <th class="col-hide-mobile">Hết hạn</th>
                   <th>Tiến trình</th>
                   <th class="col-hide-mobile">Còn lại</th>
-                  <th style="text-align: right;">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody id="runner-tbody"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- ================= TAB 3: TẤT CẢ QUEST ================= -->
-        <section class="tab-content" id="tab-quests">
-          <div class="top-row">
-            <div>
-              <h2 class="page-title">Danh Sách Quest</h2>
-              <p class="page-sub">Toàn bộ nhiệm vụ Discord đã quét được từ tài khoản.</p>
-            </div>
-            <div class="filter-bar">
-              <input type="text" class="input-search col-hide-mobile" id="input-quest-search" placeholder="Tìm tên game / quest...">
-              <div class="btn-group">
-                <button class="btn-filter active" data-filter="all">Tất cả</button>
-                <button class="btn-filter" data-filter="pending">Chưa làm</button>
-                <button class="btn-filter" data-filter="completed">Chờ claim</button>
-                <button class="btn-filter" data-filter="claimed">Hoàn thành</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card table-card">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Tên Game / Nhiệm vụ</th>
-                  <th class="col-hide-mobile">Nhà phát hành</th>
-                  <th class="col-hide-mobile">Yêu cầu</th>
-                  <th>Phần thưởng</th>
-                  <th>Trạng thái</th>
                   <th style="text-align: right;">Thao tác</th>
                 </tr>
               </thead>

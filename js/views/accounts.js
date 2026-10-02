@@ -79,8 +79,7 @@ window.selectAcc = function(id) {
   toast("Đã chọn tài khoản", "info");
   
   // Hiệu ứng skeleton loading khi đổi tài khoản
-  showTableSkeleton("runner-tbody", 4, 6);
-  showTableSkeleton("quests-tbody", 4, 6);
+  showTableSkeleton("quests-tbody", 4, 7);
   setTimeout(() => {
     if (typeof renderAll === 'function') renderAll();
     if (typeof syncQuestsFromDiscord === 'function') syncQuestsFromDiscord(false);

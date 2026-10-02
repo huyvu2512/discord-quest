@@ -252,9 +252,8 @@ document.addEventListener("DOMContentLoaded", () => {
       isSendingProgress = false;
       saveState();
       renderCounters();
-      if (state.activeTab === "runner") renderRunner();
+      if (state.activeTab === "quests" || state.activeTab === "runner") renderQuests();
       if (state.activeTab === "rewards") renderRewards();
-      if (state.activeTab === "quests") renderQuests();
     }
   }
 
@@ -310,8 +309,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (calculatedSec !== current.progSec && calculatedSec <= current.targetSec) {
       current.progSec = calculatedSec;
-      if (state.activeTab === "runner" && typeof renderRunner === "function") {
-        renderRunner();
+      if ((state.activeTab === "quests" || state.activeTab === "runner") && typeof renderQuests === "function") {
+        renderQuests();
       }
     }
   }, 1000);
@@ -329,10 +328,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Chuyển tab với hiệu ứng Skeleton Loading & Điều hướng URL theo miền /
 window.switchTabTo = function(tab, updateHistory = true) {
-  const validTabs = ["home", "accounts", "runner", "quests", "rewards", "logs", "settings"];
+  if (tab === "runner") tab = "quests";
+  const validTabs = ["home", "accounts", "quests", "rewards", "logs", "settings"];
   if (!validTabs.includes(tab)) tab = "home";
 
-  if (state.accounts.length === 0 && (tab === "runner" || tab === "quests" || tab === "rewards")) {
+  if (state.accounts.length === 0 && (tab === "quests" || tab === "rewards")) {
     toast("Vui lòng thêm tài khoản trước!", "warn");
     tab = "accounts";
   }
@@ -353,8 +353,7 @@ window.switchTabTo = function(tab, updateHistory = true) {
 
   // Kích hoạt Skeleton loading cho bảng tương ứng
   if (tab === "accounts") showTableSkeleton("accounts-tbody", 2, 6);
-  if (tab === "runner") showTableSkeleton("runner-tbody", 4, 6);
-  if (tab === "quests") showTableSkeleton("quests-tbody", 5, 6);
+  if (tab === "quests") showTableSkeleton("quests-tbody", 4, 7);
   if (tab === "rewards") showTableSkeleton("rewards-tbody", 2, 6);
 
   setTimeout(() => {
@@ -374,7 +373,7 @@ function bindNavigation() {
 // Khóa hoặc mở các tab dựa trên việc đã có tài khoản hay chưa
 function updateNavGating() {
   const hasAccount = state.accounts.length > 0;
-  const lockedTabs = ["runner", "quests", "rewards"];
+  const lockedTabs = ["quests", "rewards"];
 
   lockedTabs.forEach(tabName => {
     const btn = document.getElementById(`nav-btn-${tabName}`);
@@ -449,9 +448,8 @@ function bindActionButtons() {
     btn.classList.add("loading");
     btn.innerHTML = `<span class="spinner"></span> Đang quét...`;
 
-    // Hiển thị Skeleton loading trên cả 2 bảng
-    showTableSkeleton("runner-tbody", 4, 6);
-    showTableSkeleton("quests-tbody", 5, 6);
+    // Hiển thị Skeleton loading trên bảng Quest
+    showTableSkeleton("quests-tbody", 4, 7);
 
     await window.syncQuestsFromDiscord(true);
 
@@ -752,7 +750,7 @@ function bindTokenChecking() {
       setTimeout(async () => {
         renderAll();
         if (typeof window.switchTabTo === "function") {
-          window.switchTabTo("runner");
+          window.switchTabTo("quests");
         }
         await window.syncQuestsFromDiscord(true);
       }, 300);
@@ -916,7 +914,6 @@ function renderAll() {
   renderCounters();
   renderSidebarUser();
   renderAccounts();
-  renderRunner();
   renderQuests();
   renderRewards();
   renderLogs();
@@ -1116,8 +1113,7 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
   renderCounters();
 
   // Luôn hiển thị Skeleton Shimmer khi đang tải/đồng bộ, tuyệt đối KHÔNG hiện danh sách cũ
-  if (state.activeTab === "runner") showTableSkeleton("runner-tbody", 4, 6);
-  if (state.activeTab === "quests") showTableSkeleton("quests-tbody", 4, 6);
+  if (state.activeTab === "quests" || state.activeTab === "runner") showTableSkeleton("quests-tbody", 4, 7);
 
   addLog("info", `[Đồng bộ] Gửi GET /api/quests (@${acc.username})...`);
 

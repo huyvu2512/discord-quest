@@ -880,6 +880,10 @@
   user-select: none;
 }
 
+.mobile-only-inline {
+  display: none;
+}
+
 /* ==========================================================================
    RESPONSIVE COMPONENTS (<= 860px)
    Tối ưu hiển thị vừa vặn 100% màn hình điện thoại, không cần cuộn ngang
@@ -889,6 +893,10 @@
   /* Ẩn các cột phụ trên mobile */
   .col-hide-mobile {
     display: none !important;
+  }
+
+  .mobile-only-inline {
+    display: inline !important;
   }
 
   /* Bỏ thanh cuộn ngang, vừa khít màn hình */

@@ -46,7 +46,8 @@ try {
 function getTabFromUrl() {
   if (typeof window === "undefined") return "home";
   const path = (window.location.pathname || "").replace(/^\/+|\/+$/g, '').toLowerCase();
-  const validTabs = ["accounts", "runner", "quests", "rewards", "logs", "settings"];
+  if (path === "runner" || path === "quest") return "quests";
+  const validTabs = ["accounts", "quests", "rewards", "logs", "settings"];
   return validTabs.includes(path) ? path : "home";
 }
 
