@@ -104,7 +104,7 @@ export default async function handler(req, res) {
           status: 429,
           retryAfter: retryAfter,
           isRateLimited: true,
-          error: `Bạn đang bị Discord giới hạn tốc độ thao tác (Rate Limit). Vui lòng đợi ${Math.ceil(retryAfter)} giây rồi thử lại.`
+          error: `Bị Discord giới hạn tốc độ thao tác (Rate Limit, ${Math.ceil(retryAfter)}s).`
         });
       }
 

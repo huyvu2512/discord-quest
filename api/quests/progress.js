@@ -212,7 +212,7 @@ export default async function handler(req, res) {
       } catch {}
 
       if (discordRes.status === 404 && isVideo) {
-        errMsg = `Quest video chưa được nhận trên Discord. Vui lòng bấm biểu tượng mở Discord bên cạnh để bắt đầu xem video.`;
+        errMsg = `Quest video chưa được nhận trên Discord.`;
       }
 
       return res.status(200).json({

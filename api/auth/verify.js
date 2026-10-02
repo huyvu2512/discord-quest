@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
   const token = (body.token || '').trim();
   if (!token) {
-    return res.status(400).json({ success: false, error: 'Vui lòng cung cấp Discord Token' });
+    return res.status(400).json({ success: false, error: 'Chưa cung cấp Discord Token' });
   }
 
   try {

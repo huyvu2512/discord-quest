@@ -348,7 +348,7 @@ window.switchTabTo = function(tab, updateHistory = true) {
   if (!validTabs.includes(tab)) tab = "home";
 
   if (state.accounts.length === 0 && (tab === "quests" || tab === "rewards")) {
-    toast("Vui lòng thêm tài khoản trước!", "warn");
+    toast("Chưa có tài khoản nào được kết nối!", "warn");
     tab = "accounts";
   }
 
@@ -410,7 +410,7 @@ function bindActionButtons() {
 
   btnRunAll?.addEventListener("click", () => {
     if (state.accounts.length === 0) {
-      toast("Vui lòng thêm tài khoản trước!", "warn");
+      toast("Chưa có tài khoản nào được kết nối!", "warn");
       window.switchTabTo("accounts");
       return;
     }
@@ -563,7 +563,7 @@ function bindActionButtons() {
     const input = document.getElementById("input-custom-quest");
     const rawVal = input?.value?.trim() || "";
     if (!rawVal) {
-      toast("Vui lòng nhập Link hoặc ID Quest Discord", "warning");
+      toast("Chưa nhập Link hoặc ID Quest Discord", "warning");
       return;
     }
     const cleanId = rawVal.replace(/.*\/quests\//, '').replace(/\D/g, '');
@@ -701,7 +701,7 @@ function bindTokenChecking() {
   btnSubmit?.addEventListener("click", async () => {
     const token = tokenInput.value.trim();
     if (!token) {
-      toast("Vui lòng nhập Token!", "warn");
+      toast("Chưa nhập Token!", "warn");
       tokenInput.focus();
       return;
     }

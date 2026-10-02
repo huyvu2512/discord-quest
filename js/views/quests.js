@@ -43,7 +43,7 @@ function renderQuests() {
         <td colspan="7">
           <div class="empty-state">
             <div class="empty-title">Tính năng đang khóa</div>
-            <div class="empty-desc">Vui lòng thêm và xác thực Token ở mục "1. Tài khoản" để mở khóa danh sách Quest.</div>
+            <div class="empty-desc">Chưa có tài khoản nào được xác thực để tải danh sách Quest.</div>
             <button class="btn btn-primary btn-sm" onclick="switchTabTo('accounts')">Đến mục Tài khoản ngay</button>
           </div>
         </td>
@@ -411,7 +411,7 @@ window.openCaptchaModal = function(q, data) {
             if (fallbackBox) fallbackBox.classList.remove("hidden");
           },
           "expired-callback": function() {
-            if (statusMsg) statusMsg.textContent = "Mã xác thực đã hết hạn, vui lòng tích lại.";
+            if (statusMsg) statusMsg.textContent = "Mã xác thực đã hết hạn.";
           }
         });
       } else {

@@ -31,7 +31,7 @@ export default async function handler(req, res) {
         success: false,
         valid: false,
         expired: true,
-        error: 'Phiên đăng nhập đã hết hạn. Vui lòng kết nối lại tài khoản.'
+        error: 'Phiên đăng nhập đã hết hạn.'
       });
     }
 
