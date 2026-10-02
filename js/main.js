@@ -50,16 +50,9 @@ document.addEventListener("DOMContentLoaded", () => {
     isSendingProgress = true;
     try {
       // 1. Tự động enroll nếu quest chưa được ghi nhận đã enroll trên Discord
-      // LƯU Ý QUAN TRỌNG: Nhiệm vụ xem video (WATCH_VIDEO) trên Discord KHÔNG CẦN VÀ KHÔNG DÙNG /enroll!
-      // Discord phát video trực tiếp và chỉ gửi /video-progress (như DevTools thực tế đã chứng minh).
-      // Chỉ gửi POST /enroll cho các nhiệm vụ Game PC, Console hoặc Stream!
       const isVideo = current.taskType === 'WATCH_VIDEO' || current.taskType === 'WATCH_VIDEO_ON_MOBILE' || (typeof current.taskType === 'string' && current.taskType.includes('VIDEO'));
 
-      // 1. Chỉ thực hiện enroll với các nhiệm vụ Game PC, Console, Stream (những nhiệm vụ thực sự yêu cầu tham gia).
-      // BỎ QUA HOÀN TOÀN BƯỚC ENROLL ĐỐI VỚI NHIỆM VỤ XEM VIDEO (WATCH_VIDEO):
-      // Discord phát video trực tiếp qua Showcase/Quest Home, KHÔNG CÓ endpoint /enroll.
-      // Việc cố tình gửi POST /enroll cho video quest sẽ bị Discord trả về lỗi hoặc dính án phạt HTTP 429 Rate Limit hàng ngàn giây.
-      if (!isVideo && !current.enrolledAt) {
+      if (!current.enrolledAt) {
         addLog("info", `[Auto] Nhận Quest "${current.name}" trên Discord...`);
         const enrollRes = await fetch("/api/quests/enroll", {
           method: "POST",
@@ -111,10 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
               addLog("info", `[Auto] Đã hoàn tất hoặc không còn quest hợp lệ trong hàng đợi.`);
             }
           }
-          return; // Dừng lại, không gửi heartbeat
+          return; // Dừng lại, không gửi heartbeat/progress
         }
-      } else if (isVideo && !current.enrolledAt) {
-        current.enrolledAt = new Date().toISOString();
       }
 
       // 2. Gửi tiến độ thật (Heartbeat hoặc Video Progress)

@@ -339,6 +339,11 @@ export default async function handler(req, res) {
       const expiresAt = config.expires_at || q.expires_at || config.task_config_v2?.expires_at || config.task_config?.expires_at || null;
       const isExpired = expiresAt ? (new Date(expiresAt).getTime() <= Date.now()) : false;
 
+      // URL Video stream trực tiếp từ CDN Discord cho nhiệm vụ xem video
+      const videoAsset = taskDef.assets?.video?.url || taskDef.assets?.video_low_res?.url || null;
+      const videoUrl = videoAsset ? `https://cdn.discordapp.com/${videoAsset}` : null;
+      const videoThumbnail = taskDef.assets?.video?.thumbnail ? `https://cdn.discordapp.com/${taskDef.assets.video.thumbnail}` : null;
+
       return {
         id: q.id,
         name: config.messages?.quest_name || config.application?.name || 'Nhiệm vụ Discord',
@@ -359,7 +364,9 @@ export default async function handler(req, res) {
         expiresAt: expiresAt,
         isExpired: isExpired,
         trafficMetadataSealed: q.traffic_metadata_sealed || config.traffic_metadata_sealed || null,
-        discordUrl: `https://discord.com/quests/${q.id}`
+        discordUrl: `https://discord.com/quests/${q.id}`,
+        videoUrl: videoUrl,
+        videoThumbnail: videoThumbnail
       };
     }).filter(q => {
       // 1. Loại bỏ các quest rác/ảo không có tên hoặc không có ứng dụng nhiệm vụ

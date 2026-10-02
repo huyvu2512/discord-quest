@@ -1,13 +1,14 @@
-const SUPER_PROPERTIES_DESKTOP = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MjE1Iiwib3NfdmVyc2lvbiI6IjEwLjAuMjI2MzEiLCJvc19hcmNoIjoieDY0IiwiYXBwX2FyY2giOiJ4NjQiLCJzeXN0ZW1fbG9jYWxlIjoidmktVk4iLCJjbGllbnRfYnVpbGRfbnVtYmVyIjozNzYwMDAsImNsaWVudF9ldmVudF9zb3VyY2UiOm51bGx9';
+const SUPER_PROPERTIES_DESKTOP = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MTc1Iiwib3NfdmVyc2lvbiI6IjEwLjAuMjYxMDAiLCJvc19hcmNoIjoieDY0IiwiYXBwX2FyY2giOiJ4NjQiLCJzeXN0ZW1fbG9jYWxlIjoidmktVk4iLCJicm93c2VyX3VzZXJfYWdlbnQiOiJNb3ppbGxhLzUuMCAoV2luZG93cyBOVCAxMC4wOyBXaW42NDsgeDY0KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBkaXNjb3JkLzEuMC45MTc1IENocm9tZS8xMjguMC42NjEzLjE4NiBFbGVjdHJvbi8zMi4yLjcgU2FmYXJpLzUzNy4zNiIsImJyb3dzZXJfdmVyc2lvbiI6IjMyLjIuNyIsImNsaWVudF9idWlsZF9udW1iZXIiOjUwNDY0OSwibmF0aXZlX2J1aWxkX251bWJlciI6NTk0OTgsImNsaWVudF9ldmVudF9zb3VyY2UiOm51bGx9';
+const SUPER_PROPERTIES_WEB = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiQ2hyb21lIiwiZGV2aWNlIjoiIiwic3lzdGVtX2xvY2FsZSI6InZpLVZOIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEzOC4wLjAuMCBTYWZhcmkvNTM3LjM2IiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTM4LjAuMC4wIiwib3NfdmVyc2lvbiI6IjEwIiwicmVmZXJyZXIiOiIiLCJyZWZlcnJpbmdfZG9tYWluIjoiIiwicmVmZXJyZXJfY3VycmVudCI6IiIsInJlZmVycmluZ19kb21haW5fY3VycmVudCI6IiIsInJlbGVhc2VfY2hhbm5lbCI6InN0YWJsZSIsImNsaWVudF9idWlsZF9udW1iZXIiOjM3NjAwMCwiY2xpZW50X2V2ZW50X3NvdXJjZSI6bnVsbH0=';
 
 const DISCORD_HEADERS = (token) => ({
   'Authorization': token.trim(),
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.9215 Chrome/138.0.7204.251 Electron/37.6.0 Safari/537.36',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.9175 Chrome/128.0.6613.186 Electron/32.2.7 Safari/537.36',
   'Accept-Language': 'vi,en-US;q=0.9',
   'X-Super-Properties': SUPER_PROPERTIES_DESKTOP,
   'X-Discord-Locale': 'vi',
   'X-Discord-Timezone': 'Asia/Saigon',
-  'Sec-Ch-Ua': '"Chromium";v="138", "Not?A_Brand";v="8"',
+  'Sec-Ch-Ua': '"Chromium";v="128", "Not?A_Brand";v="24"',
   'Sec-Ch-Ua-Mobile': '?0',
   'Sec-Ch-Ua-Platform': '"Windows"',
   'Sec-Fetch-Dest': 'empty',
@@ -17,8 +18,6 @@ const DISCORD_HEADERS = (token) => ({
   'Referer': 'https://discord.com/channels/@me',
   'Content-Type': 'application/json'
 });
-
-const SUPER_PROPERTIES_WEB = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiQ2hyb21lIiwiZGV2aWNlIjoiIiwic3lzdGVtX2xvY2FsZSI6InZpLVZOIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEzOC4wLjAuMCBTYWZhcmkvNTM3LjM2IiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTM4LjAuMC4wIiwib3NfdmVyc2lvbiI6IjEwIiwicmVmZXJyZXIiOiIiLCJyZWZlcnJpbmdfZG9tYWluIjoiIiwicmVmZXJyZXJfY3VycmVudCI6IiIsInJlZmVycmluZ19kb21haW5fY3VycmVudCI6IiIsInJlbGVhc2VfY2hhbm5lbCI6InN0YWJsZSIsImNsaWVudF9idWlsZF9udW1iZXIiOjM3NjAwMCwiY2xpZW50X2V2ZW50X3NvdXJjZSI6bnVsbH0=';
 
 const DISCORD_WEB_HEADERS = (token) => ({
   'Authorization': token.trim(),
@@ -53,14 +52,26 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'Thiếu token hoặc questId' });
   }
 
-  const traffic_metadata_sealed = body.traffic_metadata_sealed || body.trafficMetadataSealed || null;
+  let traffic_metadata_sealed = body.traffic_metadata_sealed || body.trafficMetadataSealed || null;
   const metadata_sealed = body.metadata_sealed || null;
+
+  // Tự động nạp traffic_metadata_sealed từ get-decisions nếu chưa có
+  if (!traffic_metadata_sealed) {
+    try {
+      const decRes = await fetch('https://discord.com/api/v9/quests/get-decisions?placement=1&num_decisions_requested=5', {
+        headers: DISCORD_WEB_HEADERS(token)
+      });
+      if (decRes.ok) {
+        const decData = await decRes.json();
+        traffic_metadata_sealed = decData.traffic_metadata_sealed || decData.quest?.traffic_metadata_sealed || null;
+      }
+    } catch {}
+  }
 
   try {
     const isTargeted = Boolean(traffic_metadata_sealed);
 
-    // Chuẩn Discord Desktop & Web: Thử tối đa 2 lần (Location 11 -> Location 13)
-    // Tuyệt đối KHÔNG lặp brute-force 28 lần gây dính HTTP 429 Rate Limit
+    // Chuẩn Discord Desktop & Web: Thử tối đa 2 lần (Location 11 Desktop -> Location 13 Web)
     const attempts = [
       {
         headers: DISCORD_HEADERS(token),
@@ -94,7 +105,7 @@ export default async function handler(req, res) {
 
       lastRes = resDiscord;
 
-      // 1. Xử lý HTTP 429 (Giới hạn tốc độ) NGAY LẬP TỨC: Dừng ngay, không retry để tránh bị phạt thêm
+      // 1. Xử lý HTTP 429 (Giới hạn tốc độ) NGAY LẬP TỨC: Dừng ngay, không retry
       if (resDiscord.status === 429) {
         const rateLimitData = await resDiscord.json().catch(() => ({}));
         const retryAfter = rateLimitData.retry_after || 5;
