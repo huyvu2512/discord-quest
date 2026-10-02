@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     // 1. Attempt 1: Chuẩn nền tảng của Quest (Desktop hoặc Mobile)
     const primaryHeaders = isMobileTask ? DISCORD_MOBILE_HEADERS(token) : DISCORD_HEADERS(token, buildNum);
     const primaryPayload = {
-      location: 11,
+      location: isMobileTask ? 13 : 11,
       is_targeted: isTargeted,
       ...(metadata_sealed ? { metadata_sealed } : {}),
       ...(traffic_metadata_sealed ? { traffic_metadata_sealed } : {})
@@ -97,16 +97,18 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Attempt 2 (Fallback duy nhất): Thử qua Web Location 13 nếu request đầu không thành công
-    if (!isMobileTask && (resDiscord.status === 400 || resDiscord.status === 404)) {
+    // 2. Attempt 2 (Fallback duy nhất): Thử Location 13 (với Desktop) hoặc Location 1 (với Mobile)
+    if (resDiscord.status === 400 || resDiscord.status === 404) {
+      const fallbackHeaders = isMobileTask ? DISCORD_IOS_HEADERS(token) : DISCORD_WEB_HEADERS(token, buildNum);
+      const fallbackPayload = {
+        location: isMobileTask ? 1 : 13,
+        is_targeted: isTargeted,
+        ...(traffic_metadata_sealed ? { traffic_metadata_sealed } : {})
+      };
       const fallbackRes = await fetch(`https://discord.com/api/v9/quests/${questId}/enroll`, {
         method: 'POST',
-        headers: DISCORD_WEB_HEADERS(token, buildNum),
-        body: JSON.stringify({
-          location: 13,
-          is_targeted: isTargeted,
-          ...(traffic_metadata_sealed ? { traffic_metadata_sealed } : {})
-        })
+        headers: fallbackHeaders,
+        body: JSON.stringify(fallbackPayload)
       });
 
       if (fallbackRes.status === 429) {

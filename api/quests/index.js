@@ -101,10 +101,11 @@ export default async function handler(req, res) {
       balancePromise
     ]);
 
-    // Cờ bật/tắt quét quảng cáo toàn cầu (Decision Engine) và nhiệm vụ bị loại trừ (Excluded)
-    // Tạm thời tắt để chỉ tải các nhiệm vụ thực tế của tài khoản (khớp với app Discord)
+    // Cờ bật/tắt quét quảng cáo toàn cầu (Decision Engine), nhiệm vụ bị loại trừ (Excluded) và nhiệm vụ Mobile
+    // Mặc định chỉ lấy nhiệm vụ PC / Web thực tế của tài khoản (khớp chính xác với app Discord trên máy tính)
     const ENABLE_GLOBAL_DECISIONS = req.query?.includeDecisions === 'true';
     const ENABLE_EXCLUDED_QUESTS = req.query?.includeExcluded === 'true';
+    const ENABLE_MOBILE_QUESTS = req.query?.includeMobile === 'true';
 
     let decisionResults = [];
     if (ENABLE_GLOBAL_DECISIONS) {
@@ -182,11 +183,13 @@ export default async function handler(req, res) {
     (webData.quests || []).forEach(q => mergeQuest(q, 'web_active'));
     if (ENABLE_EXCLUDED_QUESTS) (webData.excluded_quests || []).forEach(q => mergeQuest(q, 'web_excluded'));
 
-    // 3. Nạp từ Mobile (@me Android & iOS)
-    (mobileData.quests || []).forEach(q => mergeQuest(q, 'mobile_android_active'));
-    if (ENABLE_EXCLUDED_QUESTS) (mobileData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_android_excluded'));
-    (iosData.quests || []).forEach(q => mergeQuest(q, 'mobile_ios_active'));
-    if (ENABLE_EXCLUDED_QUESTS) (iosData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_ios_excluded'));
+    // 3. Nạp từ Mobile (@me Android & iOS) (mặc định tắt để khớp chính xác với app Discord PC)
+    if (ENABLE_MOBILE_QUESTS) {
+      (mobileData.quests || []).forEach(q => mergeQuest(q, 'mobile_android_active'));
+      if (ENABLE_EXCLUDED_QUESTS) (mobileData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_android_excluded'));
+      (iosData.quests || []).forEach(q => mergeQuest(q, 'mobile_ios_active'));
+      if (ENABLE_EXCLUDED_QUESTS) (iosData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_ios_excluded'));
+    }
 
     // 4. Tự động nạp từ Discord Decision Engine (Tất cả Placements 0-10 trên Desktop, Web, Mobile)
     if (ENABLE_GLOBAL_DECISIONS) {
