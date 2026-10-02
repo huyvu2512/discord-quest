@@ -220,9 +220,11 @@ export default async function handler(req, res) {
 
     // 1. Nạp từ Desktop (@me)
     (desktopData.quests || []).forEach(q => mergeQuest(q, 'desktop_active'));
+    (desktopData.excluded_quests || []).forEach(q => mergeQuest(q, 'desktop_excluded'));
 
     // 2. Nạp từ Web (Quest Home)
     (webData.quests || []).forEach(q => mergeQuest(q, 'web_active'));
+    (webData.excluded_quests || []).forEach(q => mergeQuest(q, 'web_excluded'));
 
     // 3. Tự động nạp từ Discord Decision Engine (Video Quests tài trợ như CONTROL Resonant, March of Giants)
     decisionResults.filter(Boolean).forEach((decData, idx) => {
