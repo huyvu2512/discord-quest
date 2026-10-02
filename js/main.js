@@ -94,6 +94,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const nextQ = state.quests.find(q => q.status === "queued" && !q.isExpired);
             if (nextQ) {
               nextQ.status = "running";
+              nextQ._runStartedAt = Date.now();
+              nextQ._baseProgSec = nextQ.progSec || 0;
               addLog("info", `[Hàng đợi] Tự động chuyển sang: "${nextQ.name}"...`);
             } else {
               state.isRunningAll = false;
@@ -127,16 +129,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const realSec = Math.min(current.targetSec, (current._baseProgSec || 0) + elapsedRealSec);
         current.progSec = realSec;
 
-        // Jitter nhẹ ±0.15s cho số lẻ thập phân tự nhiên giống video player Discord
-        const jitter = (Math.random() * 0.3 - 0.15);
-        nextTimestamp = Number(Math.min(current.targetSec, Math.max(1, realSec + jitter)).toFixed(4));
+        // Nếu đã đủ thời gian targetSec, luôn gửi CHÍNH XÁC targetSec (không dùng jitter âm) để Discord kích hoạt hoàn thành 100%
+        if (realSec >= current.targetSec) {
+          nextTimestamp = current.targetSec;
+        } else {
+          // Jitter nhẹ ±0.15s cho số lẻ thập phân tự nhiên giống video player Discord
+          const jitter = (Math.random() * 0.3 - 0.15);
+          nextTimestamp = Number(Math.max(1, realSec + jitter).toFixed(4));
+        }
       } else {
         nextTimestamp = current.progSec;
       }
 
-      // QUAN TRỌNG: Luôn gửi terminal: false khi đang chạy để giữ session sống và Discord tiếp tục tích lũy thời gian.
-      // Tuyệt đối KHÔNG gửi terminal: true trước khi Discord xác nhận hoàn thành (tránh bị kẹt ở 14m 59s / 899s).
-      const isTerminal = false;
+      // QUAN TRỌNG: Gửi terminal: true khi nhiệm vụ game đã chạm mốc targetSec
+      const isTerminal = !isVideo && (current.progSec >= current.targetSec);
 
       const progRes = await fetch("/api/quests/progress", {
         method: "POST",
@@ -179,11 +185,14 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
         if (typeof discordProg === 'number') {
-          current.progSec = Math.min(current.targetSec, discordProg);
-          current._baseProgSec = current.progSec;
-          current._runStartedAt = Date.now();
+          // Tuyệt đối không để giá trị làm tròn của Discord kéo lùi tiến trình về targetSec - 1
+          if (discordProg >= current.progSec) {
+            current.progSec = Math.min(current.targetSec, discordProg);
+            current._baseProgSec = current.progSec;
+            current._runStartedAt = Date.now();
+          }
         } else if (isVideo) {
-          current.progSec = Math.min(current.targetSec, Math.floor(nextTimestamp));
+          current.progSec = Math.min(current.targetSec, Math.ceil(nextTimestamp));
         }
 
         const isCompleted = Boolean(uStatus?.completed_at) || (current.progSec >= current.targetSec);
@@ -202,6 +211,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const nextQ = state.quests.find(item => item.status === "queued" && item.id !== current.id && !item.isExpired);
             if (nextQ) {
               nextQ.status = "running";
+              nextQ._runStartedAt = Date.now();
+              nextQ._baseProgSec = nextQ.progSec || 0;
               addLog("info", `[Hàng đợi] Tự động chuyển tiếp sang: "${nextQ.name}"...`);
               toast(`Bắt đầu: ${nextQ.name}`, "info");
             } else {
@@ -227,6 +238,8 @@ document.addEventListener("DOMContentLoaded", () => {
           const nextQ = state.quests.find(q => q.status === "queued" && !q.isExpired);
           if (nextQ) {
             nextQ.status = "running";
+            nextQ._runStartedAt = Date.now();
+            nextQ._baseProgSec = nextQ.progSec || 0;
             addLog("info", `[Hàng đợi] Tự động chuyển tiếp sang: "${nextQ.name}"...`);
           } else {
             state.isRunningAll = false;
@@ -362,6 +375,8 @@ function bindActionButtons() {
       const first = state.quests.find(q => q.status === "queued" && !q.isExpired);
       if (first) {
         first.status = "running";
+        first._runStartedAt = Date.now();
+        first._baseProgSec = first.progSec || 0;
         addLog("info", `[Hàng đợi] Bắt đầu chạy nhiệm vụ đầu tiên: "${first.name}"...`);
       }
     }
@@ -1099,6 +1114,8 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
       // 100% SỐNG TỪ DISCORD API: Không ép trạng thái ảo từ cache, lấy chuẩn theo API
       if (currentRunningId === nq.id && nq.status !== "completed" && nq.status !== "claimed") {
         nq.status = "running";
+        if (prevQ?._runStartedAt) nq._runStartedAt = prevQ._runStartedAt;
+        if (typeof prevQ?._baseProgSec === 'number') nq._baseProgSec = prevQ._baseProgSec;
       } else if (currentQueuedIds.has(nq.id) && nq.status !== "completed" && nq.status !== "claimed") {
         nq.status = "queued";
       }
