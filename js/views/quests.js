@@ -186,21 +186,14 @@ function renderQuests() {
     const expShort = formatExpiryShort(q.expiresAt);
     const expFull = formatExpiryFull(q.expiresAt);
 
-    let statusTag = "";
     let actionBtn = "";
     const questUrl = q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home');
 
     if (q.status === "running") {
-      statusTag = `<span class="tag tag-running">● Đang chạy</span>`;
       actionBtn = `<button class="btn btn-secondary btn-sm" onclick="pauseQuest('${q.id}')">Tạm dừng</button>`;
-    } else if (q.status === "queued") {
-      statusTag = `<span class="tag tag-pending">Hàng đợi #${queueOrder++}</span>`;
-      actionBtn = `<button class="btn btn-secondary btn-run btn-sm" onclick="prioritizeQuest('${q.id}')">Chạy</button>`;
     } else if (q.status === "completed") {
-      statusTag = `<span class="tag tag-completed">Chờ nhận quà</span>`;
       actionBtn = `<a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Nhận quà</a>`;
     } else if (q.status === "claimed") {
-      statusTag = `<span class="tag tag-claimed">Hoàn thành</span>`;
       actionBtn = `
         <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
           <span class="col-hide-mobile" style="font-size: 11px; color: var(--text-muted); padding: 4px 6px;">Hoàn thành</span>
@@ -209,8 +202,14 @@ function renderQuests() {
           </a>
         </div>
       `;
+    } else if (isRunningAll) {
+      // Chạy tất cả: ẩn nút chạy, hiện Hàng chờ #...
+      actionBtn = `<span class="tag tag-pending font-mono" style="display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 10px; font-size: 11.5px; border-radius: 6px; font-weight: 500;">Hàng chờ #${queueOrder++}</span>`;
+    } else if (hasRunning) {
+      // Chạy từng cái 1: khóa nút chạy của các quest còn lại
+      actionBtn = `<button class="btn btn-secondary btn-run btn-sm" disabled style="opacity: 0.45; cursor: not-allowed;" title="Tạm dừng nhiệm vụ đang chạy để chọn nhiệm vụ này">Chạy</button>`;
     } else {
-      statusTag = `<span class="tag tag-pending">Chưa chạy</span>`;
+      // Chưa có quest nào chạy: cho phép chọn chạy bình thường
       actionBtn = `<button class="btn btn-secondary btn-run btn-sm" onclick="startQuest('${q.id}')">Chạy</button>`;
     }
 
@@ -268,6 +267,11 @@ window.startQuest = function(id) {
   target._runStartedAt = Date.now();
   target._baseProgSec = target.progSec || 0;
 
+  const btnRun = document.getElementById("btn-run-all");
+  const btnStop = document.getElementById("btn-stop-all");
+  btnRun?.classList.remove("hidden");
+  btnStop?.classList.add("hidden");
+
   addLog("info", `[Bắt đầu] Đã kích hoạt chạy "${target.name}".`);
   toast(`Bắt đầu chạy: ${target.name}`, "info");
   saveState();
@@ -286,12 +290,28 @@ window.prioritizeQuest = function(id) {
 window.pauseQuest = function(id) {
   state.isRunningAll = false;
   const target = state.quests.find(x => x.id === id);
-  if (!target) return;
-  target.status = "pending";
-  delete target._runStartedAt;
-  delete target._baseProgSec;
-  addLog("warn", `[Tạm dừng] Đã tạm dừng "${target.name}".`);
-  toast(`Đã tạm dừng quest`, "warn");
+  if (target) {
+    target.status = "pending";
+    delete target._runStartedAt;
+    delete target._baseProgSec;
+    addLog("warn", `[Tạm dừng] Đã tạm dừng "${target.name}".`);
+    toast(`Đã tạm dừng quest`, "warn");
+  }
+
+  // Chuyển toàn bộ các quest còn lại trong hàng đợi về pending
+  state.quests.forEach(q => {
+    if (q.status === "queued" || q.status === "running") {
+      q.status = "pending";
+      delete q._runStartedAt;
+      delete q._baseProgSec;
+    }
+  });
+
+  const btnRun = document.getElementById("btn-run-all");
+  const btnStop = document.getElementById("btn-stop-all");
+  btnRun?.classList.remove("hidden");
+  btnStop?.classList.add("hidden");
+
   saveState();
   if (typeof renderAll === 'function') renderAll();
 };

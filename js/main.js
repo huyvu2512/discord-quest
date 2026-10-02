@@ -1005,18 +1005,26 @@ function renderHome() {
       const order = { running: 1, queued: 2, pending: 3, completed: 4, claimed: 5 };
       const sorted = [...state.quests].sort((a, b) => (order[a.status] || 99) - (order[b.status] || 99)).slice(0, 4);
 
+      const hasRunning = state.quests.some(q => q.status === "running");
+      const isRunningAll = !!state.isRunningAll;
+      let homeQueueOrder = 1;
+
       questsPreview.innerHTML = sorted.map(q => {
-        let actionBtn = `<button class="btn btn-secondary btn-sm" onclick="startQuest('${q.id}')">Chạy</button>`;
+        let actionBtn = "";
+        const questUrl = q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home');
 
         if (q.status === "running") {
           actionBtn = `<button class="btn btn-secondary btn-sm" onclick="pauseQuest('${q.id}')">Tạm dừng</button>`;
-        } else if (q.status === "queued") {
-          actionBtn = `<button class="btn btn-secondary btn-sm" onclick="startQuest('${q.id}')">Chạy</button>`;
         } else if (q.status === "completed") {
-          const questUrl = q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home');
           actionBtn = `<a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Nhận quà</a>`;
         } else if (q.status === "claimed") {
           actionBtn = `<span class="tag tag-claimed">Hoàn thành</span>`;
+        } else if (isRunningAll) {
+          actionBtn = `<span class="tag tag-pending font-mono" style="font-size: 11px; padding: 4px 8px;">Hàng chờ #${homeQueueOrder++}</span>`;
+        } else if (hasRunning) {
+          actionBtn = `<button class="btn btn-secondary btn-sm" disabled style="opacity: 0.45; cursor: not-allowed;" title="Tạm dừng nhiệm vụ đang chạy để chọn nhiệm vụ này">Chạy</button>`;
+        } else {
+          actionBtn = `<button class="btn btn-secondary btn-sm" onclick="startQuest('${q.id}')">Chạy</button>`;
         }
 
         const iconLetter = (q.name || "Q").trim().charAt(0).toUpperCase();
