@@ -408,6 +408,13 @@ export default async function handler(req, res) {
           return false;
         }
       }
+      // 4. Ẩn nhiệm vụ thành tích Discord Activity (ACHIEVEMENT_IN_ACTIVITY) chưa hoàn thành
+      // vì Discord chặn (403 Forbidden) không cho gửi tiến độ qua HTTP API (bắt buộc người dùng tự chơi trong phòng Voice)
+      if (q.taskType === 'ACHIEVEMENT_IN_ACTIVITY') {
+        if (q.status !== 'claimed' && q.status !== 'completed') {
+          return false;
+        }
+      }
       return true;
     });
 
