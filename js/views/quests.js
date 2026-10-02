@@ -222,9 +222,8 @@ function renderQuests() {
       <tr>
         <td>
           <div class="quest-name-cell" title="${escapeHtml(q.name)}">${escapeHtml(q.name)}</div>
-          <div class="quest-sub-cell" title="${escapeHtml(q.publisher)} • ${escapeHtml(q.reward)}">
+          <div class="quest-sub-cell" title="${escapeHtml(q.publisher)}">
             <span>${escapeHtml(q.publisher)}</span>
-            <span class="mobile-only-inline" style="color: var(--amber); margin-left: 4px;">• ${escapeHtml(q.reward)}</span>
           </div>
         </td>
         <td class="col-hide-mobile"><span class="tag tag-pending">${escapeHtml(q.typeName)}</span></td>
