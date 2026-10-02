@@ -160,6 +160,8 @@ function renderQuests() {
       return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
     });
 
+  const hasRunning = (state.quests || []).some(q => q.status === "running");
+  const isRunningAll = Boolean(state.isRunningAll);
   let queueOrder = 1;
 
   if (activeQuests.length === 0) {
