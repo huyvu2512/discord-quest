@@ -101,36 +101,41 @@ export default async function handler(req, res) {
       balancePromise
     ]);
 
-    // 5. Tự động quét nhiệm vụ tài trợ qua Discord Decision Engine (Placements 0 -> 10)
-    // Quét trên toàn bộ các kênh Desktop, Web, Android và iOS để phát hiện 100% nhiệm vụ từ API
-    const decisionPlacements = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    const decisionPromises = [];
-    for (const placement of decisionPlacements) {
-      const getDecisionsUrl = `https://discord.com/api/v9/quests/get-decisions?placement=${placement}&num_decisions_requested=15`;
-      decisionPromises.push(
-        fetch(getDecisionsUrl, { headers: desktopHeaders })
-          .then(r => r.ok ? r.json() : null)
-          .then(data => data ? { placement, data } : null)
-          .catch(() => null),
-        fetch(getDecisionsUrl, { headers: webHeaders })
-          .then(r => r.ok ? r.json() : null)
-          .then(data => data ? { placement, data } : null)
-          .catch(() => null),
-        fetch(getDecisionsUrl, { headers: DISCORD_MOBILE_HEADERS(token) })
-          .then(r => r.ok ? r.json() : null)
-          .then(data => data ? { placement, data } : null)
-          .catch(() => null),
-        fetch(getDecisionsUrl, { headers: DISCORD_IOS_HEADERS(token) })
-          .then(r => r.ok ? r.json() : null)
-          .then(data => data ? { placement, data } : null)
-          .catch(() => null)
-      );
+    // Cờ bật/tắt quét quảng cáo toàn cầu (Decision Engine) và nhiệm vụ bị loại trừ (Excluded)
+    // Tạm thời tắt để chỉ tải các nhiệm vụ thực tế của tài khoản (khớp với app Discord)
+    const ENABLE_GLOBAL_DECISIONS = req.query?.includeDecisions === 'true';
+    const ENABLE_EXCLUDED_QUESTS = req.query?.includeExcluded === 'true';
+
+    let decisionResults = [];
+    if (ENABLE_GLOBAL_DECISIONS) {
+      const decisionPlacements = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const decisionPromises = [];
+      for (const placement of decisionPlacements) {
+        const getDecisionsUrl = `https://discord.com/api/v9/quests/get-decisions?placement=${placement}&num_decisions_requested=15`;
+        decisionPromises.push(
+          fetch(getDecisionsUrl, { headers: desktopHeaders })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data ? { placement, data } : null)
+            .catch(() => null),
+          fetch(getDecisionsUrl, { headers: webHeaders })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data ? { placement, data } : null)
+            .catch(() => null),
+          fetch(getDecisionsUrl, { headers: DISCORD_MOBILE_HEADERS(token) })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data ? { placement, data } : null)
+            .catch(() => null),
+          fetch(getDecisionsUrl, { headers: DISCORD_IOS_HEADERS(token) })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => data ? { placement, data } : null)
+            .catch(() => null)
+        );
+      }
+      decisionResults = await Promise.all(decisionPromises);
     }
 
     const customIdsParam = req.query?.customIds || req.body?.customIds || [];
     const clientCustomIds = Array.isArray(customIdsParam) ? customIdsParam : (typeof customIdsParam === 'string' ? customIdsParam.split(',') : []);
-
-    const decisionResults = await Promise.all(decisionPromises);
 
     // Hợp nhất dữ liệu hoàn toàn từ API (Deduplicate Map theo Quest ID duy nhất)
     const questMap = new Map();
@@ -171,62 +176,64 @@ export default async function handler(req, res) {
 
     // 1. Nạp từ Desktop (@me)
     (desktopData.quests || []).forEach(q => mergeQuest(q, 'desktop_active'));
-    (desktopData.excluded_quests || []).forEach(q => mergeQuest(q, 'desktop_excluded'));
+    if (ENABLE_EXCLUDED_QUESTS) (desktopData.excluded_quests || []).forEach(q => mergeQuest(q, 'desktop_excluded'));
 
     // 2. Nạp từ Web (Quest Home)
     (webData.quests || []).forEach(q => mergeQuest(q, 'web_active'));
-    (webData.excluded_quests || []).forEach(q => mergeQuest(q, 'web_excluded'));
+    if (ENABLE_EXCLUDED_QUESTS) (webData.excluded_quests || []).forEach(q => mergeQuest(q, 'web_excluded'));
 
     // 3. Nạp từ Mobile (@me Android & iOS)
     (mobileData.quests || []).forEach(q => mergeQuest(q, 'mobile_android_active'));
-    (mobileData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_android_excluded'));
+    if (ENABLE_EXCLUDED_QUESTS) (mobileData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_android_excluded'));
     (iosData.quests || []).forEach(q => mergeQuest(q, 'mobile_ios_active'));
-    (iosData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_ios_excluded'));
+    if (ENABLE_EXCLUDED_QUESTS) (iosData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_ios_excluded'));
 
     // 4. Tự động nạp từ Discord Decision Engine (Tất cả Placements 0-10 trên Desktop, Web, Mobile)
-    decisionResults.filter(Boolean).forEach(resItem => {
-      const placement = resItem.placement ?? 1;
-      const decData = resItem.data;
-      if (!decData) return;
-      const sealed = decData.traffic_metadata_sealed || decData.quest?.traffic_metadata_sealed || null;
+    if (ENABLE_GLOBAL_DECISIONS) {
+      decisionResults.filter(Boolean).forEach(resItem => {
+        const placement = resItem.placement ?? 1;
+        const decData = resItem.data;
+        if (!decData) return;
+        const sealed = decData.traffic_metadata_sealed || decData.quest?.traffic_metadata_sealed || null;
 
-      // Ưu tiên quest chính từ Decision Engine. Chỉ dùng creative_content nếu decData không có trường quest
-      if (decData.quest && (decData.quest.id || decData.quest.quest_id)) {
-        decData.quest.traffic_metadata_sealed = decData.quest.traffic_metadata_sealed || sealed;
-        if (decData.creative?.creative_content?.assets && decData.quest.config) {
-          decData.quest.config.assets = decData.quest.config.assets || decData.creative.creative_content.assets;
-        }
-        mergeQuest(decData.quest, `decision_p${placement}`);
-      } else if (decData.creative?.creative_content) {
-        const cc = decData.creative.creative_content;
-        const realQuestId = decData.quest_id || cc.quest_id || cc.id;
-        const combined = {
-          ...cc,
-          id: realQuestId,
-          traffic_metadata_sealed: cc.traffic_metadata_sealed || sealed
-        };
-        mergeQuest(combined, `decision_p${placement}`);
-      }
-
-      if (Array.isArray(decData.decisions)) {
-        decData.decisions.forEach(d => {
-          const questObj = d.quest || {};
-          const creativeContent = d.creative?.creative_content || {};
-          const trueQuestId = d.quest_id || questObj.id || questObj.quest_id || creativeContent.quest_id || creativeContent.id;
-          if (!trueQuestId) return;
-
+        // Ưu tiên quest chính từ Decision Engine. Chỉ dùng creative_content nếu decData không có trường quest
+        if (decData.quest && (decData.quest.id || decData.quest.quest_id)) {
+          decData.quest.traffic_metadata_sealed = decData.quest.traffic_metadata_sealed || sealed;
+          if (decData.creative?.creative_content?.assets && decData.quest.config) {
+            decData.quest.config.assets = decData.quest.config.assets || decData.creative.creative_content.assets;
+          }
+          mergeQuest(decData.quest, `decision_p${placement}`);
+        } else if (decData.creative?.creative_content) {
+          const cc = decData.creative.creative_content;
+          const realQuestId = decData.quest_id || cc.quest_id || cc.id;
           const combined = {
-            ...creativeContent,
-            ...questObj,
-            id: trueQuestId,
-            config: questObj.config || creativeContent.config || creativeContent,
-            user_status: questObj.user_status || d.user_status || null,
-            traffic_metadata_sealed: questObj.traffic_metadata_sealed || d.traffic_metadata_sealed || sealed
+            ...cc,
+            id: realQuestId,
+            traffic_metadata_sealed: cc.traffic_metadata_sealed || sealed
           };
           mergeQuest(combined, `decision_p${placement}`);
-        });
-      }
-    });
+        }
+
+        if (Array.isArray(decData.decisions)) {
+          decData.decisions.forEach(d => {
+            const questObj = d.quest || {};
+            const creativeContent = d.creative?.creative_content || {};
+            const trueQuestId = d.quest_id || questObj.id || questObj.quest_id || creativeContent.quest_id || creativeContent.id;
+            if (!trueQuestId) return;
+
+            const combined = {
+              ...creativeContent,
+              ...questObj,
+              id: trueQuestId,
+              config: questObj.config || creativeContent.config || creativeContent,
+              user_status: questObj.user_status || d.user_status || null,
+              traffic_metadata_sealed: questObj.traffic_metadata_sealed || d.traffic_metadata_sealed || sealed
+            };
+            mergeQuest(combined, `decision_p${placement}`);
+          });
+        }
+      });
+    }
 
     // 5. Nạp từ Claimed/Completed
     const claimedList = Array.isArray(claimedData) ? claimedData : (claimedData.quests || []);
