@@ -57,6 +57,28 @@ const DISCORD_MOBILE_HEADERS = (token) => ({
   'Content-Type': 'application/json'
 });
 
+const SUPER_PROPERTIES_IOS = Buffer.from(JSON.stringify({
+  os: "iOS",
+  browser: "Discord iOS",
+  device: "iPhone15,2",
+  system_locale: "vi-VN",
+  client_version: "225.0",
+  release_channel: "appleRelease",
+  device_vendor_id: "00000000-0000-0000-0000-000000000000",
+  browser_user_agent: "",
+  client_build_number: 55000
+})).toString('base64');
+
+const DISCORD_IOS_HEADERS = (token) => ({
+  'Authorization': token.trim(),
+  'User-Agent': 'Discord-iOS/225.0 (iPhone; iOS 17.5.1; Scale/3.00)',
+  'Accept-Language': 'vi,en-US;q=0.9',
+  'X-Super-Properties': SUPER_PROPERTIES_IOS,
+  'X-Discord-Locale': 'vi',
+  'X-Discord-Timezone': 'Asia/Saigon',
+  'Content-Type': 'application/json'
+});
+
 function detectTaskType(config) {
   const tasks = config.task_config_v2?.tasks ?? config.task_config?.tasks ?? {};
   // Ưu tiên Xem Video trước (nhanh, 1-2 phút) rồi mới tới Chơi Game (15 phút)
@@ -138,8 +160,16 @@ export default async function handler(req, res) {
         return { quests: [], excluded_quests: [] };
       });
 
-    // 2.2 Quét nhiệm vụ Mobile (@me trên ứng dụng di động)
+    // 2.2 Quét nhiệm vụ Mobile Android (@me trên ứng dụng di động Android)
     const mobilePromise = fetch('https://discord.com/api/v9/quests/@me', { headers: DISCORD_MOBILE_HEADERS(token) })
+      .then(async r => {
+        if (!r.ok) return { quests: [], excluded_quests: [] };
+        return r.json();
+      })
+      .catch(() => ({ quests: [], excluded_quests: [] }));
+
+    // 2.3 Quét nhiệm vụ Mobile iOS (@me trên ứng dụng di động iOS)
+    const iosPromise = fetch('https://discord.com/api/v9/quests/@me', { headers: DISCORD_IOS_HEADERS(token) })
       .then(async r => {
         if (!r.ok) return { quests: [], excluded_quests: [] };
         return r.json();
@@ -156,17 +186,18 @@ export default async function handler(req, res) {
       .then(async r => (r.ok ? r.json() : { balance: 0 }))
       .catch(() => ({ balance: 0 }));
 
-    const [desktopData, webData, mobileData, claimedData, balanceData] = await Promise.all([
+    const [desktopData, webData, mobileData, iosData, claimedData, balanceData] = await Promise.all([
       desktopPromise,
       webPromise,
       mobilePromise,
+      iosPromise,
       claimedPromise,
       balancePromise
     ]);
 
-    // 5. Tự động quét nhiệm vụ Video / Promo tài trợ qua Discord Decision Engine (Placements 0 -> 6)
-    // Quét trên cả Desktop, Web và Mobile để không bỏ sót Take-Two Empires & Puzzles và các nhà tài trợ khác
-    const decisionPlacements = [0, 1, 2, 3, 4, 5, 6];
+    // 5. Tự động quét nhiệm vụ tài trợ qua Discord Decision Engine (Placements 0 -> 10)
+    // Quét trên toàn bộ các kênh Desktop, Web, Android và iOS để phát hiện 100% nhiệm vụ từ API
+    const decisionPlacements = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     const decisionPromises = [];
     for (const placement of decisionPlacements) {
       const getDecisionsUrl = `https://discord.com/api/v9/quests/get-decisions?placement=${placement}&num_decisions_requested=15`;
@@ -182,59 +213,31 @@ export default async function handler(req, res) {
         fetch(getDecisionsUrl, { headers: DISCORD_MOBILE_HEADERS(token) })
           .then(r => r.ok ? r.json() : null)
           .then(data => data ? { placement, data } : null)
+          .catch(() => null),
+        fetch(getDecisionsUrl, { headers: DISCORD_IOS_HEADERS(token) })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => data ? { placement, data } : null)
           .catch(() => null)
       );
     }
 
-    // Hỗ trợ danh mục Video Promo đang mở của Discord (Empires & Puzzles, March of Giants, CONTROL Resonant...) + customIds
-    const activeVideoPromoPool = [
-      '1554245382601580687', // Empires & Puzzles: Match-3 Fantasy RPG (44s, Take-Two, 200 Orbs - WATCH_VIDEO_ON_MOBILE)
-      '1552897885883072582', // March of Giants Trailer (134s)
-      '1552763854692290630'  // CONTROL Resonant (18s)
-    ];
-
     const customIdsParam = req.query?.customIds || req.body?.customIds || [];
     const clientCustomIds = Array.isArray(customIdsParam) ? customIdsParam : (typeof customIdsParam === 'string' ? customIdsParam.split(',') : []);
-    const promoIdsToScan = Array.from(new Set([...activeVideoPromoPool, ...clientCustomIds])).filter(Boolean);
 
-    const customPromises = promoIdsToScan.map(qid =>
-      fetch(`https://discord.com/api/v9/quests/${qid}`, { headers: desktopHeaders })
-        .then(async r => {
-          if (!r.ok) {
-            // Thử lại với web headers hoặc mobile headers nếu desktop không trả về
-            const rWeb = await fetch(`https://discord.com/api/v9/quests/${qid}`, { headers: webHeaders });
-            if (rWeb.ok) {
-              const qDataWeb = await rWeb.json();
-              return { id: qid, config: qDataWeb, user_status: qDataWeb.user_status, _source: 'video_promo' };
-            }
-            const rMob = await fetch(`https://discord.com/api/v9/quests/${qid}`, { headers: DISCORD_MOBILE_HEADERS(token) });
-            if (rMob.ok) {
-              const qDataMob = await rMob.json();
-              return { id: qid, config: qDataMob, user_status: qDataMob.user_status, _source: 'video_promo' };
-            }
-            return null;
-          }
-          const qData = await r.json();
-          return { id: qid, config: qData, user_status: qData.user_status, _source: 'video_promo' };
-        })
-        .catch(() => null)
-    );
+    const decisionResults = await Promise.all(decisionPromises);
 
-    const [decisionResults, customPromos] = await Promise.all([
-      Promise.all(decisionPromises),
-      Promise.all(customPromises)
-    ]);
-
-    // Hợp nhất dữ liệu không trùng lặp (Deduplicate Map theo Quest ID duy nhất)
+    // Hợp nhất dữ liệu hoàn toàn từ API (Deduplicate Map theo Quest ID duy nhất)
     const questMap = new Map();
 
     const mergeQuest = (q, source) => {
-      if (!q || !q.id) return;
+      if (!q) return;
+      const qid = q.id || q.quest_id;
+      if (!qid) return;
       const config = q.config || q;
-      const existing = questMap.get(q.id);
+      const existing = questMap.get(qid);
       if (!existing) {
-        questMap.set(q.id, {
-          id: q.id,
+        questMap.set(qid, {
+          id: qid,
           config: config,
           user_status: q.user_status || null,
           traffic_metadata_sealed: q.traffic_metadata_sealed || config.traffic_metadata_sealed || null,
@@ -256,7 +259,7 @@ export default async function handler(req, res) {
           updated.traffic_metadata_sealed = q.traffic_metadata_sealed || config.traffic_metadata_sealed;
         }
         if (source === 'claimed') updated._source = 'claimed';
-        questMap.set(q.id, updated);
+        questMap.set(qid, updated);
       }
     };
 
@@ -268,28 +271,30 @@ export default async function handler(req, res) {
     (webData.quests || []).forEach(q => mergeQuest(q, 'web_active'));
     (webData.excluded_quests || []).forEach(q => mergeQuest(q, 'web_excluded'));
 
-    // 2.2 Nạp từ Mobile (@me Android/iOS)
-    (mobileData.quests || []).forEach(q => mergeQuest(q, 'mobile_active'));
-    (mobileData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_excluded'));
+    // 3. Nạp từ Mobile (@me Android & iOS)
+    (mobileData.quests || []).forEach(q => mergeQuest(q, 'mobile_android_active'));
+    (mobileData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_android_excluded'));
+    (iosData.quests || []).forEach(q => mergeQuest(q, 'mobile_ios_active'));
+    (iosData.excluded_quests || []).forEach(q => mergeQuest(q, 'mobile_ios_excluded'));
 
-    // 3. Tự động nạp từ Discord Decision Engine (Tất cả Placements 0-6 trên Desktop, Web, Mobile)
+    // 4. Tự động nạp từ Discord Decision Engine (Tất cả Placements 0-10 trên Desktop, Web, Mobile)
     decisionResults.filter(Boolean).forEach(resItem => {
       const placement = resItem.placement ?? 1;
       const decData = resItem.data;
       if (!decData) return;
       const sealed = decData.traffic_metadata_sealed || decData.quest?.traffic_metadata_sealed || null;
-      if (decData.quest && decData.quest.id) {
+      if (decData.quest && (decData.quest.id || decData.quest.quest_id)) {
         decData.quest.traffic_metadata_sealed = decData.quest.traffic_metadata_sealed || sealed;
         mergeQuest(decData.quest, `decision_p${placement}`);
       }
-      if (decData.creative?.creative_content && decData.creative.creative_content.id) {
+      if (decData.creative?.creative_content && (decData.creative.creative_content.id || decData.creative.creative_content.quest_id)) {
         decData.creative.creative_content.traffic_metadata_sealed = decData.creative.creative_content.traffic_metadata_sealed || sealed;
         mergeQuest(decData.creative.creative_content, `decision_p${placement}`);
       }
       if (Array.isArray(decData.decisions)) {
         decData.decisions.forEach(d => {
           const q = d.quest || d.creative?.creative_content || d.creative;
-          if (q && q.id) {
+          if (q && (q.id || q.quest_id)) {
             q.traffic_metadata_sealed = q.traffic_metadata_sealed || d.traffic_metadata_sealed || sealed;
             mergeQuest(q, `decision_p${placement}`);
           }
@@ -297,38 +302,65 @@ export default async function handler(req, res) {
       }
     });
 
-    // 4. Nạp từ Video Promo Pool + Custom IDs
-    customPromos.filter(Boolean).forEach(q => mergeQuest(q, 'video_promo'));
-
     // 5. Nạp từ Claimed/Completed
     const claimedList = Array.isArray(claimedData) ? claimedData : (claimedData.quests || []);
     claimedList.forEach(q => mergeQuest(q, 'claimed'));
 
+    // 6. Nạp ID người dùng chủ động dán link qua modal (nếu có)
+    clientCustomIds.forEach(cid => {
+      const clean = String(cid).trim().replace(/.*\/quests\//, '').replace(/\D/g, '');
+      if (clean && !questMap.has(clean)) {
+        questMap.set(clean, { id: clean, config: null, user_status: null, _source: 'client_custom' });
+      }
+    });
+
+    // Tự động truy vấn chi tiết (hydrate) từ Discord API cho bất kỳ Quest nào chưa đủ thông tin config/tasks
+    // (như các quest trả về từ excluded_quests hoặc decision creative chỉ có id)
+    const incompleteIds = Array.from(questMap.entries())
+      .filter(([id, item]) => {
+        const cfg = item.config;
+        return !cfg || !cfg.messages?.quest_name || (!cfg.task_config_v2 && !cfg.task_config);
+      })
+      .map(([id]) => id);
+
+    if (incompleteIds.length > 0) {
+      await Promise.all(
+        incompleteIds.map(async (qid) => {
+          try {
+            let r = await fetch(`https://discord.com/api/v9/quests/${qid}`, { headers: desktopHeaders });
+            if (!r.ok) {
+              r = await fetch(`https://discord.com/api/v9/quests/${qid}`, { headers: webHeaders });
+            }
+            if (!r.ok) {
+              r = await fetch(`https://discord.com/api/v9/quests/${qid}`, { headers: DISCORD_MOBILE_HEADERS(token) });
+            }
+            if (!r.ok) {
+              r = await fetch(`https://discord.com/api/v9/quests/${qid}`, { headers: DISCORD_IOS_HEADERS(token) });
+            }
+            if (r.ok) {
+              const fullQuest = await r.json();
+              if (fullQuest && (fullQuest.id || fullQuest.config)) {
+                mergeQuest(fullQuest, 'hydrated');
+              }
+            }
+          } catch {}
+        })
+      );
+    }
+
     const rawQuests = Array.from(questMap.values());
     const orbsBalance = balanceData.balance ?? 0;
 
-    console.log(`[API /api/quests] Đã quét ${rawQuests.length} Quest từ Discord (active, promo & claimed)`);
+    console.log(`[API /api/quests] Đã quét ${rawQuests.length} Quest từ Discord API (desktop, web, mobile, decisions & claimed)`);
 
     const formattedQuests = rawQuests.map(q => {
       const config = q.config || q || {};
       const name = config.messages?.quest_name || config.application?.name || 'Nhiệm vụ Discord';
-      const lowerName = name.toLowerCase();
 
-      let taskType = detectTaskType(config);
+      const taskType = detectTaskType(config);
       const tasks = config.task_config_v2?.tasks ?? config.task_config?.tasks ?? {};
-
-      // Tự động nhận diện nhiệm vụ Xem Video dựa trên từ khóa video/trailer thực tế nếu chưa có task cụ thể
-      const hasDefinedTask = Boolean(config.task_config_v2?.tasks || config.task_config?.tasks);
-      if (!hasDefinedTask || taskType === 'PLAY_ON_DESKTOP') {
-        if (tasks['WATCH_VIDEO_ON_MOBILE'] || lowerName.includes('puzzle') || lowerName.includes('empires')) {
-          taskType = 'WATCH_VIDEO_ON_MOBILE';
-        } else if (tasks['WATCH_VIDEO'] || lowerName.includes('video') || lowerName.includes('trailer') || lowerName.includes('march of giants') || lowerName.includes('control resonant') || lowerName.includes('take-two')) {
-          taskType = 'WATCH_VIDEO';
-        }
-      }
-
       const taskDef = tasks[taskType] || {};
-      const targetSec = taskDef.target ?? ((lowerName.includes('puzzle') || lowerName.includes('empires')) ? 44 : (taskType.includes('VIDEO') ? 120 : 900));
+      const targetSec = typeof taskDef.target === 'number' ? taskDef.target : (taskType.includes('VIDEO') ? 60 : 900);
 
       const progressVal = q.user_status?.progress?.[taskType]?.value ?? 0;
       let progSec = Math.min(targetSec, progressVal);

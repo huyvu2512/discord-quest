@@ -90,14 +90,10 @@ export default async function handler(req, res) {
     const name = config.messages?.quest_name || config.application?.name || 'Nhiệm vụ Discord';
     const lowerName = name.toLowerCase();
 
-    let taskType = detectTaskType(config);
-    if (lowerName.includes('video') || lowerName.includes('trailer') || lowerName.includes('resonant') || lowerName.includes('puzzle')) {
-      taskType = 'WATCH_VIDEO';
-    }
-
+    const taskType = detectTaskType(config);
     const tasks = config.task_config_v2?.tasks ?? config.task_config?.tasks ?? {};
     const taskDef = tasks[taskType] || {};
-    const targetSec = taskDef.target ?? (taskType.includes('VIDEO') ? 120 : 900);
+    const targetSec = typeof taskDef.target === 'number' ? taskDef.target : (taskType.includes('VIDEO') ? 60 : 900);
 
     const progressVal = q.user_status?.progress?.[taskType]?.value ?? 0;
     const progSec = Math.min(targetSec, progressVal);
