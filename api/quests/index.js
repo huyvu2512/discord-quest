@@ -7,110 +7,15 @@
  * 4. Claimed Quests (@me/claimed - Các nhiệm vụ đã xem xong/chờ nhận thưởng)
  */
 
-const SUPER_PROPERTIES_DESKTOP = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MjE1Iiwib3NfdmVyc2lvbiI6IjEwLjAuMjI2MzEiLCJvc19hcmNoIjoieDY0IiwiYXBwX2FyY2giOiJ4NjQiLCJzeXN0ZW1fbG9jYWxlIjoidmktVk4iLCJjbGllbnRfYnVpbGRfbnVtYmVyIjozNzYwMDAsImNsaWVudF9ldmVudF9zb3VyY2UiOm51bGx9';
-const SUPER_PROPERTIES_WEB = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiQ2hyb21lIiwiZGV2aWNlIjoiIiwic3lzdGVtX2xvY2FsZSI6InZpLVZOIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEzOC4wLjAuMCBTYWZhcmkvNTM3LjM2IiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTM4LjAuMC4wIiwib3NfdmVyc2lvbiI6IjEwIiwicmVmZXJyZXIiOiIiLCJyZWZlcnJpbmdfZG9tYWluIjoiIiwicmVmZXJyZXJfY3VycmVudCI6IiIsInJlZmVycmluZ19kb21haW5fY3VycmVudCI6IiIsInJlbGVhc2VfY2hhbm5lbCI6InN0YWJsZSIsImNsaWVudF9idWlsZF9udW1iZXIiOjM3NjAwMCwiY2xpZW50X2V2ZW50X3NvdXJjZSI6bnVsbH0=';
-const SUPER_PROPERTIES_MOBILE = 'eyJvcyI6IkFuZHJvaWQiLCJicm93c2VyIjoiRGlzY29yZCBBbmRyb2lkIiwiZGV2aWNlIjoiU2Ftc3VuZyBHYWxheHkgUzI0Iiwic3lzdGVtX2xvY2FsZSI6InZpLVZOIiwiY2xpZW50X3ZlcnNpb24iOiIyMjUuMCIsInJlbGVhc2VfY2hhbm5lbCI6Imdvb2dsZVJlbGVhc2UiLCJkZXZpY2VfdmVuZG9yX2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiIiwiY2xpZW50X2J1aWxkX251bWJlciI6MjI1MDAwMDAwfQ==';
-
-const DISCORD_HEADERS = (token) => ({
-  'Authorization': token.trim(),
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.9215 Chrome/138.0.7204.251 Electron/37.6.0 Safari/537.36',
-  'Accept-Language': 'vi,en-US;q=0.9',
-  'X-Super-Properties': SUPER_PROPERTIES_DESKTOP,
-  'X-Discord-Locale': 'vi',
-  'X-Discord-Timezone': 'Asia/Saigon',
-  'Sec-Ch-Ua': '"Chromium";v="138", "Not?A_Brand";v="8"',
-  'Sec-Ch-Ua-Mobile': '?0',
-  'Sec-Ch-Ua-Platform': '"Windows"',
-  'Sec-Fetch-Dest': 'empty',
-  'Sec-Fetch-Mode': 'cors',
-  'Sec-Fetch-Site': 'same-origin',
-  'Origin': 'https://discord.com',
-  'Referer': 'https://discord.com/channels/@me',
-  'Content-Type': 'application/json'
-});
-
-const DISCORD_WEB_HEADERS = (token) => ({
-  'Authorization': token.trim(),
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  'Accept-Language': 'vi,en-US;q=0.9',
-  'X-Super-Properties': SUPER_PROPERTIES_WEB,
-  'X-Discord-Locale': 'vi',
-  'X-Discord-Timezone': 'Asia/Saigon',
-  'Sec-Ch-Ua': '"Chromium";v="138", "Not?A_Brand";v="8"',
-  'Sec-Ch-Ua-Mobile': '?0',
-  'Sec-Ch-Ua-Platform': '"Windows"',
-  'Sec-Fetch-Dest': 'empty',
-  'Sec-Fetch-Mode': 'cors',
-  'Sec-Fetch-Site': 'same-origin',
-  'Origin': 'https://discord.com',
-  'Referer': 'https://discord.com/quest-home',
-  'Content-Type': 'application/json'
-});
-
-const DISCORD_MOBILE_HEADERS = (token) => ({
-  'Authorization': token.trim(),
-  'User-Agent': 'Discord-Android/225000000; Mozilla/5.0 (Linux; Android 14; SM-S928B Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/138.0.7204.251 Mobile Safari/537.36',
-  'Accept-Language': 'vi,en-US;q=0.9',
-  'X-Super-Properties': SUPER_PROPERTIES_MOBILE,
-  'X-Discord-Locale': 'vi',
-  'X-Discord-Timezone': 'Asia/Saigon',
-  'Content-Type': 'application/json'
-});
-
-const SUPER_PROPERTIES_IOS = Buffer.from(JSON.stringify({
-  os: "iOS",
-  browser: "Discord iOS",
-  device: "iPhone15,2",
-  system_locale: "vi-VN",
-  client_version: "225.0",
-  release_channel: "appleRelease",
-  device_vendor_id: "00000000-0000-0000-0000-000000000000",
-  browser_user_agent: "",
-  client_build_number: 55000
-})).toString('base64');
-
-const DISCORD_IOS_HEADERS = (token) => ({
-  'Authorization': token.trim(),
-  'User-Agent': 'Discord-iOS/225.0 (iPhone; iOS 17.5.1; Scale/3.00)',
-  'Accept-Language': 'vi,en-US;q=0.9',
-  'X-Super-Properties': SUPER_PROPERTIES_IOS,
-  'X-Discord-Locale': 'vi',
-  'X-Discord-Timezone': 'Asia/Saigon',
-  'Content-Type': 'application/json'
-});
-
-function detectTaskType(config) {
-  const tasks = config.task_config_v2?.tasks ?? config.task_config?.tasks ?? {};
-  // Ưu tiên Xem Video trước (nhanh, 1-2 phút) rồi mới tới Chơi Game (15 phút)
-  const priority = [
-    'WATCH_VIDEO', 'WATCH_VIDEO_ON_MOBILE',
-    'PLAY_ON_DESKTOP', 'PLAY_ON_XBOX', 'PLAY_ON_PLAYSTATION', 'PLAY_ON_NINTENDO',
-    'PLAY_ON_MOBILE', 'PLAY_SOCIAL_GAME', 'PLAY_ACTIVITY',
-    'STREAM_ON_DESKTOP', 'WATCH_STREAM',
-    'FOLLOW_SOCIAL', 'SHARE_CONTENT', 'JOIN_COMMUNITY',
-    'COMPLETE_SURVEY', 'REDEEM_CODE', 'MAKE_PURCHASE'
-  ];
-  return priority.find(t => tasks[t] != null) || Object.keys(tasks)[0] || 'PLAY_ON_DESKTOP';
-}
-
-function getTaskTypeName(taskType) {
-  switch (taskType) {
-    case 'WATCH_VIDEO': return 'Xem Video';
-    case 'WATCH_VIDEO_ON_MOBILE': return 'Xem Video (Mobile)';
-    case 'WATCH_STREAM': return 'Xem Livestream';
-    case 'PLAY_ON_DESKTOP': return 'Chơi trên PC';
-    case 'STREAM_ON_DESKTOP': return 'Stream trên PC';
-    case 'PLAY_ON_XBOX': return 'Chơi (Xbox)';
-    case 'PLAY_ON_PLAYSTATION': return 'Chơi (PS5)';
-    case 'PLAY_ON_NINTENDO': return 'Chơi (Nintendo)';
-    case 'PLAY_ON_MOBILE': return 'Chơi Mobile';
-    case 'PLAY_ACTIVITY': return 'Hoạt động Discord';
-    case 'FOLLOW_SOCIAL': return 'Theo dõi MXH';
-    case 'SHARE_CONTENT': return 'Chia sẻ nội dung';
-    case 'JOIN_COMMUNITY': return 'Tham gia nhóm';
-    default: return 'Nhiệm vụ Discord';
-  }
-}
+import {
+  fetchLatestBuildNumber,
+  DISCORD_HEADERS,
+  DISCORD_WEB_HEADERS,
+  DISCORD_MOBILE_HEADERS,
+  DISCORD_IOS_HEADERS,
+  detectTaskType,
+  getTaskTypeName
+} from '../discord-client.js';
 
 export default async function handler(req, res) {
   let token = req.query?.token || req.headers?.authorization;
@@ -127,8 +32,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const desktopHeaders = DISCORD_HEADERS(token);
-    const webHeaders = DISCORD_WEB_HEADERS(token);
+    const buildNum = await fetchLatestBuildNumber();
+    const desktopHeaders = DISCORD_HEADERS(token, buildNum);
+    const webHeaders = DISCORD_WEB_HEADERS(token, buildNum);
 
     // 1. Quét nhiệm vụ Desktop (@me)
     const desktopPromise = fetch('https://discord.com/api/v9/quests/@me', { headers: desktopHeaders })

@@ -3,54 +3,15 @@
  * Cho phép tra cứu bất kỳ Quest nào (kể cả Video Quest trên Quest Home) qua ID hoặc link
  */
 
-const SUPER_PROPERTIES_DESKTOP = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MjE1Iiwib3NfdmVyc2lvbiI6IjEwLjAuMjI2MzEiLCJvc19hcmNoIjoieDY0IiwiYXBwX2FyY2giOiJ4NjQiLCJzeXN0ZW1fbG9jYWxlIjoidmktVk4iLCJjbGllbnRfYnVpbGRfbnVtYmVyIjozNzYwMDAsImNsaWVudF9ldmVudF9zb3VyY2UiOm51bGx9';
-
-const DISCORD_HEADERS = (token) => ({
-  'Authorization': token.trim(),
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.9215 Chrome/138.0.7204.251 Electron/37.6.0 Safari/537.36',
-  'Accept-Language': 'vi,en-US;q=0.9',
-  'X-Super-Properties': SUPER_PROPERTIES_DESKTOP,
-  'X-Discord-Locale': 'vi',
-  'X-Discord-Timezone': 'Asia/Saigon',
-  'Sec-Ch-Ua': '"Chromium";v="138", "Not?A_Brand";v="8"',
-  'Sec-Ch-Ua-Mobile': '?0',
-  'Sec-Ch-Ua-Platform': '"Windows"',
-  'Sec-Fetch-Dest': 'empty',
-  'Sec-Fetch-Mode': 'cors',
-  'Sec-Fetch-Site': 'same-origin',
-  'Origin': 'https://discord.com',
-  'Referer': 'https://discord.com/channels/@me',
-  'Content-Type': 'application/json'
-});
-
-function detectTaskType(config) {
-  const tasks = config.task_config_v2?.tasks ?? config.task_config?.tasks ?? {};
-  const priority = [
-    'WATCH_VIDEO', 'WATCH_VIDEO_ON_MOBILE',
-    'PLAY_ON_DESKTOP', 'PLAY_ON_XBOX', 'PLAY_ON_PLAYSTATION', 'PLAY_ON_NINTENDO',
-    'PLAY_ON_MOBILE', 'PLAY_SOCIAL_GAME', 'PLAY_ACTIVITY',
-    'STREAM_ON_DESKTOP', 'WATCH_STREAM',
-    'FOLLOW_SOCIAL', 'SHARE_CONTENT', 'JOIN_COMMUNITY',
-    'COMPLETE_SURVEY', 'REDEEM_CODE', 'MAKE_PURCHASE'
-  ];
-  return priority.find(t => tasks[t] != null) || Object.keys(tasks)[0] || 'PLAY_ON_DESKTOP';
-}
-
-function getTaskTypeName(taskType) {
-  switch (taskType) {
-    case 'WATCH_VIDEO': return 'Xem Video';
-    case 'WATCH_VIDEO_ON_MOBILE': return 'Xem Video (Mobile)';
-    case 'WATCH_STREAM': return 'Xem Livestream';
-    case 'PLAY_ON_DESKTOP': return 'Chơi trên PC';
-    case 'STREAM_ON_DESKTOP': return 'Stream trên PC';
-    case 'PLAY_ON_XBOX': return 'Chơi (Xbox)';
-    case 'PLAY_ON_PLAYSTATION': return 'Chơi (PS5)';
-    case 'PLAY_ON_NINTENDO': return 'Chơi (Nintendo)';
-    case 'PLAY_ON_MOBILE': return 'Chơi Mobile';
-    case 'PLAY_ACTIVITY': return 'Hoạt động Discord';
-    default: return 'Nhiệm vụ Discord';
-  }
-}
+import {
+  fetchLatestBuildNumber,
+  DISCORD_HEADERS,
+  DISCORD_WEB_HEADERS,
+  DISCORD_MOBILE_HEADERS,
+  DISCORD_IOS_HEADERS,
+  detectTaskType,
+  getTaskTypeName
+} from '../discord-client.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -74,11 +35,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const headers = DISCORD_HEADERS(token);
-    const r = await fetch(`https://discord.com/api/v9/quests/${cleanId}`, { headers });
+    const buildNum = await fetchLatestBuildNumber();
+    let r = await fetch(`https://discord.com/api/v9/quests/${cleanId}`, { headers: DISCORD_HEADERS(token, buildNum) });
+    if (!r.ok) {
+      r = await fetch(`https://discord.com/api/v9/quests/${cleanId}`, { headers: DISCORD_WEB_HEADERS(token, buildNum) });
+    }
+    if (!r.ok) {
+      r = await fetch(`https://discord.com/api/v9/quests/${cleanId}`, { headers: DISCORD_MOBILE_HEADERS(token) });
+    }
+    if (!r.ok) {
+      r = await fetch(`https://discord.com/api/v9/quests/${cleanId}`, { headers: DISCORD_IOS_HEADERS(token) });
+    }
     
     if (!r.ok) {
-      const errText = await r.text().catch(() => '');
       return res.status(r.status).json({
         success: false,
         error: `Không tìm thấy nhiệm vụ Discord (HTTP ${r.status})`

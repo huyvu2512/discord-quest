@@ -1,18 +1,7 @@
-const SUPER_PROPERTIES_DESKTOP = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MjE1Iiwib3NfdmVyc2lvbiI6IjEwLjAuMjI2MzEiLCJvc19hcmNoIjoieDY0IiwiYXBwX2FyY2giOiJ4NjQiLCJzeXN0ZW1fbG9jYWxlIjoidmktVk4iLCJjbGllbnRfYnVpbGRfbnVtYmVyIjozNzYwMDAsImNsaWVudF9ldmVudF9zb3VyY2UiOm51bGx9';
-
-const DISCORD_HEADERS = (token) => ({
-  'Authorization': token.trim(),
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.9215 Chrome/138.0.7204.251 Electron/37.6.0 Safari/537.36',
-  'Accept-Language': 'vi,en-US;q=0.9',
-  'X-Super-Properties': SUPER_PROPERTIES_DESKTOP,
-  'X-Discord-Locale': 'vi',
-  'X-Discord-Timezone': 'Asia/Saigon',
-  'Sec-Fetch-Dest': 'empty',
-  'Sec-Fetch-Mode': 'cors',
-  'Sec-Fetch-Site': 'same-origin',
-  'Origin': 'https://discord.com',
-  'Referer': 'https://discord.com/channels/@me'
-});
+import {
+  fetchLatestBuildNumber,
+  DISCORD_HEADERS
+} from '../discord-client.js';
 
 export default async function handler(req, res) {
   let token = req.query?.token || req.headers?.authorization;
@@ -43,9 +32,10 @@ export default async function handler(req, res) {
   }
 
   try {
+    const buildNum = await fetchLatestBuildNumber();
     const discordRes = await fetch(`https://discord.com/api/v9/quests/${questId}/reward-code`, {
       method: 'GET',
-      headers: DISCORD_HEADERS(token)
+      headers: DISCORD_HEADERS(token, buildNum)
     });
 
     if (!discordRes.ok) {
