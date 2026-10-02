@@ -401,6 +401,13 @@ export default async function handler(req, res) {
       if (isExpired && !(q.status === 'claimed' && (q.hasGiftCode || q.code))) {
         return false;
       }
+      // 3. Nếu không bật quét Mobile: Ẩn các nhiệm vụ độc quyền trên điện thoại (WATCH_VIDEO_ON_MOBILE) chưa hoàn thành
+      // để bảng nhiệm vụ khớp chính xác 100% với app Discord trên máy tính (PC), không bị báo lỗi 404/260000
+      if (!ENABLE_MOBILE_QUESTS && (q.taskType === 'WATCH_VIDEO_ON_MOBILE' || q.taskType?.includes('MOBILE'))) {
+        if (q.status !== 'claimed' && q.status !== 'completed') {
+          return false;
+        }
+      }
       return true;
     });
 
