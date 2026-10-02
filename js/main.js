@@ -54,59 +54,74 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!current.enrolledAt) {
         addLog("info", `[Auto] Nhận Quest "${current.name}" trên Discord...`);
-        const enrollRes = await fetch("/api/quests/enroll", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            token: acc.token,
-            questId: current.id,
-            trafficMetadataSealed: current.trafficMetadataSealed
-          })
-        });
-        const enrollData = await enrollRes.json().catch(() => ({}));
+        let enrollSuccess = false;
+        try {
+          const enrollRes = await fetch("/api/quests/enroll", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              token: acc.token,
+              questId: current.id,
+              taskType: current.taskType,
+              trafficMetadataSealed: current.trafficMetadataSealed
+            })
+          });
+          const enrollData = await enrollRes.json().catch(() => ({}));
 
-        // Bắt trường hợp dính HTTP 429 Rate Limit từ Discord
-        if (enrollData.status === 429 || enrollData.isRateLimited) {
-          current.status = "pending";
-          state.isRunningAll = false;
-          const btnRun = document.getElementById("btn-run-all");
-          const btnStop = document.getElementById("btn-stop-all");
-          btnRun?.classList.remove("hidden");
-          btnStop?.classList.add("hidden");
+          // Bắt trường hợp dính HTTP 429 Rate Limit từ Discord
+          if (enrollData.status === 429 || enrollData.isRateLimited) {
+            current.status = "pending";
+            state.isRunningAll = false;
+            const btnRun = document.getElementById("btn-run-all");
+            const btnStop = document.getElementById("btn-stop-all");
+            btnRun?.classList.remove("hidden");
+            btnStop?.classList.add("hidden");
 
-          const waitSec = Math.ceil(enrollData.retryAfter || 5);
-          addLog("warn", `[Rate Limit] Discord giới hạn tốc độ (chờ ${waitSec}s). Đã tạm dừng.`);
-          toast(`Discord giới hạn thao tác (chờ ${waitSec}s)`, "warn");
-          return;
+            const waitSec = Math.ceil(enrollData.retryAfter || 5);
+            addLog("warn", `[Rate Limit] Discord giới hạn tốc độ (chờ ${waitSec}s). Đã tạm dừng.`);
+            toast(`Discord giới hạn thao tác (chờ ${waitSec}s)`, "warn");
+            return;
+          }
+
+          if (enrollRes.ok && (enrollData.success || enrollData.alreadyEnrolled || enrollData.code === 260017)) {
+            enrollSuccess = true;
+            current.enrolledAt = new Date().toISOString();
+            addLog("success", `[Auto] Nhận Quest "${current.name}" thành công (đã tham gia).`);
+          } else {
+            addLog("info", `[Auto] Chuẩn bị phát tiến trình cho "${current.name}"...`);
+          }
+        } catch {
+          addLog("info", `[Auto] Chuẩn bị phát tiến trình cho "${current.name}"...`);
         }
 
-        if (enrollRes.ok && (enrollData.success || enrollData.alreadyEnrolled || enrollData.code === 260017)) {
-          current.enrolledAt = new Date().toISOString();
-          addLog("success", `[Auto] Nhận Quest "${current.name}" thành công (đã tham gia).`);
-        } else {
-          // Bắt trường hợp Quest không thể tham gia -> Tạm dừng, KHÔNG xóa quest khỏi danh sách
-          current.status = "pending";
-          addLog("error", `[Không thể nhận] "${current.name}": ${enrollData.error || 'Lỗi tham gia quest'}. Đã tạm dừng.`);
-          toast(`Không thể nhận "${current.name}": ${enrollData.error || 'Lỗi Discord'}`, "warn");
+        if (!enrollSuccess) {
+          if (isVideo) {
+            // Nhiệm vụ video: Discord không bắt buộc enroll trước qua API enroll, tiếp tục gửi tiến trình video
+            current.enrolledAt = new Date().toISOString();
+          } else {
+            // Nhiệm vụ game nếu không thể tham gia thì mới tạm dừng
+            current.status = "pending";
+            addLog("error", `[Không thể nhận] "${current.name}". Đã tạm dừng.`);
+            toast(`Không thể nhận "${current.name}"`, "warn");
 
-          // CHỈ TỰ ĐỘNG CHUYỂN SANG QUEST TIẾP THEO KHI ĐANG BẬT "CHẠY TẤT CẢ"
-          if (state.isRunningAll) {
-            const nextQ = state.quests.find(q => q.status === "queued" && !q.isExpired);
-            if (nextQ) {
-              nextQ.status = "running";
-              nextQ._runStartedAt = Date.now();
-              nextQ._baseProgSec = nextQ.progSec || 0;
-              addLog("info", `[Hàng đợi] Tự động chuyển sang: "${nextQ.name}"...`);
-            } else {
-              state.isRunningAll = false;
-              const btnRun = document.getElementById("btn-run-all");
-              const btnStop = document.getElementById("btn-stop-all");
-              btnRun?.classList.remove("hidden");
-              btnStop?.classList.add("hidden");
-              addLog("info", `[Auto] Đã hoàn tất hoặc không còn quest hợp lệ trong hàng đợi.`);
+            if (state.isRunningAll) {
+              const nextQ = state.quests.find(q => q.status === "queued" && !q.isExpired);
+              if (nextQ) {
+                nextQ.status = "running";
+                nextQ._runStartedAt = Date.now();
+                nextQ._baseProgSec = nextQ.progSec || 0;
+                addLog("info", `[Hàng đợi] Tự động chuyển sang: "${nextQ.name}"...`);
+              } else {
+                state.isRunningAll = false;
+                const btnRun = document.getElementById("btn-run-all");
+                const btnStop = document.getElementById("btn-stop-all");
+                btnRun?.classList.remove("hidden");
+                btnStop?.classList.add("hidden");
+                addLog("info", `[Auto] Đã hoàn tất hoặc không còn quest hợp lệ trong hàng đợi.`);
+              }
             }
+            return; // Dừng lại, không gửi heartbeat/progress
           }
-          return; // Dừng lại, không gửi heartbeat/progress
         }
       }
 

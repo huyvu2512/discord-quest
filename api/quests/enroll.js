@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     try { body = JSON.parse(body); } catch {}
   }
 
-  const { token, questId } = body || {};
+  const { token, questId, taskType } = body || {};
   if (!token || !questId) {
     return res.status(400).json({ success: false, error: 'Thiếu token hoặc questId' });
   }
@@ -41,20 +41,21 @@ export default async function handler(req, res) {
 
   try {
     const isTargeted = Boolean(traffic_metadata_sealed);
+    const isMobileTask = taskType === 'WATCH_VIDEO_ON_MOBILE' || taskType?.includes('MOBILE');
 
-    // Chuẩn Discord Desktop, Web & Mobile: Thử lần lượt (Location 11 Desktop -> Location 13 Web -> Mobile)
+    // Chuẩn Discord Desktop, Web & Mobile:
     const attempts = [
       {
-        headers: DISCORD_HEADERS(token, buildNum),
+        headers: isMobileTask ? DISCORD_MOBILE_HEADERS(token) : DISCORD_HEADERS(token, buildNum),
         payload: {
           location: 11,
-          is_targeted: false,
+          is_targeted: isTargeted,
           metadata_sealed: metadata_sealed,
           traffic_metadata_sealed: traffic_metadata_sealed || null
         }
       },
       {
-        headers: DISCORD_WEB_HEADERS(token, buildNum),
+        headers: isMobileTask ? DISCORD_IOS_HEADERS(token) : DISCORD_WEB_HEADERS(token, buildNum),
         payload: {
           location: 13,
           is_targeted: isTargeted,

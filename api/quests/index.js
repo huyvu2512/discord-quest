@@ -197,18 +197,33 @@ export default async function handler(req, res) {
           decData.quest.config.assets = decData.quest.config.assets || decData.creative.creative_content.assets;
         }
         mergeQuest(decData.quest, `decision_p${placement}`);
-      } else if (decData.creative?.creative_content && (decData.creative.creative_content.id || decData.creative.creative_content.quest_id)) {
-        decData.creative.creative_content.traffic_metadata_sealed = decData.creative.creative_content.traffic_metadata_sealed || sealed;
-        mergeQuest(decData.creative.creative_content, `decision_p${placement}`);
+      } else if (decData.creative?.creative_content) {
+        const cc = decData.creative.creative_content;
+        const realQuestId = decData.quest_id || cc.quest_id || cc.id;
+        const combined = {
+          ...cc,
+          id: realQuestId,
+          traffic_metadata_sealed: cc.traffic_metadata_sealed || sealed
+        };
+        mergeQuest(combined, `decision_p${placement}`);
       }
 
       if (Array.isArray(decData.decisions)) {
         decData.decisions.forEach(d => {
-          const q = d.quest || d.creative?.creative_content;
-          if (q && (q.id || q.quest_id)) {
-            q.traffic_metadata_sealed = q.traffic_metadata_sealed || d.traffic_metadata_sealed || sealed;
-            mergeQuest(q, `decision_p${placement}`);
-          }
+          const questObj = d.quest || {};
+          const creativeContent = d.creative?.creative_content || {};
+          const trueQuestId = d.quest_id || questObj.id || questObj.quest_id || creativeContent.quest_id || creativeContent.id;
+          if (!trueQuestId) return;
+
+          const combined = {
+            ...creativeContent,
+            ...questObj,
+            id: trueQuestId,
+            config: questObj.config || creativeContent.config || creativeContent,
+            user_status: questObj.user_status || d.user_status || null,
+            traffic_metadata_sealed: questObj.traffic_metadata_sealed || d.traffic_metadata_sealed || sealed
+          };
+          mergeQuest(combined, `decision_p${placement}`);
         });
       }
     });

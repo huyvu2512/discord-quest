@@ -45,8 +45,15 @@ export default async function handler(req, res) {
       discordUrl = `https://discord.com/api/v9/quests/${questId}/video-progress`;
       const numTs = typeof timestamp === 'number' ? timestamp : parseFloat(timestamp) || 10;
       payload = { timestamp: Number(numTs.toFixed(4)) };
-      headers = DISCORD_HEADERS(token, buildNum);
-      headers['Referer'] = 'https://discord.com/quest-home';
+      if (trafficMetadataSealed) {
+        payload.traffic_metadata_sealed = trafficMetadataSealed;
+      }
+      if (taskType === 'WATCH_VIDEO_ON_MOBILE') {
+        headers = DISCORD_MOBILE_HEADERS(token);
+      } else {
+        headers = DISCORD_HEADERS(token, buildNum);
+        headers['Referer'] = 'https://discord.com/quest-home';
+      }
     } else if (taskType?.includes('CONSOLE') || taskType?.includes('XBOX') || taskType?.includes('PLAYSTATION') || taskType?.includes('NINTENDO')) {
       discordUrl = `https://discord.com/api/v9/quests/${questId}/console-heartbeat`;
       payload = {
