@@ -354,6 +354,12 @@ export default async function handler(req, res) {
         hasGiftCode = true;
       }
 
+      // Nếu nhiệm vụ đã hoàn thành / nhận thưởng trong quá khứ nhưng Discord không trả về mã code (code = null),
+      // nghĩa là mã đã hết hạn sử dụng hoặc đợt phát code đã kết thúc -> Không còn Gift Code khả dụng
+      if (status === 'claimed' && !code) {
+        hasGiftCode = false;
+      }
+
       const startsAt = config.starts_at || q.starts_at || null;
       const appId = taskDef.applications?.[0]?.id ?? config.application?.id;
       const expiresAt = config.expires_at || q.expires_at || config.task_config_v2?.expires_at || config.task_config?.expires_at || null;

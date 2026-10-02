@@ -7,6 +7,11 @@
 
 function isGiftCodeQuest(q) {
   if (!q) return false;
+  // 0. Nếu là nhiệm vụ đã claimed / hoàn thành trong quá khứ nhưng không có chuỗi mã code (code = null),
+  // nghĩa là mã đã hết hạn sử dụng hoặc đợt phát code đã kết thúc từ lâu -> Không khả dụng, bỏ qua!
+  if (q.status === 'claimed' && (!q.code || typeof q.code !== 'string' || !q.code.trim())) {
+    return false;
+  }
   if (q.code) return true; // Đã nhận chuỗi mã quà
   if (q.hasGiftCode === true) return true;
 
@@ -87,46 +92,62 @@ function getRewardItems() {
   }
 
   // 1. Quét từ state.quests:
-  // Lấy TẤT CẢ các nhiệm vụ có mã quà (Gift Code) - kể cả ĐÃ XONG hay CHƯA LÀM
+  // Lấy các nhiệm vụ có mã quà (Gift Code) hợp lệ:
+  // - Nhiệm vụ đã nhận (claimed): Bắt buộc phải có mã code thật (q.code)
+  // - Nhiệm vụ chưa làm (pending/queued/running): Phải còn hạn sử dụng
   (state.quests || []).forEach(q => {
-    if (isGiftCodeQuest(q)) {
-      const redeemLink = getRedeemUrl(q);
-      const isDone = q.status === "completed" || q.status === "claimed";
-      const targetSec = q.targetSec || 900;
-      const progSec = isDone ? targetSec : (q.progSec || 0);
-      const pct = isDone ? 100 : Math.min(99, Math.floor((progSec / targetSec) * 100));
+    if (!isGiftCodeQuest(q)) return;
 
-      const newItem = {
-        id: q.id,
-        questName: q.name,
-        account: accName,
-        type: q.reward || "Gift Code",
-        code: q.code || null,
-        status: q.status || "pending",
-        progSec: progSec,
-        targetSec: targetSec,
-        pct: pct,
-        discordUrl: q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home'),
-        redeemLink: redeemLink,
-        expiry: "Còn hạn dùng"
-      };
+    const isDone = q.status === "completed" || q.status === "claimed";
 
-      const existingIdx = findItemIndex(newItem);
-      if (existingIdx !== -1) {
-        const existing = items[existingIdx];
-        if (newItem.code && !existing.code) existing.code = newItem.code;
-        if (!existing.id && newItem.id) existing.id = newItem.id;
-        if (existing.type === "Gift Code" && newItem.type !== "Gift Code") existing.type = newItem.type;
-        const statusScore = s => (s === 'running' ? 5 : s === 'claimed' ? 4 : s === 'completed' ? 3 : s === 'queued' ? 2 : 1);
-        if (statusScore(newItem.status) > statusScore(existing.status)) existing.status = newItem.status;
-      } else {
-        items.push(newItem);
+    // 1. Bỏ qua nhiệm vụ đã claimed nhưng không có mã code (mã hết hạn hoặc đợt phát code đã đóng)
+    if (q.status === "claimed" && (!q.code || typeof q.code !== 'string' || !q.code.trim())) {
+      return;
+    }
+
+    // 2. Bỏ qua nhiệm vụ chưa làm nhưng đã hết hạn sử dụng
+    if (!isDone) {
+      if (q.isExpired || (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now())) {
+        return;
       }
+    }
+
+    const redeemLink = getRedeemUrl(q);
+    const targetSec = q.targetSec || 900;
+    const progSec = isDone ? targetSec : (q.progSec || 0);
+    const pct = isDone ? 100 : Math.min(99, Math.floor((progSec / targetSec) * 100));
+
+    const newItem = {
+      id: q.id,
+      questName: q.name,
+      account: accName,
+      type: q.reward || "Gift Code",
+      code: q.code || null,
+      status: q.status || "pending",
+      progSec: progSec,
+      targetSec: targetSec,
+      pct: pct,
+      discordUrl: q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home'),
+      redeemLink: redeemLink,
+      expiry: "Còn hạn dùng"
+    };
+
+    const existingIdx = findItemIndex(newItem);
+    if (existingIdx !== -1) {
+      const existing = items[existingIdx];
+      if (newItem.code && !existing.code) existing.code = newItem.code;
+      if (!existing.id && newItem.id) existing.id = newItem.id;
+      if (existing.type === "Gift Code" && newItem.type !== "Gift Code") existing.type = newItem.type;
+      const statusScore = s => (s === 'running' ? 5 : s === 'claimed' ? 4 : s === 'completed' ? 3 : s === 'queued' ? 2 : 1);
+      if (statusScore(newItem.status) > statusScore(existing.status)) existing.status = newItem.status;
+    } else {
+      items.push(newItem);
     }
   });
 
-  // 2. Gộp thêm từ state.rewards (chỉ bổ sung nếu chưa có trong state.quests):
+  // 2. Gộp thêm từ state.rewards (chỉ bổ sung nếu có chuỗi mã code thật và chưa có trong state.quests):
   (state.rewards || []).forEach(r => {
+    if (!r.code || typeof r.code !== 'string' || !r.code.trim()) return;
     if (isGiftCodeQuest(r)) {
       const candidate = {
         id: r.id,
@@ -249,12 +270,9 @@ function renderRewards() {
       } else {
         codeCol = `
           <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
-            <button class="btn btn-primary btn-sm" id="btn-fetch-code-${r.id}" onclick="fetchRewardCode('${r.id}')" style="display: inline-flex; align-items: center; gap: 5px; height: 36px; padding: 0 12px; font-size: 12px; border-radius: 6px;" title="Lấy trực tiếp chuỗi mã Gift Code từ Discord API">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
-              <span>Lấy Mã Quà</span>
-            </button>
-            <a href="${discordQuestUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="${linkTitle}">
+            <a href="${discordQuestUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 5px; height: 36px; padding: 0 12px; font-size: 12px; border-radius: 6px;" title="${linkTitle}">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+              <span>Xem trên Discord</span>
             </a>
           </div>
         `;

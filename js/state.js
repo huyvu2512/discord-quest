@@ -23,6 +23,8 @@ localStorage.setItem("dqt_quests", JSON.stringify(savedQuests));
 
 let savedRewards = JSON.parse(localStorage.getItem("dqt_rewards") || "[]");
 savedRewards = savedRewards.filter(r => {
+  // Chỉ lưu giữ những phần thưởng thực sự CÓ MÃ CODE khả dụng
+  if (!r.code || typeof r.code !== 'string' || !r.code.trim()) return false;
   if (r.code?.includes('GENSHIN') || r.questName?.includes('Genshin') || r.questName?.includes('Honkai')) return false;
   const t = (r.type || '').toLowerCase();
   const qn = (r.questName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
