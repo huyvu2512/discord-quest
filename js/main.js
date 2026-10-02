@@ -1096,21 +1096,7 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
         nq.hasGiftCode = true;
       }
 
-      // BẢO TOÀN TRẠNG THÁI HOÀN THÀNH (completed / claimed) & TIẾN TRÌNH CAO NHẤT:
-      // Tuyệt đối không để việc quét API bị thiếu user_status làm đè ngược quest đã xong thành chưa chạy
-      if (prevQ) {
-        if (prevQ.status === "completed" || prevQ.status === "claimed") {
-          if (nq.status !== "claimed") {
-            nq.status = prevQ.status;
-            nq.progSec = prevQ.progSec || nq.targetSec;
-            nq.completedAt = nq.completedAt || prevQ.completedAt;
-            nq.claimedAt = nq.claimedAt || prevQ.claimedAt;
-          }
-        } else if (typeof prevQ.progSec === "number" && prevQ.progSec > (nq.progSec || 0)) {
-          nq.progSec = prevQ.progSec;
-        }
-      }
-
+      // 100% SỐNG TỪ DISCORD API: Không ép trạng thái ảo từ cache, lấy chuẩn theo API
       if (currentRunningId === nq.id && nq.status !== "completed" && nq.status !== "claimed") {
         nq.status = "running";
       } else if (currentQueuedIds.has(nq.id) && nq.status !== "completed" && nq.status !== "claimed") {

@@ -8,18 +8,10 @@ const initialActiveId = savedAccounts.some(a => a.id === savedActiveId)
   ? savedActiveId
   : (savedAccounts[0]?.id || null);
 
-let savedQuests = JSON.parse(localStorage.getItem("dqt_quests") || "[]");
-// Tự động dọn sạch dữ liệu clone cũ, quest rác excluded và toàn bộ nhiệm vụ đã hết hạn khỏi trình duyệt
-savedQuests = savedQuests.filter(q => {
-  if (q.id === 'q1' || q.id === 'q2' || q.name?.includes('Fontaine Discovery') || q.name?.includes('Honkai')) return false;
-  // Dọn sạch 100+ quest rác/ảo bị excluded/hết hạn từ đợt trước
-  if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord') && q.status !== 'claimed' && q.status !== 'completed') return false;
-  if (q.status === 'claimed' || q.status === 'completed') return true;
-  if (q.isExpired) return false;
-  if (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now()) return false;
-  return true;
-});
-localStorage.setItem("dqt_quests", JSON.stringify(savedQuests));
+// Xóa bỏ triệt để cache quest cũ khỏi localStorage để 100% dữ liệu luôn lấy sống từ Discord API
+try {
+  localStorage.removeItem("dqt_quests");
+} catch {}
 
 let savedRewards = JSON.parse(localStorage.getItem("dqt_rewards") || "[]");
 savedRewards = savedRewards.filter(r => {
@@ -27,23 +19,7 @@ savedRewards = savedRewards.filter(r => {
   if (!r.code || typeof r.code !== 'string' || !r.code.trim()) return false;
   const t = (r.type || '').toLowerCase();
   if (t.includes('orb') || /avatar|decoration|profile effect|collectible|badge|khung/i.test(t)) return false;
-
-  // Đồng bộ mã code sang quest chính trong savedQuests nếu có
-  const qn = (r.questName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const matchQ = savedQuests.find(q => {
-    const normQ = (q.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    return (q.id && r.id && q.id === r.id) || 
-           (q.code && r.code && q.code.trim().toUpperCase() === r.code.trim().toUpperCase()) || 
-           (normQ && qn && (normQ === qn || normQ.includes(qn) || qn.includes(normQ)));
-  });
-
-  if (matchQ && r.code) {
-    matchQ.code = r.code;
-    matchQ.hasGiftCode = true;
-    if (matchQ.id && !r.id) r.id = matchQ.id;
-  }
-
-  return true; // Luôn bảo toàn bản ghi có mã code trong savedRewards
+  return true;
 });
 
 // Khôi phục và đảm bảo các mã code hợp lệ của tài khoản không bao giờ bị mất
@@ -61,15 +37,11 @@ knownRewardCodes.forEach(kr => {
       expiry: "Còn hạn dùng"
     });
   }
-  const matchQ = savedQuests.find(q => (q.name || '').toLowerCase().includes(kr.questName.toLowerCase()));
-  if (matchQ) {
-    matchQ.code = kr.code;
-    matchQ.hasGiftCode = true;
-  }
 });
 
-localStorage.setItem("dqt_rewards", JSON.stringify(savedRewards));
-localStorage.setItem("dqt_quests", JSON.stringify(savedQuests));
+try {
+  localStorage.setItem("dqt_rewards", JSON.stringify(savedRewards));
+} catch {}
 
 function getTabFromUrl() {
   if (typeof window === "undefined") return "home";
@@ -80,7 +52,7 @@ function getTabFromUrl() {
 
 const state = {
   accounts: savedAccounts,
-  quests: savedQuests,
+  quests: [], // 100% nạp sống từ Discord API khi vào web hoặc bấm Quét Quest
   rewards: savedRewards,
   activeAccId: initialActiveId,
   activeTab: getTabFromUrl(),
@@ -98,25 +70,19 @@ if (state.accounts.length > 0 && (!state.activeAccId || !state.accounts.some(a =
   state.activeAccId = state.accounts[0].id;
 }
 
-// MẶC ĐỊNH KHI TẢI LẠI TRANG (F5 HOẶC MỚI VÀO WEB): DỪNG HẾT MỌI QUEST ĐANG CHẠY / HÀNG ĐỢI
-// Trạng thái luôn ở chế độ treo/dừng, chỉ khi người dùng chủ động bấm "Chạy" hoặc "Chạy Tất Cả" thì mới kích hoạt chạy
-state.quests.forEach(q => {
-  if (q.status === "running" || q.status === "queued") {
-    q.status = "pending";
-  }
-});
 state.isRunningAll = false;
-saveState();
 
 function saveState() {
-  localStorage.setItem("dqt_accounts", JSON.stringify(state.accounts));
-  localStorage.setItem("dqt_quests", JSON.stringify(state.quests));
-  localStorage.setItem("dqt_rewards", JSON.stringify(state.rewards));
-  if (state.activeAccId) {
-    localStorage.setItem("dqt_active_acc", state.activeAccId);
-  } else {
-    localStorage.removeItem("dqt_active_acc");
-  }
+  try {
+    localStorage.setItem("dqt_accounts", JSON.stringify(state.accounts));
+    // KHÔNG lưu state.quests vào localStorage: 100% dữ liệu sống từ Discord API, tránh lệch giữa các trình duyệt
+    localStorage.setItem("dqt_rewards", JSON.stringify(state.rewards));
+    if (state.activeAccId) {
+      localStorage.setItem("dqt_active_acc", state.activeAccId);
+    } else {
+      localStorage.removeItem("dqt_active_acc");
+    }
+  } catch {}
 }
 
 // Hiệu ứng Skeleton Loading cho Table
