@@ -354,12 +354,6 @@ export default async function handler(req, res) {
         hasGiftCode = true;
       }
 
-      // Nếu nhiệm vụ đã hoàn thành / nhận thưởng trong quá khứ nhưng Discord không trả về mã code (code = null),
-      // nghĩa là mã đã hết hạn sử dụng hoặc đợt phát code đã kết thúc -> Không còn Gift Code khả dụng
-      if (status === 'claimed' && !code) {
-        hasGiftCode = false;
-      }
-
       const startsAt = config.starts_at || q.starts_at || null;
       const appId = taskDef.applications?.[0]?.id ?? config.application?.id;
       const expiresAt = config.expires_at || q.expires_at || config.task_config_v2?.expires_at || config.task_config?.expires_at || null;
@@ -442,7 +436,7 @@ export default async function handler(req, res) {
     const claimedGiftQuests = deduplicatedQuests.filter(q => q.status === 'claimed' && q.hasGiftCode && !q.code);
     if (claimedGiftQuests.length > 0) {
       await Promise.allSettled(
-        claimedGiftQuests.slice(0, 5).map(async q => {
+        claimedGiftQuests.slice(0, 10).map(async q => {
           try {
             const codeRes = await fetch(`https://discord.com/api/v9/quests/${q.id}/reward-code`, {
               headers: desktopHeaders
@@ -460,6 +454,14 @@ export default async function handler(req, res) {
         })
       );
     }
+
+    // Sau khi quét /reward-code: nếu nhiệm vụ đã claimed mà Discord không trả về mã code (hoặc đợt phát quà đã kết thúc),
+    // đánh dấu hasGiftCode = false để loại bỏ nhiệm vụ rác không khả dụng
+    deduplicatedQuests.forEach(q => {
+      if (q.status === 'claimed' && !q.code) {
+        q.hasGiftCode = false;
+      }
+    });
 
     return res.status(200).json({
       success: true,

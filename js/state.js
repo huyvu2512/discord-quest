@@ -31,7 +31,7 @@ savedRewards = savedRewards.filter(r => {
   if (t.includes('orb') || t.includes('avatar') || t.includes('decoration') || t.includes('profile effect') || t.includes('badge')) return false;
   if (qn.includes('monopoly') || qn.includes('wizard101') || qn.includes('gravebound') || qn.includes('warthunder') || qn.includes('albion') || qn.includes('dumbways') || qn.includes('runescape') || qn.includes('phantomblade') || qn.includes('dawnwalker') || qn.includes('backrooms')) return false;
 
-  // Nếu trong savedQuests đã có quest này, đồng bộ mã code sang quest chính rồi xóa bản ghi thừa khỏi savedRewards để tránh lặp
+  // Đồng bộ mã code sang quest chính trong savedQuests nếu có
   const matchQ = savedQuests.find(q => {
     const normQ = (q.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     return (q.id && r.id && q.id === r.id) || 
@@ -39,13 +39,37 @@ savedRewards = savedRewards.filter(r => {
            (normQ && qn && (normQ === qn || normQ.includes(qn) || qn.includes(normQ)));
   });
 
-  if (matchQ) {
-    if (r.code && !matchQ.code) matchQ.code = r.code;
-    return false; // Loại bỏ bản ghi thừa khỏi savedRewards
+  if (matchQ && r.code) {
+    matchQ.code = r.code;
+    matchQ.hasGiftCode = true;
+    if (matchQ.id && !r.id) r.id = matchQ.id;
   }
 
-  return true;
+  return true; // Luôn bảo toàn bản ghi có mã code trong savedRewards
 });
+
+// Khôi phục và đảm bảo các mã code hợp lệ của tài khoản không bao giờ bị mất
+const knownRewardCodes = [
+  { questName: "Apex VS Street Fighter 6 Event", type: "Kung Fu Coach tracker set", code: "3Y22-PJSM-CVJM-ZCDY" },
+  { questName: "ROBLOX", type: "Blurple 8-Bit Wings", code: "026154290182" }
+];
+knownRewardCodes.forEach(kr => {
+  if (!savedRewards.some(r => r.code === kr.code)) {
+    savedRewards.push({
+      questName: kr.questName,
+      type: kr.type,
+      code: kr.code,
+      status: "claimed",
+      expiry: "Còn hạn dùng"
+    });
+  }
+  const matchQ = savedQuests.find(q => (q.name || '').toLowerCase().includes(kr.questName.toLowerCase()));
+  if (matchQ) {
+    matchQ.code = kr.code;
+    matchQ.hasGiftCode = true;
+  }
+});
+
 localStorage.setItem("dqt_rewards", JSON.stringify(savedRewards));
 localStorage.setItem("dqt_quests", JSON.stringify(savedQuests));
 

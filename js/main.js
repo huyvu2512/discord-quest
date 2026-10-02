@@ -982,7 +982,17 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
     const currentQueuedIds = new Set(state.quests.filter(q => q.status === "queued").map(q => q.id));
 
     // Nạp danh sách nhiệm vụ mới chuẩn từ API (đã được sắp xếp ổn định từ Backend)
+    // QUAN TRỌNG: Bảo toàn mã code đã lưu vì Discord /quests/@me/claimed không gửi mã code dạng văn bản trực tiếp
     state.quests = validQuests.map(nq => {
+      const prevQ = state.quests.find(q => q.id === nq.id || (q.name && nq.name && (q.name.trim().toLowerCase() === nq.name.trim().toLowerCase() || q.name.toLowerCase().includes(nq.name.toLowerCase()) || nq.name.toLowerCase().includes(q.name.toLowerCase()))));
+      const savedR = state.rewards.find(r => ((r.id && r.id === nq.id) || (r.questName && nq.name && (r.questName.trim().toLowerCase() === nq.name.trim().toLowerCase() || r.questName.toLowerCase().includes(nq.name.toLowerCase()) || nq.name.toLowerCase().includes(r.questName.toLowerCase())))) && r.code);
+
+      const existingCode = nq.code || prevQ?.code || savedR?.code || null;
+      if (existingCode) {
+        nq.code = existingCode;
+        nq.hasGiftCode = true;
+      }
+
       if (currentRunningId === nq.id && nq.status !== "completed" && nq.status !== "claimed") {
         nq.status = "running";
       } else if (currentQueuedIds.has(nq.id) && nq.status !== "completed" && nq.status !== "claimed") {
@@ -991,18 +1001,24 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
       return nq;
     });
 
-    // Thu thập các Gift code đã nhận thưởng vào tab Quà tặng
+    // Luôn bảo toàn các Gift code trong state.rewards
     state.quests.forEach(q => {
-      if (q.code && !state.rewards.some(r => r.code === q.code)) {
-        state.rewards.unshift({
-          id: `r_${q.id}`,
-          questName: q.name,
-          account: acc.username,
-          type: "Gift Code",
-          code: q.code,
-          link: "https://discord.com",
-          expiry: "30 ngày"
-        });
+      if (q.code) {
+        const existR = state.rewards.find(r => r.code === q.code || (r.questName && q.name && r.questName.toLowerCase() === q.name.toLowerCase()));
+        if (!existR) {
+          state.rewards.unshift({
+            id: q.id,
+            questName: q.name,
+            account: acc.username,
+            type: q.reward || "Gift Code",
+            code: q.code,
+            discordUrl: `https://discord.com/quests/${q.id}`,
+            expiry: "Còn hạn dùng"
+          });
+        } else {
+          existR.code = q.code;
+          if (q.id && !existR.id) existR.id = q.id;
+        }
       }
     });
 
