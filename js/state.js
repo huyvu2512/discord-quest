@@ -25,13 +25,11 @@ let savedRewards = JSON.parse(localStorage.getItem("dqt_rewards") || "[]");
 savedRewards = savedRewards.filter(r => {
   // Chỉ lưu giữ những phần thưởng thực sự CÓ MÃ CODE khả dụng
   if (!r.code || typeof r.code !== 'string' || !r.code.trim()) return false;
-  if (r.code?.includes('GENSHIN') || r.questName?.includes('Genshin') || r.questName?.includes('Honkai')) return false;
   const t = (r.type || '').toLowerCase();
-  const qn = (r.questName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (t.includes('orb') || t.includes('avatar') || t.includes('decoration') || t.includes('profile effect') || t.includes('badge')) return false;
-  if (qn.includes('monopoly') || qn.includes('wizard101') || qn.includes('gravebound') || qn.includes('warthunder') || qn.includes('albion') || qn.includes('dumbways') || qn.includes('runescape') || qn.includes('phantomblade') || qn.includes('dawnwalker') || qn.includes('backrooms')) return false;
+  if (t.includes('orb') || /avatar|decoration|profile effect|collectible|badge|khung/i.test(t)) return false;
 
   // Đồng bộ mã code sang quest chính trong savedQuests nếu có
+  const qn = (r.questName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const matchQ = savedQuests.find(q => {
     const normQ = (q.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     return (q.id && r.id && q.id === r.id) || 

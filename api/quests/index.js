@@ -307,48 +307,29 @@ export default async function handler(req, res) {
         }
       }
 
-      // Bổ sung thông tin phần thưởng cụ thể nếu Discord không gửi chi tiết trong lịch sử claimed
-      if (rewardLabel === 'Phần thưởng Discord') {
-        if (lowerName.includes('monopoly')) rewardLabel = '200 Orbs';
-        else if (lowerName.includes('dumb ways')) rewardLabel = 'Builder Bean Avatar Decoration';
-        else if (lowerName.includes('wolverine')) rewardLabel = "Marvel's Wolverine Avatar Decoration";
-        else if (lowerName.includes('runescape')) rewardLabel = 'Dragonwilds Avatar Decoration';
-        else if (lowerName.includes('roblox')) rewardLabel = 'Blurple 8-Bit Wings';
-        else if (lowerName.includes('apex')) rewardLabel = 'Kung Fu Coach tracker set';
-        else if (lowerName.includes('star wars')) rewardLabel = 'STAR WARS Zero Item Pack';
-        else if (lowerName.includes('phantom blade')) rewardLabel = 'Phantom Blade Avatar Set';
-        else if (lowerName.includes('subnautica')) rewardLabel = 'Subnautica 2 Badge & Boost';
-        else if (lowerName.includes('backrooms')) rewardLabel = 'Backrooms Movie Avatar Decoration';
-        else if (lowerName.includes('dawnwalker')) rewardLabel = 'Dawnwalker Avatar Set';
-        else if (lowerName.includes('nba')) rewardLabel = 'NBA 2K27 Content Pack';
-      }
-
-      // Nhận diện xem nhiệm vụ có tặng Gift Code / Mã quà hay không
-      let hasGiftCode = false;
-      if (code) {
-        hasGiftCode = true;
-      } else if (rewards.length > 0 && rewards.some(r => r.type === 1 || r.messages?.redemption_instructions)) {
-        hasGiftCode = true;
-      }
-
+      // Nhận diện loại phần thưởng 100% dựa trên cấu trúc dữ liệu chuẩn của Discord API
       const lowerRew = rewardLabel.toLowerCase();
-      const isOrb = lowerRew.includes('orb') || rewards.some(r => r.orb_quantity > 0 || r.type === 0);
-      const isAvatarDeco = lowerRew.includes('avatar') || lowerRew.includes('decoration') || 
-                           lowerRew.includes('profile effect') || lowerRew.includes('badge') ||
-                           lowerName.includes('albion') || lowerName.includes('dumb ways') ||
-                           lowerName.includes('wolverine') || lowerName.includes('runescape') ||
-                           lowerName.includes('phantom blade') || lowerName.includes('dawnwalker') ||
-                           lowerName.includes('backrooms');
 
+      // 1. Orbs: Kiểm tra thuộc tính orb_quantity, type = 0/4 của Discord hoặc tên có chứa "Orb"
+      const isOrb = rewards.some(r => (r.orb_quantity != null && r.orb_quantity > 0) || r.type === 0 || r.type === 4) || lowerRew.includes('orb');
+
+      // 2. Discord Collectibles (Avatar Decoration / Profile Effect / Badges):
+      // Thuộc tính chuẩn của Discord: type === 3, có sku_id (SKU trong Discord Store), hoặc tên vật phẩm trang trí
+      const isAvatarDeco = rewards.some(r => r.type === 3 || Boolean(r.sku_id)) || 
+                           /avatar|decoration|profile effect|collectible|badge|khung đại diện/i.test(lowerRew);
+
+      // 3. Gift Code / Mã đổi thưởng từ game đối tác bên thứ 3:
+      // Tự động nhận diện động 100% cho mọi game hiện tại và tương lai nếu:
+      // - Đã có chuỗi mã code trả về từ Discord
+      // - Hoặc reward type là mã đổi thưởng (type === 1 hoặc 2) hoặc có hướng dẫn nhập mã (redemption_instructions)
+      // - Hoặc tên quà chứa các từ khóa mã quà phổ biến (code, pack, bundle, item, skin, tracker, boost, key, dlc...)
+      let hasGiftCode = false;
       if (isOrb || isAvatarDeco) {
         hasGiftCode = false;
       } else if (
-        lowerRew.includes('code') || lowerRew.includes('pack') || lowerRew.includes('bundle') || 
-        lowerRew.includes('tracker') || lowerRew.includes('wings') || lowerRew.includes('skin') || 
-        lowerRew.includes('item') || lowerRew.includes('boost') || lowerRew.includes('dlc') ||
-        lowerName.includes('roblox') || lowerName.includes('apex') || lowerName.includes('star wars') || 
-        lowerName.includes('nba') || lowerName.includes('battlefield') || lowerName.includes('fortnite') ||
-        lowerName.includes('genshin') || lowerName.includes('honkai') || lowerName.includes('warframe')
+        Boolean(code) ||
+        rewards.some(r => r.type === 1 || r.type === 2 || Boolean(r.messages?.redemption_instructions) || Boolean(r.messages?.redemption_instructions_by_platform)) ||
+        /code|gift|pack|bundle|tracker|wings|skin|item|boost|dlc|key|set|trang phục|vật phẩm/i.test(lowerRew)
       ) {
         hasGiftCode = true;
       }

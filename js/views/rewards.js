@@ -15,33 +15,18 @@ function isGiftCodeQuest(q) {
   if (q.code) return true; // Đã nhận chuỗi mã quà
   if (q.hasGiftCode === true) return true;
 
-  const lowerName = (q.name || q.questName || "").toLowerCase();
   const lowerRew = (q.reward || q.type || "").toLowerCase();
 
   // 1. Loại trừ tuyệt đối Orbs (cộng trực tiếp vào ví Discord, không có mã)
-  if (lowerRew.includes('orb') || lowerRew.includes('orbs')) return false;
+  if (lowerRew.includes('orb')) return false;
 
   // 2. Loại trừ tuyệt đối Discord Avatar / Profile Effects / Badges (nhận thẳng vào avatar Discord)
-  if (
-    lowerRew.includes('avatar') || lowerRew.includes('decoration') || 
-    lowerRew.includes('profile effect') || lowerRew.includes('badge') ||
-    lowerName.includes('albion') || lowerName.includes('dumb ways') || 
-    lowerName.includes('wolverine') || lowerName.includes('runescape') ||
-    lowerName.includes('phantom blade') || lowerName.includes('dawnwalker') ||
-    lowerName.includes('backrooms')
-  ) {
+  if (/avatar|decoration|profile effect|collectible|badge|khung đại diện/i.test(lowerRew)) {
     return false;
   }
 
   // 3. Nhận diện các nhiệm vụ game bên thứ 3 có mã quà tặng / Gift Code
-  if (
-    lowerRew.includes('code') || lowerRew.includes('pack') || lowerRew.includes('bundle') ||
-    lowerRew.includes('tracker') || lowerRew.includes('wings') || lowerRew.includes('skin') ||
-    lowerRew.includes('item') || lowerRew.includes('boost') || lowerRew.includes('dlc') ||
-    lowerName.includes('roblox') || lowerName.includes('apex') || lowerName.includes('star wars') ||
-    lowerName.includes('nba') || lowerName.includes('battlefield') || lowerName.includes('fortnite') ||
-    lowerName.includes('genshin') || lowerName.includes('honkai') || lowerName.includes('warframe')
-  ) {
+  if (/code|gift|pack|bundle|tracker|wings|skin|item|boost|dlc|key|set|trang phục|vật phẩm/i.test(lowerRew)) {
     return true;
   }
 
@@ -49,14 +34,6 @@ function isGiftCodeQuest(q) {
 }
 
 function getRedeemUrl(quest) {
-  const lower = ((quest.name || quest.questName || "") + " " + (quest.reward || quest.type || "")).toLowerCase();
-  if (lower.includes('roblox')) return 'https://www.roblox.com/redeem';
-  if (lower.includes('apex') || lower.includes('battlefield') || lower.includes('star wars')) return 'https://www.ea.com/redeem';
-  if (lower.includes('genshin')) return 'https://genshin.hoyoverse.com/en/gift';
-  if (lower.includes('honkai')) return 'https://hsr.hoyoverse.com/gift';
-  if (lower.includes('fortnite')) return 'https://www.fortnite.com/redeem';
-  if (lower.includes('warframe')) return 'https://www.warframe.com/promocode';
-  if (lower.includes('nba')) return 'https://www.nba2k.com/redeem';
   return quest.discordUrl || (quest.id ? `https://discord.com/quests/${quest.id}` : 'https://discord.com/quest-home');
 }
 
