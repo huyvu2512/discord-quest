@@ -189,17 +189,22 @@ export default async function handler(req, res) {
       const decData = resItem.data;
       if (!decData) return;
       const sealed = decData.traffic_metadata_sealed || decData.quest?.traffic_metadata_sealed || null;
+
+      // Ưu tiên quest chính từ Decision Engine. Chỉ dùng creative_content nếu decData không có trường quest
       if (decData.quest && (decData.quest.id || decData.quest.quest_id)) {
         decData.quest.traffic_metadata_sealed = decData.quest.traffic_metadata_sealed || sealed;
+        if (decData.creative?.creative_content?.assets && decData.quest.config) {
+          decData.quest.config.assets = decData.quest.config.assets || decData.creative.creative_content.assets;
+        }
         mergeQuest(decData.quest, `decision_p${placement}`);
-      }
-      if (decData.creative?.creative_content && (decData.creative.creative_content.id || decData.creative.creative_content.quest_id)) {
+      } else if (decData.creative?.creative_content && (decData.creative.creative_content.id || decData.creative.creative_content.quest_id)) {
         decData.creative.creative_content.traffic_metadata_sealed = decData.creative.creative_content.traffic_metadata_sealed || sealed;
         mergeQuest(decData.creative.creative_content, `decision_p${placement}`);
       }
+
       if (Array.isArray(decData.decisions)) {
         decData.decisions.forEach(d => {
-          const q = d.quest || d.creative?.creative_content || d.creative;
+          const q = d.quest || d.creative?.creative_content;
           if (q && (q.id || q.quest_id)) {
             q.traffic_metadata_sealed = q.traffic_metadata_sealed || d.traffic_metadata_sealed || sealed;
             mergeQuest(q, `decision_p${placement}`);
@@ -372,15 +377,132 @@ export default async function handler(req, res) {
       return true;
     });
 
-    // Loại bỏ trùng lặp chuẩn xác theo Quest ID (Snowflake duy nhất của Discord)
-    // Giữ nguyên vẹn tất cả quest có ID khác nhau (bao gồm các đợt nhiệm vụ mới/lặp lại mùa như Typhoeus)
-    const seenIds = new Set();
-    const deduplicatedQuests = [];
-    for (const q of formattedQuests) {
-      if (!q.id || seenIds.has(q.id)) continue;
-      seenIds.add(q.id);
-      deduplicatedQuests.push(q);
+    // -------------------------------------------------------------------------
+    // BỘ LỌC TRÙNG LẶP THÔNG MINH (SMART DEDUPLICATION)
+    // 100% dữ liệu từ Discord API nhưng loại bỏ triệt để các trường hợp trùng lặp:
+    // 1. Loại bỏ các nhiệm vụ pending "bóng ma" khi người dùng ĐÃ hoàn thành / nhận thưởng trong cùng đợt
+    // 2. Hợp nhất các bản ghi trùng placement/creative của cùng một chiến dịch pending
+    // 3. Giữ nguyên 100% các phần thưởng khác nhau (ví dụ 2 vật phẩm khác nhau của Matchbox)
+    // 4. Giữ nguyên 100% các đợt nhiệm vụ mùa mới (như Typhoeus tháng 10 vs tháng 9)
+    // -------------------------------------------------------------------------
+
+    const cleanStr = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+    // 1. BƯỚC 1: Tìm các quest đã claimed / completed / queued
+    const activeOrDone = formattedQuests.filter(q => q.status !== 'pending');
+
+    const isGhostPendingOf = (p, c) => {
+      if (p.taskType !== c.taskType) return false;
+      // Không so sánh với nhiệm vụ đã hết hạn từ quá khứ
+      if (c.isExpired) return false;
+
+      const isGame = p.taskType === 'PLAY_ON_DESKTOP' || p.taskType === 'STREAM_ON_DESKTOP' || p.taskType === 'PLAY_ACTIVITY' || p.taskType === 'ACHIEVEMENT_IN_ACTIVITY';
+
+      // a) Nhiệm vụ chơi game (PC/Console): Trùng applicationId thực sự trong cùng đợt chiến dịch còn hạn
+      if (isGame && p.applicationId && c.applicationId && p.applicationId === c.applicationId) {
+        const sP = p.startsAt ? p.startsAt.slice(0, 10) : '';
+        const sC = c.startsAt ? c.startsAt.slice(0, 10) : '';
+        const eP = p.expiresAt ? p.expiresAt.slice(0, 10) : '';
+        const eC = c.expiresAt ? c.expiresAt.slice(0, 10) : '';
+        if ((sP && sP === sC) || (eP && eP === eC)) {
+          return true;
+        }
+      }
+
+      // b) Nhiệm vụ Video: URL video của quest c chứa ID của quest p (creative cutdown variant) hoặc cùng file video
+      if (!isGame) {
+        if (c.videoUrl && p.id && c.videoUrl.includes(p.id)) return true;
+        if (p.videoUrl && c.id && p.videoUrl.includes(c.id)) return true;
+        if (c.videoUrl && p.videoUrl && c.videoUrl === p.videoUrl) return true;
+      }
+
+      return false;
+    };
+
+    // Loại bỏ các quest pending "bóng ma" đã được làm/claim
+    const validQuests = formattedQuests.filter(q => {
+      if (q.status !== 'pending') return true;
+      return !activeOrDone.some(c => isGhostPendingOf(q, c));
+    });
+
+    // 2. BƯỚC 2: So sánh độ ưu tiên khi hợp nhất 2 bản ghi trùng lặp
+    const compareQuestPriority = (a, b) => {
+      // Ưu tiên trạng thái: running (5) > queued (4) > completed (3) > claimed (2) > pending (1)
+      const rank = { running: 5, queued: 4, completed: 3, claimed: 2, pending: 1 };
+      const diffRank = (rank[b.status] || 0) - (rank[a.status] || 0);
+      if (diffRank !== 0) return diffRank;
+
+      // Ưu tiên tiến độ cao hơn
+      const diffProg = (b.progSec || 0) - (a.progSec || 0);
+      if (diffProg !== 0) return diffProg;
+
+      // Chưa hết hạn ưu tiên hơn đã hết hạn
+      if (!a.isExpired && b.isExpired) return -1;
+      if (a.isExpired && !b.isExpired) return 1;
+
+      // Ưu tiên có trafficMetadataSealed (để play video)
+      if (b.trafficMetadataSealed && !a.trafficMetadataSealed) return 1;
+      if (!b.trafficMetadataSealed && a.trafficMetadataSealed) return -1;
+
+      // Ưu tiên có videoUrl
+      if (b.videoUrl && !a.videoUrl) return 1;
+      if (!b.videoUrl && a.videoUrl) return -1;
+
+      // Ưu tiên ID Snowflake lớn hơn (đối tượng mới hơn từ Discord)
+      return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+    };
+
+    // 3. BƯỚC 3: Nhóm theo Campaign Key và hợp nhất
+    const campaignMap = new Map();
+    for (const q of validQuests) {
+      const name = cleanStr(q.name);
+      const taskType = String(q.taskType || '');
+      const reward = cleanStr(q.reward);
+      const targetSec = Number(q.targetSec) || 0;
+      const sDate = q.startsAt ? q.startsAt.slice(0, 10) : '';
+      const eDate = q.expiresAt ? q.expiresAt.slice(0, 10) : '';
+      const appId = q.applicationId ? String(q.applicationId) : '';
+      
+      // Với các quest đã claim ở các mốc thời gian khác nhau (ví dụ F1 Clash các tuần trước hoặc AION 2 các đợt trước),
+      // giữ lại lịch sử claim riêng biệt theo claimedAt
+      const claimDate = (q.status === 'claimed' && q.claimedAt) ? q.claimedAt.slice(0, 10) : '';
+
+      const key = `${name}#${taskType}#${reward}#${targetSec}#${appId}#${sDate}#${eDate}#${claimDate}`;
+
+      if (!campaignMap.has(key)) {
+        campaignMap.set(key, q);
+      } else {
+        const existing = campaignMap.get(key);
+        const prio = compareQuestPriority(existing, q);
+        if (prio > 0) {
+          // q tốt hơn existing -> chọn q, bổ sung metadata từ existing nếu q thiếu
+          const merged = {
+            ...q,
+            trafficMetadataSealed: q.trafficMetadataSealed || existing.trafficMetadataSealed,
+            videoUrl: q.videoUrl || existing.videoUrl,
+            videoThumbnail: q.videoThumbnail || existing.videoThumbnail,
+            code: q.code || existing.code
+          };
+          campaignMap.set(key, merged);
+        } else {
+          // existing tốt hơn -> bổ sung metadata từ q nếu existing thiếu
+          if (!existing.trafficMetadataSealed && q.trafficMetadataSealed) {
+            existing.trafficMetadataSealed = q.trafficMetadataSealed;
+          }
+          if (!existing.videoUrl && q.videoUrl) {
+            existing.videoUrl = q.videoUrl;
+          }
+          if (!existing.videoThumbnail && q.videoThumbnail) {
+            existing.videoThumbnail = q.videoThumbnail;
+          }
+          if (!existing.code && q.code) {
+            existing.code = q.code;
+          }
+        }
+      }
     }
+
+    const deduplicatedQuests = Array.from(campaignMap.values());
 
     // Sắp xếp danh sách trả về một cách ổn định, đồng bộ (deterministic sort)
     deduplicatedQuests.sort((a, b) => {
