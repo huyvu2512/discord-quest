@@ -73,7 +73,7 @@ export default async function handler(req, res) {
         payload.application_id = applicationId;
       }
       headers = DISCORD_HEADERS(token, buildNum);
-    } else if (taskType === 'PLAY_ACTIVITY') {
+    } else if (taskType === 'PLAY_ACTIVITY' || taskType === 'ACHIEVEMENT_IN_ACTIVITY') {
       // Hỗ trợ stream_key cho nhiệm vụ Discord Activity
       discordUrl = `https://discord.com/api/v9/quests/${questId}/heartbeat`;
       payload = {

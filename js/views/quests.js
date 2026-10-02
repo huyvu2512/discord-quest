@@ -180,9 +180,12 @@ function renderQuests() {
   }
 
   tbody.innerHTML = activeQuests.map(q => {
-    const isDone = q.status === "completed" || q.status === "claimed";
+    const isDone = q.status === "completed" || q.status === "claimed" || (q.targetSec > 0 && q.progSec >= q.targetSec);
     if (isDone) {
       q.progSec = q.targetSec;
+      if (q.status !== "claimed") {
+        q.status = "completed";
+      }
     }
     const pct = isDone ? 100 : Math.min(99, Math.floor((q.progSec / q.targetSec) * 100));
     const remain = isDone ? 0 : Math.max(0, q.targetSec - q.progSec);

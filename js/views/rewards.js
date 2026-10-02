@@ -80,7 +80,7 @@ function getRewardItems() {
   (state.quests || []).forEach(q => {
     if (!isGiftCodeQuest(q)) return;
 
-    const isDone = q.status === "completed" || q.status === "claimed";
+    const isDone = q.status === "completed" || q.status === "claimed" || (q.targetSec > 0 && q.progSec >= q.targetSec);
 
     // 1. Bỏ qua nhiệm vụ đã claimed nhưng không có mã code (mã hết hạn hoặc đợt phát code đã đóng)
     if (q.status === "claimed" && (!q.code || typeof q.code !== 'string' || !q.code.trim())) {
