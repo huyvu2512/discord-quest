@@ -129,15 +129,6 @@ function renderRunner() {
       actionBtn = `<button class="btn btn-secondary btn-run btn-sm" onclick="startQuest('${q.id}')">Chạy</button>`;
     }
 
-    const isVideo = q.taskType === 'WATCH_VIDEO' || q.taskType === 'WATCH_VIDEO_ON_MOBILE' || (q.typeName && q.typeName.includes('Video'));
-    let videoActions = "";
-    if (isVideo && !isDone) {
-      if (q.videoUrl) {
-        videoActions += `<button class="btn btn-secondary btn-sm" onclick="openVideoPlayerModal('${q.id}')" title="Xem video trực tiếp trên Web" style="margin-left: 4px; padding: 4px 7px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align: -1px; margin-right: 2px;"><path d="M8 5v14l11-7z"/></svg>Xem</button>`;
-      }
-      videoActions += `<a href="${q.discordUrl || 'https://discord.com/quests/' + q.id}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="Mở trang xem trên Discord" style="margin-left: 4px; padding: 4px 7px; display: inline-flex; align-items: center;"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></a>`;
-    }
-
     return `
       <tr>
         <td>
@@ -161,7 +152,7 @@ function renderRunner() {
           ${isDone ? 'Hoàn thành' : fmtSec(remain)}
         </td>
         <td style="text-align: right; white-space: nowrap;">
-          ${actionBtn}${videoActions}
+          ${actionBtn}
         </td>
       </tr>
     `;
@@ -221,81 +212,4 @@ window.claimQuest = function(id) {
 
   addLog("info", `[Nhận quà] Đã mở link Discord cho "${q.name}". Sau khi bạn nhận quà trên Discord, web sẽ tự đồng bộ trạng thái từ API.`);
   toast(`Đang mở Discord để nhận quà...`, "info");
-};
-
-// Video Player Modal Trực Tiếp trên Web
-window.openVideoPlayerModal = function(id) {
-  const q = state.quests.find(x => x.id === id);
-  if (!q) return;
-
-  const modal = document.getElementById("modal-video-player");
-  if (!modal) return;
-
-  const titleEl = document.getElementById("video-modal-title");
-  const subEl = document.getElementById("video-modal-sub");
-  const videoEl = document.getElementById("video-modal-player");
-  const linkEl = document.getElementById("video-modal-discord-link");
-  const statusEl = document.getElementById("video-modal-status");
-
-  if (titleEl) titleEl.textContent = q.name;
-  if (subEl) subEl.textContent = `${q.publisher || 'Discord'} • Mục tiêu: ${fmtSec(q.targetSec)}`;
-  if (linkEl) linkEl.href = q.discordUrl || `https://discord.com/quests/${q.id}`;
-  if (statusEl) statusEl.innerHTML = `<span style="color: var(--text-muted);">Sẵn sàng phát video...</span>`;
-
-  if (videoEl) {
-    videoEl.src = q.videoUrl || '';
-    videoEl.currentTime = q.progSec || 0;
-
-    let lastReportTime = 0;
-    videoEl.ontimeupdate = async () => {
-      const cur = videoEl.currentTime;
-      if (cur - lastReportTime >= 5 || cur >= q.targetSec) {
-        lastReportTime = cur;
-        const acc = state.accounts.find(a => a.id === state.activeAccId);
-        if (!acc || !acc.token) return;
-
-        if (statusEl) statusEl.innerHTML = `<span style="color: var(--accent);">Đang đồng bộ tiến trình (${Math.floor(cur)}s / ${q.targetSec}s)...</span>`;
-
-        try {
-          const res = await fetch('/api/quests/progress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              token: acc.token,
-              questId: q.id,
-              taskType: q.taskType,
-              timestamp: Number(cur.toFixed(4)),
-              trafficMetadataSealed: q.trafficMetadataSealed
-            })
-          });
-          const data = await res.json();
-          if (data.success) {
-            q.progSec = Math.min(q.targetSec, Math.floor(cur));
-            if (cur >= q.targetSec || data.user_status?.completed_at) {
-              q.status = 'completed';
-              q.progSec = q.targetSec;
-              if (statusEl) statusEl.innerHTML = `<span style="color: var(--green); font-weight: 600;">★ Đã hoàn thành 100%! Bấm "Nhận quà" bên dưới.</span>`;
-              toast(`Hoàn thành "${q.name}"!`, "success");
-            }
-            saveState();
-            renderRunner();
-          }
-        } catch {}
-      }
-    };
-  }
-
-  modal.classList.remove("hidden");
-};
-
-window.closeVideoPlayerModal = function() {
-  const modal = document.getElementById("modal-video-player");
-  const videoEl = document.getElementById("video-modal-player");
-  if (videoEl) {
-    videoEl.pause();
-    videoEl.ontimeupdate = null;
-    videoEl.src = "";
-  }
-  if (modal) modal.classList.add("hidden");
-  renderRunner();
 };
