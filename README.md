@@ -33,26 +33,30 @@ Hệ thống cho phép quét kho nhiệm vụ chính thức từ Discord qua API
 
 ## Tính năng chính
 
-- **Quét kho nhiệm vụ Discord đa nguồn:**
-  - Đồng bộ cùng lúc 3 luồng dữ liệu Discord: `/quests/@me` (Desktop Client), Web Quest Home Showcase và `/quests/@me/claimed` (Nhiệm vụ đã hoàn thành).
-  - Tự động nhận diện chính xác phần thưởng (Orbs, Avatar Decoration, Trang phục game, 2XP Boost, Gift Code).
-  - Tự động lọc bỏ các nhiệm vụ đã hết hạn thực tế, giữ danh sách luôn tinh gọn.
+- **Quét kho nhiệm vụ Discord đa nguồn & đa nền tảng:**
+  - Đồng bộ cùng lúc tất cả luồng dữ liệu từ Discord: `/quests/@me` (Desktop Client), Web Quest Home Showcase, Mobile Feed và `/quests/@me/claimed` (Nhiệm vụ đã hoàn thành).
+  - Tích hợp **Discord Decision Engine (Placements 0 ➔ 6)** với đầy đủ headers Desktop, Web và Mobile để quét trúng mọi chiến dịch tài trợ video/game mới nhất (Take-Two, Arknights, March of Giants, CONTROL Resonant...).
+  - **Đồng bộ thuần API (Zero Stale Cache):** Loại bỏ hoàn toàn việc đọc trạng thái cũ từ LocalStorage; 100% dữ liệu hiển thị lấy trực tiếp từ Discord API, đảm bảo đồng nhất tuyệt đối trên mọi thiết bị và trình duyệt.
+  - Tự động nhận diện chính xác phần thưởng: Orbs, Avatar Decoration, Profile Effect, Trang phục game, 2XP Boost, Gift Code.
+  - Tự động lọc bỏ các nhiệm vụ rác hoặc đã hết hạn thực tế, giữ danh sách luôn tinh gọn.
+- **Thêm nhiệm vụ bằng Link hoặc ID Discord (Custom Quest Lookup):**
+  - Hỗ trợ thêm nhanh bất kỳ nhiệm vụ nào bằng cách dán URL (`https://discord.com/quests/...`) hoặc dãy số Snowflake ID.
+  - Tự động tra cứu qua API `/api/quests/lookup` và lưu trữ đồng bộ vĩnh viễn vào hệ thống.
 - **Giả lập tiến độ thông minh (Heartbeat Spoofing):**
-  - **Nhiệm vụ Xem Video:** Tự động phát hiện video/trailer game, định kỳ gửi tiến trình `video-progress` từng giây/khoảng thời gian hợp lệ đúng chuẩn Discord Client v9.
-  - **Nhiệm vụ Chơi Game:** Giả lập `console-heartbeat` hoặc `heartbeat` an toàn.
+  - **Nhiệm vụ Xem Video:** Tự động phát hiện video/trailer game, định kỳ gửi tiến trình `video-progress` từng giây thời gian thực (1s Real-time Wall-Clock), tự động kèm `traffic_metadata_sealed` đúng chuẩn Discord Client v9 build 504649.
+  - **Nhiệm vụ Chơi Game:** Giả lập `console-heartbeat` hoặc `heartbeat` an toàn, tích lũy đủ 15 phút.
 - **Trình điều phối hàng đợi (Sequential Queue Runner):**
   - Đảm bảo tính tuần tự: Luôn chỉ duy nhất 1 nhiệm vụ được kích hoạt chạy tại một thời điểm để bảo vệ an toàn cho tài khoản.
   - Tự động bắt đầu nhiệm vụ tiếp theo trong hàng đợi ngay khi nhiệm vụ hiện tại chạm mốc 100%.
 - **Cơ chế nhận thưởng an toàn (Safe Discord Claim):**
   - Tách bạch quy trình nhận quà: Nhấp nút **"Nhận quà"** sẽ mở trực tiếp trang quest trên Discord (`discord.com/quests/{id}`) trong tab mới để người dùng tự xác minh Captcha chính chủ.
   - **Đồng bộ trạng thái từ API thật:** Không tự ý đánh dấu hoàn thành; hệ thống tự động kiểm tra lại API Discord (khi chuyển tab hoặc sau khi mở link) để chỉ chuyển sang **"Hoàn thành"** khi Discord đã xác nhận quà được nhận vào tài khoản.
+- **Kho lưu trữ & Trích xuất Gift Code tự động:**
+  - Tự động kết nối tới endpoint `/reward-code` của Discord để lấy mã Gift Code thật của các nhiệm vụ game đối tác đã nhận thưởng.
+  - Hỗ trợ sao chép 1 chạm và quản lý thời hạn sử dụng.
 - **Quản lý đa tài khoản & Khôi phục phiên:**
   - Hỗ trợ thêm và chuyển đổi giữa nhiều tài khoản Discord nhanh chóng.
   - Tự động lấy avatar, username, discriminator và số dư điểm ảo Orbs thật từ Discord.
-  - Lưu trữ phiên làm việc an toàn trong LocalStorage trình duyệt.
-- **Kho lưu trữ Gift Code:**
-  - Tự động ghi nhận mã Gift Code của các nhiệm vụ đã nhận thưởng.
-  - Hỗ trợ sao chép 1 chạm và kiểm tra thời hạn sử dụng.
 - **Nhật ký thời gian thực (Live Execution Logs):**
   - Theo dõi mọi tiến trình gửi nhịp tim, hoàn thành và phản hồi từ Discord qua giao diện bảng điều khiển mô phỏng Terminal.
 - **Tối ưu SEO & Theo dõi người dùng Vercel Analytics:**
@@ -81,14 +85,16 @@ Hệ thống cho phép quét kho nhiệm vụ chính thức từ Discord qua API
 discord-quest/
 ├── api/                          # Vercel Serverless Functions
 │   ├── auth/
-│   │   ├── logout.js             # API xử lý đăng xuất phiên
-│   │   ├── refresh.js            # API làm mới dữ liệu tài khoản
+│   │   ├── logout.js             # API xử lý đăng xuất phiên an toàn
+│   │   ├── refresh.js            # API làm mới dữ liệu và hồ sơ tài khoản
 │   │   └── verify.js             # API xác thực token và nạp thông tin user
 │   ├── ip.js                     # API nhận diện IP mạng của client
 │   └── quests/
 │       ├── enroll.js             # API gửi yêu cầu ghi danh nhiệm vụ
 │       ├── index.js              # API quét toàn bộ quest, lọc hết hạn & số dư Orbs
-│       └── progress.js           # API giả lập nhịp tim video & game
+│       ├── lookup.js             # API tra cứu nhiệm vụ theo Link hoặc ID Discord
+│       ├── progress.js           # API giả lập nhịp tim video & game chuẩn Discord
+│       └── reward-code.js        # API trích xuất mã quà tặng Gift Code chính thức
 ├── assets/
 │   ├── images/
 │   │   ├── logo.png              # Logo ứng dụng
@@ -99,11 +105,11 @@ discord-quest/
 │   ├── components.css            # Thư viện component: nút, bảng, tag, thanh tiến trình
 │   ├── home.css                  # Bố cục và style cho bảng điều khiển Tổng quan
 │   ├── layout.css                # Bố cục khung sườn Header, Sidebar và Grid
-│   ├── modal.css                 # Hộp thoại modal thêm tài khoản
+│   ├── modal.css                 # Hộp thoại modal thêm tài khoản & thêm quest
 │   └── variables.css             # Hệ màu, biến thiết kế và chủ đề Discord Dark
 ├── js/
 │   ├── main.js                   # Điểm khởi đầu ứng dụng, điều phối tab và auto-runner
-│   ├── state.js                  # Quản lý trạng thái trung tâm (Store & LocalStorage)
+│   ├── state.js                  # Quản lý trạng thái trung tâm (Store thuần API)
 │   └── views/
 │       ├── accounts.js           # Logic hiển thị và thao tác quản lý tài khoản
 │       ├── logs.js               # Logic hiển thị nhật ký hệ thống thời gian thực
@@ -180,7 +186,7 @@ Hệ thống cung cấp các API Serverless chạy trên nền tảng Vercel Fun
 ### 1. Thông tin mạng (`/api/ip`)
 - **GET `/api/ip`**
   - Trả về địa chỉ IP mạng thật của client.
-  - Phản hồi: `{ "success": true, "ip": "14.241.xxx.xxx" }`
+  - Phản hồi: `{ "success": true, "ip": "42.117.xx.xx" }`
 
 ### 2. Xác thực tài khoản (`/api/auth/verify`)
 - **POST `/api/auth/verify`**
@@ -188,22 +194,44 @@ Hệ thống cung cấp các API Serverless chạy trên nền tảng Vercel Fun
   - Body: `{ "token": "YOUR_DISCORD_TOKEN" }`
   - Phản hồi: `{ "success": true, "user": { "id": "...", "username": "...", "global_name": "...", "avatar": "..." } }`
 
-### 3. Danh sách nhiệm vụ (`/api/quests`)
+### 3. Làm mới tài khoản (`/api/auth/refresh`)
+- **POST `/api/auth/refresh`**
+  - Kiểm tra tính hợp lệ của token và cập nhật thông tin mới nhất từ Discord.
+  - Body: `{ "token": "YOUR_DISCORD_TOKEN" }`
+
+### 4. Đăng xuất phiên (`/api/auth/logout`)
+- **POST `/api/auth/logout`**
+  - Xóa phiên làm việc hiện tại an toàn.
+
+### 5. Danh sách nhiệm vụ (`/api/quests`)
 - **GET `/api/quests?token=YOUR_DISCORD_TOKEN`**
-  - Đồng bộ toàn bộ nhiệm vụ từ Discord (Desktop, Web, Claimed), tính toán tiến trình chuẩn, loại trừ nhiệm vụ hết hạn và lấy số dư Orbs.
+  - Đồng bộ toàn bộ nhiệm vụ từ Discord (Desktop, Web, Mobile Decisions, Claimed), tính toán tiến trình chuẩn, loại trừ nhiệm vụ hết hạn và lấy số dư Orbs.
+  - Query tùy chọn: `customIds=155...,155...` để quét thêm các nhiệm vụ thêm thủ công.
   - Phản hồi: `{ "success": true, "balance": 700, "quests": [...] }`
 
-### 4. Ghi danh nhiệm vụ (`/api/quests/enroll`)
+### 6. Ghi danh nhiệm vụ (`/api/quests/enroll`)
 - **POST `/api/quests/enroll`**
-  - Gửi yêu cầu đăng ký tham gia nhiệm vụ tới Discord.
+  - Gửi yêu cầu đăng ký tham gia nhiệm vụ tới Discord kèm `traffic_metadata_sealed`.
   - Body: `{ "token": "YOUR_DISCORD_TOKEN", "questId": "..." }`
   - Phản hồi: `{ "success": true, "enrolled": true }`
 
-### 5. Gửi tiến trình nhiệm vụ (`/api/quests/progress`)
+### 7. Gửi tiến trình nhiệm vụ (`/api/quests/progress`)
 - **POST `/api/quests/progress`**
-  - Gửi nhịp tim video-progress hoặc game heartbeat mô phỏng client Discord.
-  - Body: `{ "token": "...", "questId": "...", "taskType": "WATCH_VIDEO", "progress": 30 }`
+  - Gửi tiến trình `video-progress` hoặc game `heartbeat` mô phỏng client Discord thật build 504649.
+  - Body: `{ "token": "...", "questId": "...", "taskType": "WATCH_VIDEO", "timestamp": 18, "applicationId": "..." }`
   - Phản hồi: `{ "success": true, "user_status": { ... } }`
+
+### 8. Tra cứu nhiệm vụ bằng Link / ID (`/api/quests/lookup`)
+- **POST `/api/quests/lookup`**
+  - Tra cứu thông tin chi tiết của bất kỳ Quest nào qua đường link Discord hoặc Snowflake ID.
+  - Body: `{ "token": "...", "questId": "https://discord.com/quests/155..." }`
+  - Phản hồi: `{ "success": true, "quest": { ... } }`
+
+### 9. Trích xuất Gift Code (`/api/quests/reward-code`)
+- **POST `/api/quests/reward-code`**
+  - Lấy mã quà tặng dạng văn bản trực tiếp từ Discord API cho các quest đã nhận thưởng.
+  - Body: `{ "token": "...", "questId": "..." }`
+  - Phản hồi: `{ "success": true, "code": "XXXX-XXXX-XXXX" }`
 
 ---
 
