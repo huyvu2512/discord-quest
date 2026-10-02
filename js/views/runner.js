@@ -259,6 +259,9 @@ window.claimQuest = async function(id, btn) {
     if (data.requireCaptcha) {
       addLog("warn", `[Nhận quà] Discord yêu cầu xác thực Captcha cho "${q.name}".`);
       toast(`Discord yêu cầu Captcha: "${q.name}"`, "warning");
+      if (typeof window.openCaptchaModal === 'function') {
+        window.openCaptchaModal(q, data);
+      }
       return;
     }
 
@@ -309,5 +312,146 @@ window.claimQuest = async function(id, btn) {
       btn.disabled = false;
       btn.innerHTML = origBtnHtml || "Nhận quà";
     }
+  }
+};
+
+// ==================== HCAPTCHA MODAL HANDLERS ====================
+window.openCaptchaModal = function(q, data) {
+  const modal = document.getElementById("modal-captcha");
+  if (!modal) return;
+
+  const container = document.getElementById("hcaptcha-widget-container");
+  const statusMsg = document.getElementById("captcha-status-msg");
+  const fallbackBox = document.getElementById("captcha-fallback-box");
+  const fallbackLink = document.getElementById("captcha-fallback-link");
+
+  if (fallbackBox) fallbackBox.classList.add("hidden");
+  if (fallbackLink) {
+    fallbackLink.href = q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home');
+  }
+  if (statusMsg) statusMsg.textContent = "Đang tải xác minh hCaptcha...";
+
+  modal.classList.add("open");
+
+  const sitekey = data.captchaSitekey || "4bb5aadb-b50f-4f23-b1c2-92b59ba400d5";
+
+  const renderWidget = () => {
+    if (container) container.innerHTML = "";
+    try {
+      if (window.hcaptcha && typeof window.hcaptcha.render === 'function') {
+        if (statusMsg) statusMsg.textContent = "";
+        window.hcaptcha.render("hcaptcha-widget-container", {
+          sitekey: sitekey,
+          ...(data.captchaRqdata ? { rqdata: data.captchaRqdata } : {}),
+          theme: "dark",
+          callback: async function(token) {
+            if (statusMsg) statusMsg.textContent = "Đang gửi mã xác thực tới Discord...";
+            await window.submitClaimWithCaptcha(q, token, data.captchaRqtoken);
+          },
+          "error-callback": function(err) {
+            console.warn("[hCaptcha Error]", err);
+            if (statusMsg) statusMsg.textContent = "";
+            if (fallbackBox) fallbackBox.classList.remove("hidden");
+          },
+          "expired-callback": function() {
+            if (statusMsg) statusMsg.textContent = "Mã xác thực đã hết hạn, vui lòng tích lại.";
+          }
+        });
+      } else {
+        if (statusMsg) statusMsg.textContent = "Chưa thể kết nối tới thư viện hCaptcha.";
+        if (fallbackBox) fallbackBox.classList.remove("hidden");
+      }
+    } catch (err) {
+      console.warn("[hCaptcha Render Catch]", err);
+      if (statusMsg) statusMsg.textContent = "";
+      if (fallbackBox) fallbackBox.classList.remove("hidden");
+    }
+  };
+
+  if (window.hcaptcha) {
+    renderWidget();
+  } else {
+    let checkCount = 0;
+    const interval = setInterval(() => {
+      checkCount++;
+      if (window.hcaptcha) {
+        clearInterval(interval);
+        renderWidget();
+      } else if (checkCount > 25) {
+        clearInterval(interval);
+        if (statusMsg) statusMsg.textContent = "Không thể tải widget hCaptcha.";
+        if (fallbackBox) fallbackBox.classList.remove("hidden");
+      }
+    }, 200);
+  }
+};
+
+window.submitClaimWithCaptcha = async function(q, captchaKey, captchaRqtoken) {
+  const currentAcc = state.accounts.find(a => a.id === state.activeAccId) || state.accounts[0];
+  if (!currentAcc || !currentAcc.token) return;
+
+  const modal = document.getElementById("modal-captcha");
+  addLog("info", `[Nhận quà] Đang gửi xác thực Captcha cho "${q.name}"...`);
+
+  try {
+    const res = await fetch('/api/quests/claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: currentAcc.token,
+        questId: q.id,
+        taskType: q.taskType || null,
+        trafficMetadataSealed: q.trafficMetadataSealed || null,
+        captchaKey: captchaKey,
+        captchaRqtoken: captchaRqtoken || null
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (modal) modal.classList.remove("open");
+
+    if (res.ok && data.success) {
+      q.status = 'claimed';
+      q.claimedAt = data.claimedAt || new Date().toISOString();
+      if (data.code) {
+        q.code = data.code;
+        q.hasGiftCode = true;
+      }
+      if (typeof data.balance === 'number') {
+        currentAcc.orbs = data.balance;
+      }
+
+      if (q.code) {
+        if (!Array.isArray(state.rewards)) state.rewards = [];
+        const existR = state.rewards.find(r => r.id === q.id || r.code === q.code);
+        if (!existR) {
+          state.rewards.unshift({
+            id: q.id,
+            questName: q.name,
+            account: currentAcc.username ? `@${currentAcc.username}` : "Tài khoản",
+            type: q.reward || "Gift Code",
+            code: q.code,
+            discordUrl: q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home'),
+            claimedAt: q.claimedAt
+          });
+        }
+      }
+
+      saveState();
+      renderAll();
+
+      addLog("success", `[Nhận quà] Thành công! Đã nhận "${q.reward}" cho "${q.name}".`);
+      toast(`Nhận thưởng "${q.reward}" thành công!`, "success");
+      return;
+    }
+
+    const errMsg = data.error || 'Lỗi nhận thưởng từ Discord API';
+    addLog("error", `[Nhận quà] Thất bại: ${errMsg}`);
+    toast(errMsg, "error");
+  } catch (err) {
+    if (modal) modal.classList.remove("open");
+    addLog("error", `[Nhận quà] Lỗi kết nối: ${err.message}`);
+    toast("Lỗi kết nối khi nhận thưởng.", "error");
   }
 };

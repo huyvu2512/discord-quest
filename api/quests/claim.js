@@ -47,9 +47,17 @@ export default async function handler(req, res) {
     try { body = JSON.parse(body); } catch {}
   }
 
-  const { token, questId, taskType, platform: reqPlatform } = body || {};
+  const { token, questId, taskType, platform: reqPlatform, captchaKey, captchaRqtoken } = body || {};
   if (!token || !questId) {
     return res.status(400).json({ success: false, error: 'Thiếu token hoặc questId' });
+  }
+
+  const captchaHeaders = {};
+  if (captchaKey) {
+    captchaHeaders['X-Captcha-Key'] = captchaKey;
+  }
+  if (captchaRqtoken) {
+    captchaHeaders['X-Captcha-Rqtoken'] = captchaRqtoken;
   }
 
   let traffic_metadata_sealed = body.traffic_metadata_sealed || body.trafficMetadataSealed || null;
@@ -99,6 +107,12 @@ export default async function handler(req, res) {
       if (typeof traffic_metadata_sealed === 'string' && traffic_metadata_sealed.length > 0) {
         p.traffic_metadata_sealed = traffic_metadata_sealed;
       }
+      if (captchaKey) {
+        p.captcha_key = captchaKey;
+      }
+      if (captchaRqtoken) {
+        p.captcha_rqtoken = captchaRqtoken;
+      }
       return p;
     };
 
@@ -107,49 +121,49 @@ export default async function handler(req, res) {
       // 1. Desktop tiêu chuẩn Discord client (location 11: QUEST_HOME_DESKTOP)
       {
         name: 'desktop_standard',
-        headers: DISCORD_HEADERS(token, buildNum),
+        headers: { ...DISCORD_HEADERS(token, buildNum), ...captchaHeaders },
         payload: buildPayload(targetPlatform, 11)
       },
       // 2. Desktop Reward Modal (location 25: REWARD_MODAL - giao diện popup nhận quà)
       {
         name: 'desktop_reward_modal',
-        headers: DISCORD_HEADERS(token, buildNum),
+        headers: { ...DISCORD_HEADERS(token, buildNum), ...captchaHeaders },
         payload: buildPayload(targetPlatform, 25)
       },
       // 3. Desktop với platform = 4 (PC explicit nếu targetPlatform = 0)
       ...(targetPlatform === 0 ? [{
         name: 'desktop_pc_platform',
-        headers: DISCORD_HEADERS(token, buildNum),
+        headers: { ...DISCORD_HEADERS(token, buildNum), ...captchaHeaders },
         payload: buildPayload(4, 11)
       }] : []),
       // 4. Web client headers (location 13: QUEST_BAR_MOBILE / Web)
       {
         name: 'web_location_13',
-        headers: DISCORD_WEB_HEADERS(token, buildNum),
+        headers: { ...DISCORD_WEB_HEADERS(token, buildNum), ...captchaHeaders },
         payload: buildPayload(targetPlatform, 13)
       },
       // 5. Desktop không truyền platform (chỉ truyền location & is_targeted)
       {
         name: 'desktop_no_platform',
-        headers: DISCORD_HEADERS(token, buildNum),
+        headers: { ...DISCORD_HEADERS(token, buildNum), ...captchaHeaders },
         payload: buildPayload(undefined, 11)
       },
       // 6. Mobile Android client
       {
         name: 'mobile_android',
-        headers: DISCORD_MOBILE_HEADERS(token),
+        headers: { ...DISCORD_MOBILE_HEADERS(token), ...captchaHeaders },
         payload: buildPayload(targetPlatform, 11)
       },
       // 7. Mobile iOS client
       {
         name: 'mobile_ios',
-        headers: DISCORD_IOS_HEADERS(token),
+        headers: { ...DISCORD_IOS_HEADERS(token), ...captchaHeaders },
         payload: buildPayload(targetPlatform, 11)
       },
       // 8. Payload rỗng tối giản (dự phòng)
       {
         name: 'desktop_minimal',
-        headers: DISCORD_HEADERS(token, buildNum),
+        headers: { ...DISCORD_HEADERS(token, buildNum), ...captchaHeaders },
         payload: {}
       }
     ];
@@ -180,7 +194,10 @@ export default async function handler(req, res) {
           return res.status(200).json({
             success: false,
             requireCaptcha: true,
-            captchaSitekey: errJson.captcha_sitekey || null,
+            captchaSitekey: errJson.captcha_sitekey || '4bb5aadb-b50f-4f23-b1c2-92b59ba400d5',
+            captchaService: errJson.captcha_service || 'hcaptcha',
+            captchaRqdata: errJson.captcha_rqdata || null,
+            captchaRqtoken: errJson.captcha_rqtoken || null,
             error: 'Discord yêu cầu giải Captcha để nhận phần thưởng này'
           });
         }

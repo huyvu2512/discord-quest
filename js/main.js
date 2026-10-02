@@ -532,6 +532,19 @@ function bindActionButtons() {
     }
   });
 
+  // Modal Giải Captcha Discord
+  const captchaModal = document.getElementById("modal-captcha");
+  document.getElementById("btn-close-captcha-modal")?.addEventListener("click", () => captchaModal?.classList.remove("open"));
+  document.getElementById("btn-cancel-captcha")?.addEventListener("click", () => captchaModal?.classList.remove("open"));
+  captchaModal?.addEventListener("click", (e) => {
+    if (e.target === captchaModal) captchaModal.classList.remove("open");
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && captchaModal?.classList.contains("open")) {
+      captchaModal.classList.remove("open");
+    }
+  });
+
   document.getElementById("btn-submit-custom-quest")?.addEventListener("click", async () => {
     const input = document.getElementById("input-custom-quest");
     const rawVal = input?.value?.trim() || "";

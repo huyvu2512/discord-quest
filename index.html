@@ -56,6 +56,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   
+  <!-- hCaptcha API for Discord Captcha Verification -->
+  <script src="https://js.hcaptcha.com/1/api.js?render=explicit" async defer></script>
+
   <!-- Modular CSS -->
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -822,6 +825,45 @@
       <div class="modal-foot">
         <button class="btn btn-secondary btn-sm" id="btn-cancel-quest-modal">Hủy</button>
         <button class="btn btn-primary btn-sm" id="btn-submit-custom-quest">Thêm & Quét Ngay</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Giải Captcha Discord -->
+  <div class="modal-backdrop" id="modal-captcha">
+    <div class="modal" style="max-width: 440px; text-align: center;">
+      <div class="modal-head" style="justify-content: center; position: relative;">
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#5865F2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Xác Thực Captcha Discord
+        </h3>
+        <button class="btn-close" id="btn-close-captcha-modal" style="position: absolute; right: 16px; top: 16px;">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+          Discord yêu cầu xác thực người thật để nhận phần thưởng này. Vui lòng bấm xác minh bên dưới:
+        </p>
+
+        <!-- Container chứa hCaptcha widget -->
+        <div id="hcaptcha-widget-container" style="display: flex; justify-content: center; align-items: center; min-height: 82px;"></div>
+
+        <!-- Trạng thái hoặc thông báo lỗi nếu domain bị chặn -->
+        <div id="captcha-status-msg" style="margin-top: 12px; font-size: 12px; color: var(--text-muted);"></div>
+
+        <div id="captcha-fallback-box" class="hidden" style="margin-top: 14px; padding: 12px; border-radius: 8px; background: rgba(237, 66, 69, 0.1); border: 1px solid rgba(237, 66, 69, 0.3); text-align: left;">
+          <div style="font-size: 12px; color: var(--red); font-weight: 600; margin-bottom: 4px;">Không thể tải Captcha trực tiếp:</div>
+          <div style="font-size: 11px; color: var(--text-sub); line-height: 1.4;">
+            Discord chỉ cho phép giải Captcha trên domain <code>discord.com</code>. Bạn có thể mở trực tiếp Discord để nhận quà:
+          </div>
+          <a id="captcha-fallback-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="display: block; width: 100%; text-align: center; margin-top: 10px;">
+            Mở trên Discord để nhận
+          </a>
+        </div>
+      </div>
+      <div class="modal-foot" style="justify-content: center;">
+        <button class="btn btn-secondary btn-sm" id="btn-cancel-captcha">Hủy</button>
       </div>
     </div>
   </div>
