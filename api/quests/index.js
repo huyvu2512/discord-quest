@@ -9,6 +9,7 @@
 
 const SUPER_PROPERTIES_DESKTOP = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MjE1Iiwib3NfdmVyc2lvbiI6IjEwLjAuMjI2MzEiLCJvc19hcmNoIjoieDY0IiwiYXBwX2FyY2giOiJ4NjQiLCJzeXN0ZW1fbG9jYWxlIjoidmktVk4iLCJjbGllbnRfYnVpbGRfbnVtYmVyIjozNzYwMDAsImNsaWVudF9ldmVudF9zb3VyY2UiOm51bGx9';
 const SUPER_PROPERTIES_WEB = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiQ2hyb21lIiwiZGV2aWNlIjoiIiwic3lzdGVtX2xvY2FsZSI6InZpLVZOIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEzOC4wLjAuMCBTYWZhcmkvNTM3LjM2IiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTM4LjAuMC4wIiwib3NfdmVyc2lvbiI6IjEwIiwicmVmZXJyZXIiOiIiLCJyZWZlcnJpbmdfZG9tYWluIjoiIiwicmVmZXJyZXJfY3VycmVudCI6IiIsInJlZmVycmluZ19kb21haW5fY3VycmVudCI6IiIsInJlbGVhc2VfY2hhbm5lbCI6InN0YWJsZSIsImNsaWVudF9idWlsZF9udW1iZXIiOjM3NjAwMCwiY2xpZW50X2V2ZW50X3NvdXJjZSI6bnVsbH0=';
+const SUPER_PROPERTIES_MOBILE = 'eyJvcyI6IkFuZHJvaWQiLCJicm93c2VyIjoiRGlzY29yZCBBbmRyb2lkIiwiZGV2aWNlIjoiU2Ftc3VuZyBHYWxheHkgUzI0Iiwic3lzdGVtX2xvY2FsZSI6InZpLVZOIiwiY2xpZW50X3ZlcnNpb24iOiIyMjUuMCIsInJlbGVhc2VfY2hhbm5lbCI6Imdvb2dsZVJlbGVhc2UiLCJkZXZpY2VfdmVuZG9yX2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiIiwiY2xpZW50X2J1aWxkX251bWJlciI6MjI1MDAwMDAwfQ==';
 
 const DISCORD_HEADERS = (token) => ({
   'Authorization': token.trim(),
@@ -43,6 +44,16 @@ const DISCORD_WEB_HEADERS = (token) => ({
   'Sec-Fetch-Site': 'same-origin',
   'Origin': 'https://discord.com',
   'Referer': 'https://discord.com/quest-home',
+  'Content-Type': 'application/json'
+});
+
+const DISCORD_MOBILE_HEADERS = (token) => ({
+  'Authorization': token.trim(),
+  'User-Agent': 'Discord-Android/225000000; Mozilla/5.0 (Linux; Android 14; SM-S928B Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/138.0.7204.251 Mobile Safari/537.36',
+  'Accept-Language': 'vi,en-US;q=0.9',
+  'X-Super-Properties': SUPER_PROPERTIES_MOBILE,
+  'X-Discord-Locale': 'vi',
+  'X-Discord-Timezone': 'Asia/Saigon',
   'Content-Type': 'application/json'
 });
 
@@ -144,19 +155,27 @@ export default async function handler(req, res) {
       balancePromise
     ]);
 
-    // 5. Tự động quét nhiệm vụ Video / Promo tài trợ qua Discord Decision Engine (Placements 1 & 0)
-    const decisionPlacements = [1, 0];
-    const decisionPromises = decisionPlacements.map(placement => {
-      const getDecisionsUrl = `https://discord.com/api/v9/quests/get-decisions?placement=${placement}&num_decisions_requested=10`;
-      return fetch(getDecisionsUrl, { headers: desktopHeaders })
-        .then(async r => {
-          if (r.ok) return r.json();
-          const rWeb = await fetch(getDecisionsUrl, { headers: webHeaders });
-          if (rWeb.ok) return rWeb.json();
-          return null;
-        })
-        .catch(() => null);
-    });
+    // 5. Tự động quét nhiệm vụ Video / Promo tài trợ qua Discord Decision Engine (Placements 0 -> 6)
+    // Quét trên cả Desktop, Web và Mobile để không bỏ sót Take-Two Empires & Puzzles và các nhà tài trợ khác
+    const decisionPlacements = [0, 1, 2, 3, 4, 5, 6];
+    const decisionPromises = [];
+    for (const placement of decisionPlacements) {
+      const getDecisionsUrl = `https://discord.com/api/v9/quests/get-decisions?placement=${placement}&num_decisions_requested=15`;
+      decisionPromises.push(
+        fetch(getDecisionsUrl, { headers: desktopHeaders })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => data ? { placement, data } : null)
+          .catch(() => null),
+        fetch(getDecisionsUrl, { headers: webHeaders })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => data ? { placement, data } : null)
+          .catch(() => null),
+        fetch(getDecisionsUrl, { headers: DISCORD_MOBILE_HEADERS(token) })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => data ? { placement, data } : null)
+          .catch(() => null)
+      );
+    }
 
     // Hỗ trợ danh mục Video Promo đang mở của Discord (March of Giants, CONTROL Resonant...) + customIds
     const activeVideoPromoPool = [
@@ -171,7 +190,13 @@ export default async function handler(req, res) {
     const customPromises = promoIdsToScan.map(qid =>
       fetch(`https://discord.com/api/v9/quests/${qid}`, { headers: desktopHeaders })
         .then(async r => {
-          if (!r.ok) return null;
+          if (!r.ok) {
+            // Thử lại với web headers nếu desktop không trả về
+            const rWeb = await fetch(`https://discord.com/api/v9/quests/${qid}`, { headers: webHeaders });
+            if (!rWeb.ok) return null;
+            const qDataWeb = await rWeb.json();
+            return { id: qid, config: qDataWeb, user_status: qDataWeb.user_status, _source: 'video_promo' };
+          }
           const qData = await r.json();
           return { id: qid, config: qData, user_status: qData.user_status, _source: 'video_promo' };
         })
@@ -183,7 +208,7 @@ export default async function handler(req, res) {
       Promise.all(customPromises)
     ]);
 
-    // Hợp nhất dữ liệu không trùng lặp (Deduplicate Map)
+    // Hợp nhất dữ liệu không trùng lặp (Deduplicate Map theo Quest ID duy nhất)
     const questMap = new Map();
 
     const mergeQuest = (q, source) => {
@@ -226,9 +251,11 @@ export default async function handler(req, res) {
     (webData.quests || []).forEach(q => mergeQuest(q, 'web_active'));
     (webData.excluded_quests || []).forEach(q => mergeQuest(q, 'web_excluded'));
 
-    // 3. Tự động nạp từ Discord Decision Engine (Video Quests tài trợ như CONTROL Resonant, March of Giants)
-    decisionResults.filter(Boolean).forEach((decData, idx) => {
-      const placement = decisionPlacements[idx] ?? 1;
+    // 3. Tự động nạp từ Discord Decision Engine (Tất cả Placements 0-6 trên Desktop, Web, Mobile)
+    decisionResults.filter(Boolean).forEach(resItem => {
+      const placement = resItem.placement ?? 1;
+      const decData = resItem.data;
+      if (!decData) return;
       const sealed = decData.traffic_metadata_sealed || decData.quest?.traffic_metadata_sealed || null;
       if (decData.quest && decData.quest.id) {
         decData.quest.traffic_metadata_sealed = decData.quest.traffic_metadata_sealed || sealed;
@@ -240,7 +267,7 @@ export default async function handler(req, res) {
       }
       if (Array.isArray(decData.decisions)) {
         decData.decisions.forEach(d => {
-          const q = d.quest || d.creative?.creative_content;
+          const q = d.quest || d.creative?.creative_content || d.creative;
           if (q && q.id) {
             q.traffic_metadata_sealed = q.traffic_metadata_sealed || d.traffic_metadata_sealed || sealed;
             mergeQuest(q, `decision_p${placement}`);
@@ -270,14 +297,14 @@ export default async function handler(req, res) {
       // Tự động nhận diện nhiệm vụ Xem Video dựa trên từ khóa video/trailer thực tế nếu chưa có task cụ thể
       const hasDefinedTask = Boolean(config.task_config_v2?.tasks || config.task_config?.tasks);
       if (!hasDefinedTask || taskType === 'PLAY_ON_DESKTOP') {
-        if (lowerName.includes('video') || lowerName.includes('trailer') || lowerName.includes('march of giants') || lowerName.includes('control resonant')) {
+        if (lowerName.includes('video') || lowerName.includes('trailer') || lowerName.includes('march of giants') || lowerName.includes('control resonant') || lowerName.includes('empires & puzzles') || lowerName.includes('take-two') || lowerName.includes('puzzle')) {
           taskType = 'WATCH_VIDEO';
         }
       }
 
       const tasks = config.task_config_v2?.tasks ?? config.task_config?.tasks ?? {};
       const taskDef = tasks[taskType] || {};
-      const targetSec = taskDef.target ?? (taskType.includes('VIDEO') ? 120 : 900);
+      const targetSec = taskDef.target ?? ((lowerName.includes('puzzle') || lowerName.includes('empires')) ? 44 : (taskType.includes('VIDEO') ? 120 : 900));
 
       const progressVal = q.user_status?.progress?.[taskType]?.value ?? 0;
       let progSec = Math.min(targetSec, progressVal);
@@ -383,22 +410,15 @@ export default async function handler(req, res) {
       return true;
     });
 
-    // Loại bỏ trùng lặp triệt để theo Tên game + ApplicationId
-    const seenKeys = new Map();
+    // Loại bỏ trùng lặp chuẩn xác theo Quest ID (Snowflake duy nhất của Discord)
+    // Giữ nguyên vẹn tất cả quest có ID khác nhau (bao gồm các đợt nhiệm vụ mới/lặp lại mùa như Typhoeus)
+    const seenIds = new Set();
+    const deduplicatedQuests = [];
     for (const q of formattedQuests) {
-      const key = `${(q.name || '').trim().toLowerCase()}_${q.applicationId || ''}`;
-      if (!seenKeys.has(key)) {
-        seenKeys.set(key, q);
-      } else {
-        const existing = seenKeys.get(key);
-        // Ưu tiên bản có trạng thái cao hơn (running > queued > completed > claimed > pending) hoặc có tiến trình
-        const statusScore = (s) => (s === 'running' ? 4 : (s === 'queued' ? 3 : (s === 'completed' ? 2 : (s === 'claimed' ? 1 : 0))));
-        if (statusScore(q.status) > statusScore(existing.status) || q.progSec > existing.progSec) {
-          seenKeys.set(key, q);
-        }
-      }
+      if (!q.id || seenIds.has(q.id)) continue;
+      seenIds.add(q.id);
+      deduplicatedQuests.push(q);
     }
-    const deduplicatedQuests = Array.from(seenKeys.values());
 
     // Sắp xếp danh sách trả về một cách ổn định, đồng bộ (deterministic sort)
     deduplicatedQuests.sort((a, b) => {

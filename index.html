@@ -95,6 +95,10 @@
       <div class="header-actions">
         <div class="divider-v"></div>
         <button class="btn btn-secondary" id="btn-refresh">Quét Quest</button>
+        <button class="btn btn-secondary" id="btn-open-add-quest" title="Thêm nhiệm vụ bằng Link hoặc ID Discord">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 4px; vertical-align: -1px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Thêm Link
+        </button>
         <button class="btn btn-primary" id="btn-run-all">Chạy Tất Cả</button>
         <button class="btn btn-danger hidden" id="btn-stop-all">Dừng Lại</button>
         <button class="btn btn-secondary btn-icon-only" onclick="window.shareApp()" title="Chia sẻ ứng dụng / Thêm vào màn hình chính" style="padding: 7px 11px;">
@@ -795,6 +799,29 @@
       <div class="modal-foot">
         <button class="btn btn-secondary btn-sm" id="btn-cancel-modal">Hủy</button>
         <button class="btn btn-primary btn-sm" id="btn-confirm-add-account">Kiểm Tra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Thêm Nhiệm Vụ Bằng Link / ID -->
+  <div class="modal-backdrop" id="modal-add-quest">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-head">
+        <h3 class="modal-title">Thêm Nhiệm Vụ Bằng Link / ID</h3>
+        <button class="btn-close" id="btn-close-quest-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-field">
+          <label class="form-lbl">Link hoặc ID Quest Discord</label>
+          <input type="text" id="input-custom-quest" class="input-text font-mono" placeholder="https://discord.com/quests/155... hoặc 155..." autocomplete="off">
+          <p class="form-hint" style="margin-top: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            💡 <strong>Mẹo:</strong> Trong Discord, bấm vào dấu 3 chấm (•••) ở góc trên thẻ Quest ➔ chọn <strong>"Sao chép liên kết"</strong> rồi dán vào đây để công cụ tự động quét và nạp ngay lập tức!
+          </p>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary btn-sm" id="btn-cancel-quest-modal">Hủy</button>
+        <button class="btn btn-primary btn-sm" id="btn-submit-custom-quest">Thêm & Quét Ngay</button>
       </div>
     </div>
   </div>

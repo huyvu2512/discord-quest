@@ -455,6 +455,65 @@ function bindActionButtons() {
     }
   });
 
+  // Modal Thêm Nhiệm Vụ Bằng Link / ID
+  const questModal = document.getElementById("modal-add-quest");
+  const openQuestModal = () => {
+    questModal?.classList.add("open");
+    const input = document.getElementById("input-custom-quest");
+    if (input) {
+      input.value = "";
+      setTimeout(() => input.focus(), 100);
+    }
+  };
+  window.openAddQuestModal = openQuestModal;
+  document.getElementById("btn-open-add-quest")?.addEventListener("click", openQuestModal);
+  document.getElementById("btn-close-quest-modal")?.addEventListener("click", () => questModal?.classList.remove("open"));
+  document.getElementById("btn-cancel-quest-modal")?.addEventListener("click", () => questModal?.classList.remove("open"));
+
+  questModal?.addEventListener("click", (e) => {
+    if (e.target === questModal) questModal.classList.remove("open");
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && questModal?.classList.contains("open")) {
+      questModal.classList.remove("open");
+    }
+  });
+
+  document.getElementById("btn-submit-custom-quest")?.addEventListener("click", async () => {
+    const input = document.getElementById("input-custom-quest");
+    const rawVal = input?.value?.trim() || "";
+    if (!rawVal) {
+      toast("Vui lòng nhập Link hoặc ID Quest Discord", "warning");
+      return;
+    }
+    const cleanId = rawVal.replace(/.*\/quests\//, '').replace(/\D/g, '');
+    if (!cleanId || cleanId.length < 15) {
+      toast("ID Quest không hợp lệ (phải là dãy số Snowflake Discord)", "error");
+      return;
+    }
+
+    try {
+      let customIds = JSON.parse(localStorage.getItem('custom_quest_ids') || '[]');
+      if (!customIds.includes(cleanId)) {
+        customIds.push(cleanId);
+        localStorage.setItem('custom_quest_ids', JSON.stringify(customIds));
+      }
+      questModal?.classList.remove("open");
+      toast(`Đã thêm Quest ${cleanId}! Đang đồng bộ...`, "success");
+      addLog("success", `[Thêm Quest] Đã lưu ID: ${cleanId}, tiến hành quét ngay.`);
+      await syncQuestsFromDiscord(true);
+    } catch (err) {
+      toast(`Lỗi thêm quest: ${err.message}`, "error");
+    }
+  });
+
+  document.getElementById("input-custom-quest")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      document.getElementById("btn-submit-custom-quest")?.click();
+    }
+  });
+
   document.getElementById("link-guide-token")?.addEventListener("click", (e) => {
     e.preventDefault();
     document.getElementById("token-guide-box")?.classList.toggle("hidden");
@@ -1028,8 +1087,8 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
     // Nạp danh sách nhiệm vụ mới chuẩn từ API (đã được sắp xếp ổn định từ Backend)
     // QUAN TRỌNG: Bảo toàn mã code đã lưu vì Discord /quests/@me/claimed không gửi mã code dạng văn bản trực tiếp
     state.quests = validQuests.map(nq => {
-      const prevQ = state.quests.find(q => q.id === nq.id || (q.name && nq.name && (q.name.trim().toLowerCase() === nq.name.trim().toLowerCase() || q.name.toLowerCase().includes(nq.name.toLowerCase()) || nq.name.toLowerCase().includes(q.name.toLowerCase()))));
-      const savedR = state.rewards.find(r => ((r.id && r.id === nq.id) || (r.questName && nq.name && (r.questName.trim().toLowerCase() === nq.name.trim().toLowerCase() || r.questName.toLowerCase().includes(nq.name.toLowerCase()) || nq.name.toLowerCase().includes(r.questName.toLowerCase())))) && r.code);
+      const prevQ = state.quests.find(q => q.id === nq.id);
+      const savedR = state.rewards.find(r => (r.id && r.id === nq.id) || (r.code && nq.code && r.code === nq.code));
 
       const existingCode = nq.code || prevQ?.code || savedR?.code || null;
       if (existingCode) {
