@@ -210,7 +210,7 @@
   display: grid;
   grid-template-columns: 1.55fr 1fr;
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .home-col-left {
@@ -218,6 +218,7 @@
   flex-direction: column;
   gap: 18px;
   min-height: 0;
+  height: 100%;
 }
 
 .home-col-right {
@@ -227,13 +228,25 @@
   min-height: 0;
 }
 
-.home-logs-section-card {
+.home-quests-card {
   display: flex;
   flex-direction: column;
-  height: 310px;
-  min-height: 310px;
-  max-height: 310px;
+  box-sizing: border-box;
+}
+
+/* Card Nhật Ký tự động kéo dài (flex: 1) xuống chạm thẳng mép dưới cùng của Cột Phải */
+.home-logs-section-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
   overflow: hidden;
+  box-sizing: border-box;
+}
+
+.home-steps-section-card {
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
 }
 
@@ -325,6 +338,7 @@
 .quest-row-main {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .quest-row-title {
@@ -337,29 +351,27 @@
 }
 
 .quest-row-sub {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   font-size: 11.5px;
   color: var(--text-muted);
   margin-top: 2px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.quest-sub-dot {
-  opacity: 0.5;
-}
-
-.quest-sub-reward {
-  color: var(--amber);
-  font-weight: 500;
-}
-
-.quest-row-status {
-  flex-shrink: 0;
+.quest-row-desc {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .quest-row-action {
   flex-shrink: 0;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .quest-row-action .btn {
@@ -367,6 +379,13 @@
   padding: 0 11px;
   font-size: 11.5px;
   font-weight: 600;
+}
+
+.quest-row-action .tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 4px;
 }
 
 /* Empty State */
@@ -397,9 +416,7 @@
 /* Mini Logs Terminal - Giữ nguyên kích thước ban đầu, tự cuộn mượt mà khi có log mới */
 .home-logs-mini-box {
   flex: 1;
-  height: 220px;
-  min-height: 220px;
-  max-height: 220px;
+  min-height: 200px;
   font-family: var(--font-mono);
   font-size: 11.5px;
   line-height: 1.65;
@@ -706,6 +723,25 @@
 
   .home-main-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .home-col-left,
+  .home-col-right {
+    width: 100%;
+    min-width: 0;
+    gap: 16px;
+    height: auto;
+  }
+
+  .home-logs-section-card {
+    min-height: 290px;
+    height: 290px;
+  }
+
+  .home-logs-mini-box {
+    height: 210px;
+    min-height: 210px;
   }
 }
 
@@ -834,6 +870,7 @@
     max-width: 100%;
     min-width: 0;
     gap: 14px;
+    box-sizing: border-box;
   }
 
   .home-section-card {
@@ -868,7 +905,7 @@
     white-space: nowrap;
   }
 
-  /* Tối ưu danh sách nhiệm vụ trên mobile: bố cục 3 cột (Avatar - Nội dung - Nút hành động) */
+  /* Tối ưu danh sách nhiệm vụ trên mobile: bố cục 1 dòng gọn gàng (Avatar - Nội dung - Nút hành động) */
   .home-quests-container {
     width: 100%;
     max-width: 100%;
@@ -876,13 +913,10 @@
   }
 
   .home-quest-row {
-    display: grid;
-    grid-template-columns: 32px minmax(0, 1fr) auto;
-    grid-template-rows: auto auto;
-    column-gap: 10px;
-    row-gap: 3px;
-    padding: 8px 10px;
+    display: flex;
     align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -890,9 +924,6 @@
   }
 
   .quest-row-avatar {
-    grid-column: 1;
-    grid-row: 1 / 3;
-    align-self: center;
     width: 30px;
     height: 30px;
     font-size: 12.5px;
@@ -901,10 +932,9 @@
   }
 
   .quest-row-main {
-    grid-column: 2;
-    grid-row: 1 / 3;
+    flex: 1;
     min-width: 0;
-    align-self: center;
+    overflow: hidden;
   }
 
   .quest-row-title {
@@ -918,17 +948,24 @@
   .quest-row-sub {
     font-size: 11px;
     margin-top: 1px;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    gap: 4px;
+  }
+
+  .quest-row-desc {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .quest-row-action {
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: end;
     flex-shrink: 0;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .quest-row-action .btn {
@@ -938,27 +975,9 @@
     font-weight: 600;
   }
 
-  .quest-row-status {
-    grid-column: 3;
-    grid-row: 2;
-    justify-self: end;
-    flex-shrink: 0;
-  }
-
-  .quest-row-status .tag {
-    font-size: 10px;
-    padding: 1px 6px;
-  }
-
-  /* Khi nhiệm vụ đã xong/claimed, tag Hoàn thành căn giữa cạnh phải */
-  .home-quest-row:has(.quest-row-action > span) .quest-row-status,
-  .home-quest-row:has(.quest-row-action:empty) .quest-row-status {
-    grid-row: 1 / 3;
-    align-self: center;
-  }
-
-  .quest-row-action > span {
-    display: none;
+  .quest-row-action .tag {
+    font-size: 10.5px;
+    padding: 2px 7px;
   }
 
   /* Card Mini Logs Console trên mobile: giữ cố định kích thước, tự cuộn bên trong */

@@ -271,11 +271,11 @@
             <!-- 3. Dashboard Two-Column Grid -->
             <div class="home-main-grid">
 
-              <!-- Left Column: Quests & Logs (Wider) -->
+              <!-- Left Column: Quests & Live Logs (Stretches to match bottom edge) -->
               <div class="home-col-left">
 
                 <!-- Nhiệm Vụ Mới Nhất -->
-                <div class="card home-section-card">
+                <div class="card home-section-card home-quests-card">
                   <div class="home-section-header">
                     <div class="home-section-title">
                       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -291,7 +291,7 @@
                   </div>
                 </div>
 
-                <!-- Nhật Ký Thời Gian Thực -->
+                <!-- Nhật Ký Thời Gian Thực (Kéo dài xuống mép dưới) -->
                 <div class="card home-section-card home-logs-section-card">
                   <div class="home-section-header">
                     <div class="home-section-title">
@@ -375,7 +375,7 @@
                 </div>
 
                 <!-- 3 Bước Khởi Động -->
-                <div class="card home-section-card">
+                <div class="card home-section-card home-steps-section-card">
                   <div class="home-section-header">
                     <div class="home-section-title">
                       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -453,8 +453,8 @@
                 <tr>
                   <th>Nhiệm vụ</th>
                   <th class="col-hide-mobile">Hình thức</th>
-                  <th>Phần thưởng</th>
-                  <th class="col-hide-mobile">Hết hạn</th>
+                  <th class="col-hide-mobile">Phần thưởng</th>
+                  <th>Hết hạn</th>
                   <th>Tiến trình</th>
                   <th class="col-hide-mobile">Còn lại</th>
                   <th style="text-align: right;">Thao tác</th>
@@ -644,15 +644,15 @@
               <div class="setting-item">
                 <div class="setting-info">
                   <div class="setting-title">Chu kỳ gửi tiến trình Chơi Game</div>
-                  <div class="setting-desc">Tần suất cập nhật thời gian chơi game ngầm (Chuẩn Discord: 60s).</div>
+                  <div class="setting-desc">Tần suất gửi heartbeat chơi game ngầm (Chuẩn Discord: 20s, khuyến nghị: 15-20s).</div>
                 </div>
                 <div class="stepper-box">
-                  <button type="button" class="stepper-btn" onclick="stepSetting('set-game-interval', -5, 45, 120)">−</button>
+                  <button type="button" class="stepper-btn" onclick="stepSetting('set-game-interval', -1, 5, 60)">−</button>
                   <div class="stepper-val-wrap">
-                    <input type="number" id="set-game-interval" class="stepper-input" value="60" min="45" max="120">
+                    <input type="number" id="set-game-interval" class="stepper-input" value="20" min="5" max="60">
                     <span class="stepper-unit">giây</span>
                   </div>
-                  <button type="button" class="stepper-btn" onclick="stepSetting('set-game-interval', 5, 45, 120)">+</button>
+                  <button type="button" class="stepper-btn" onclick="stepSetting('set-game-interval', 1, 5, 60)">+</button>
                 </div>
               </div>
 

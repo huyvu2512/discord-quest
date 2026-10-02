@@ -995,23 +995,26 @@
   }
 
   .quest-name-cell {
-    max-width: 90px !important;
+    max-width: 125px !important;
     font-size: 11px !important;
   }
 
   .quest-sub-cell {
-    max-width: 90px !important;
+    max-width: 125px !important;
     font-size: 9.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
-  .quest-reward-cell {
-    max-width: 75px !important;
+  .quest-expiry-cell {
     font-size: 10px !important;
+    white-space: nowrap !important;
   }
 
   .progress-wrap {
-    min-width: 60px;
-    gap: 2px;
+    min-width: 70px;
+    gap: 3px;
   }
 
   .progress-track {

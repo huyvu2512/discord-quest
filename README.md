@@ -43,14 +43,17 @@ Hệ thống cho phép quét kho nhiệm vụ chính thức từ Discord qua API
   - Hỗ trợ thêm nhanh bất kỳ nhiệm vụ nào bằng cách dán URL (`https://discord.com/quests/...`) hoặc dãy số Snowflake ID.
   - Tự động tra cứu qua API `/api/quests/lookup` và lưu trữ đồng bộ vĩnh viễn vào hệ thống.
 - **Giả lập tiến độ thông minh (Heartbeat Spoofing):**
-  - **Nhiệm vụ Xem Video:** Tự động phát hiện video/trailer game, định kỳ gửi tiến trình `video-progress` từng giây thời gian thực (1s Real-time Wall-Clock), tự động kèm `traffic_metadata_sealed` đúng chuẩn Discord Client v9 build 504649.
-  - **Nhiệm vụ Chơi Game:** Giả lập `console-heartbeat` hoặc `heartbeat` an toàn, tích lũy đủ 15 phút.
+  - **Nhiệm vụ Xem Video:** Tự động phát hiện video/trailer game, định kỳ gửi tiến trình `video-progress` từng giây thời gian thực (1s Real-time Wall-Clock), tự động kèm `traffic_metadata_sealed` đúng chuẩn Discord Client v9 build 504649 (Chu kỳ khuyến nghị: 7s).
+  - **Nhiệm vụ Chơi Game:** Giả lập `console-heartbeat` hoặc `heartbeat` an toàn chuẩn Discord Client (Chu kỳ chuẩn: 20s, hỗ trợ tinh chỉnh từ 5s đến 60s), tích lũy tiến độ mượt mà không bị delay.
 - **Trình điều phối hàng đợi (Sequential Queue Runner):**
   - Đảm bảo tính tuần tự: Luôn chỉ duy nhất 1 nhiệm vụ được kích hoạt chạy tại một thời điểm để bảo vệ an toàn cho tài khoản.
   - Tự động bắt đầu nhiệm vụ tiếp theo trong hàng đợi ngay khi nhiệm vụ hiện tại chạm mốc 100%.
 - **Cơ chế nhận thưởng an toàn (Safe Discord Claim):**
   - Tách bạch quy trình nhận quà: Nhấp nút **"Nhận quà"** sẽ mở trực tiếp trang quest trên Discord (`discord.com/quests/{id}`) trong tab mới để người dùng tự xác minh Captcha chính chủ.
   - **Đồng bộ trạng thái từ API thật:** Không tự ý đánh dấu hoàn thành; hệ thống tự động kiểm tra lại API Discord (khi chuyển tab hoặc sau khi mở link) để chỉ chuyển sang **"Hoàn thành"** khi Discord đã xác nhận quà được nhận vào tài khoản.
+- **Giao diện Responsive Hiện Đại & Cân Đối:**
+  - **Dashboard Trang chủ:** Bố cục 2 cột cân xứng tuyệt đối, card Nhật ký hoạt động trực tiếp tự động kéo dài (stretch) bằng phẳng mép đáy với các bước thao tác nhanh. Danh sách nhiệm vụ mở hiển thị tinh tế, gọn gàng, tự động rút gọn dấu `...` khi văn bản dài.
+  - **Tối ưu Mobile bảng Quest (`/quests`):** Tự động ẩn cột phụ và chữ "Hoàn thành" rườm rà, bổ sung cột "Hết hạn" trực quan, mở rộng không gian cho tên nhiệm vụ và thanh tiến trình không bị chèn chữ.
 - **Kho lưu trữ & Trích xuất Gift Code tự động:**
   - Tự động kết nối tới endpoint `/reward-code` của Discord để lấy mã Gift Code thật của các nhiệm vụ game đối tác đã nhận thưởng.
   - Hỗ trợ sao chép 1 chạm và quản lý thời hạn sử dụng.

@@ -278,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const raw = localStorage.getItem("dqt_settings");
       const s = raw ? JSON.parse(raw) : {};
       const isVideo = current ? (current.taskType === 'WATCH_VIDEO' || current.taskType === 'WATCH_VIDEO_ON_MOBILE' || (typeof current.taskType === 'string' && current.taskType.includes('VIDEO'))) : true;
-      let baseSec = isVideo ? (parseInt(s.videoInterval, 10) || 7) : (parseInt(s.gameInterval, 10) || 60);
+      let baseSec = isVideo ? (parseInt(s.videoInterval, 10) || 7) : (parseInt(s.gameInterval, 10) || 20);
       if (s.randomJitter !== false) {
         // Lệch ngẫu nhiên ±1s cho video, ±2s cho game để giả lập người thật
         const delta = isVideo ? (Math.random() * 2 - 1) : (Math.random() * 4 - 2);
@@ -646,7 +646,8 @@ function bindSettings() {
       }
       if (s.gameInterval !== undefined) {
         const el = document.getElementById("set-game-interval");
-        if (el) el.value = s.gameInterval;
+        const val = s.gameInterval === 60 ? 20 : s.gameInterval;
+        if (el) el.value = val;
       }
       if (s.randomJitter !== undefined) {
         const el = document.getElementById("set-random-jitter");
@@ -662,7 +663,7 @@ function bindSettings() {
       autoClaim: document.getElementById("set-auto-claim")?.checked ?? true,
       autoEnroll: document.getElementById("set-auto-enroll")?.checked ?? true,
       videoInterval: parseInt(document.getElementById("set-video-interval")?.value, 10) || 7,
-      gameInterval: parseInt(document.getElementById("set-game-interval")?.value, 10) || 60,
+      gameInterval: parseInt(document.getElementById("set-game-interval")?.value, 10) || 20,
       randomJitter: document.getElementById("set-random-jitter")?.checked ?? true
     };
     localStorage.setItem("dqt_settings", JSON.stringify(s));
@@ -683,7 +684,7 @@ function bindSettings() {
     if (claimEl) claimEl.checked = true;
     if (enrollEl) enrollEl.checked = true;
     if (videoEl) videoEl.value = 7;
-    if (gameEl) gameEl.value = 60;
+    if (gameEl) gameEl.value = 20;
     if (jitterEl) jitterEl.checked = true;
 
     localStorage.removeItem("dqt_settings");
@@ -1017,21 +1018,16 @@ function renderHome() {
       const sorted = [...state.quests].sort((a, b) => (order[a.status] || 99) - (order[b.status] || 99)).slice(0, 4);
 
       questsPreview.innerHTML = sorted.map(q => {
-        let tagHtml = `<span class="tag tag-pending">Chưa làm</span>`;
         let actionBtn = `<button class="btn btn-secondary btn-sm" onclick="startQuest('${q.id}')">Chạy</button>`;
 
         if (q.status === "running") {
-          tagHtml = `<span class="tag tag-running">● Đang chạy</span>`;
           actionBtn = `<button class="btn btn-secondary btn-sm" onclick="pauseQuest('${q.id}')">Tạm dừng</button>`;
         } else if (q.status === "queued") {
-          tagHtml = `<span class="tag tag-pending">Hàng đợi</span>`;
           actionBtn = `<button class="btn btn-secondary btn-sm" onclick="startQuest('${q.id}')">Chạy</button>`;
         } else if (q.status === "completed") {
-          tagHtml = `<span class="tag tag-completed">Chờ claim</span>`;
           actionBtn = `<button class="btn btn-primary btn-sm" onclick="claimQuest('${q.id}')">Nhận quà</button>`;
         } else if (q.status === "claimed") {
-          tagHtml = `<span class="tag tag-claimed">Hoàn thành</span>`;
-          actionBtn = `<span class="col-hide-mobile" style="font-size: 11px; color: var(--text-muted); padding: 4px 6px;">Hoàn thành</span>`;
+          actionBtn = `<span class="tag tag-claimed">Hoàn thành</span>`;
         }
 
         const iconLetter = (q.name || "Q").trim().charAt(0).toUpperCase();
@@ -1042,12 +1038,9 @@ function renderHome() {
             <div class="quest-row-main">
               <div class="quest-row-title" title="${escapeHtml(q.name)}">${escapeHtml(q.name)}</div>
               <div class="quest-row-sub">
-                <span>${escapeHtml(q.publisher || 'Discord')}</span>
-                <span class="quest-sub-dot">•</span>
-                <span class="quest-sub-reward">${escapeHtml(q.reward || '+30 Orbs')}</span>
+                <span class="quest-row-desc" title="${escapeHtml(q.publisher || 'Discord')}">${escapeHtml(q.publisher || 'Discord')}</span>
               </div>
             </div>
-            <div class="quest-row-status">${tagHtml}</div>
             <div class="quest-row-action">${actionBtn}</div>
           </div>
         `;

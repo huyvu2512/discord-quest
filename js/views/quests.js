@@ -184,7 +184,7 @@ function renderQuests() {
       statusTag = `<span class="tag tag-claimed">Hoàn thành</span>`;
       actionBtn = `
         <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
-          <span style="font-size: 11px; color: var(--text-muted); padding: 4px 6px;">Hoàn thành</span>
+          <span class="col-hide-mobile" style="font-size: 11px; color: var(--text-muted); padding: 4px 6px;">Hoàn thành</span>
           <a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="Mở nhiệm vụ trên Discord">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
           </a>
@@ -199,14 +199,14 @@ function renderQuests() {
       <tr>
         <td>
           <div class="quest-name-cell" title="${escapeHtml(q.name)}">${escapeHtml(q.name)}</div>
-          <div class="quest-sub-cell" title="${escapeHtml(q.publisher)}">
-            ${escapeHtml(q.publisher)}
-            <span class="mobile-only-inline font-mono" style="margin-left: 6px; color: ${isExpiredQuest ? 'var(--red)' : 'var(--text-muted)'}; font-size: 11px;">• Hạn: ${expShort}</span>
+          <div class="quest-sub-cell" title="${escapeHtml(q.publisher)} • ${escapeHtml(q.reward)}">
+            <span>${escapeHtml(q.publisher)}</span>
+            <span class="mobile-only-inline" style="color: var(--amber); margin-left: 4px;">• ${escapeHtml(q.reward)}</span>
           </div>
         </td>
         <td class="col-hide-mobile"><span class="tag tag-pending">${escapeHtml(q.typeName)}</span></td>
-        <td class="quest-reward-cell" title="${escapeHtml(q.reward)}">${escapeHtml(q.reward)}</td>
-        <td class="col-hide-mobile font-mono" style="font-size: 12px; color: ${isExpiredQuest ? 'var(--red)' : 'var(--text-sub)'}; white-space: nowrap;" title="Hạn chót: ${escapeHtml(expFull)}">
+        <td class="quest-reward-cell col-hide-mobile" title="${escapeHtml(q.reward)}">${escapeHtml(q.reward)}</td>
+        <td class="quest-expiry-cell font-mono" style="font-size: 11.5px; color: ${isExpiredQuest ? 'var(--red)' : 'var(--text-sub)'}; white-space: nowrap;" title="Hạn chót: ${escapeHtml(expFull)}">
           ${isExpiredQuest ? `<span style="color: var(--red); font-weight: 600;">${expShort}</span>` : expShort}
         </td>
         <td class="quest-progress-cell">
