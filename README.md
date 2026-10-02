@@ -35,7 +35,7 @@ Hệ thống cho phép quét kho nhiệm vụ chính thức từ Discord qua API
 
 - **Quét kho nhiệm vụ Discord đa nguồn & đa nền tảng:**
   - Đồng bộ cùng lúc tất cả luồng dữ liệu từ Discord: `/quests/@me` (Desktop Client), Web Quest Home Showcase, Mobile Feed và `/quests/@me/claimed` (Nhiệm vụ đã hoàn thành).
-  - Tích hợp **Discord Decision Engine (Placements 0 ➔ 6)** với đầy đủ headers Desktop, Web và Mobile để quét trúng mọi chiến dịch tài trợ video/game mới nhất (Take-Two, Arknights, March of Giants, CONTROL Resonant...).
+  - Tích hợp **Discord Decision Engine (Placements 0 ➔ 10)** với đầy đủ headers Desktop, Web, Android và iOS để quét trúng mọi chiến dịch tài trợ video/game mới nhất.
   - **Đồng bộ thuần API (Zero Stale Cache):** Loại bỏ hoàn toàn việc đọc trạng thái cũ từ LocalStorage; 100% dữ liệu hiển thị lấy trực tiếp từ Discord API, đảm bảo đồng nhất tuyệt đối trên mọi thiết bị và trình duyệt.
   - Tự động nhận diện chính xác phần thưởng: Orbs, Avatar Decoration, Profile Effect, Trang phục game, 2XP Boost, Gift Code.
   - Tự động lọc bỏ các nhiệm vụ rác hoặc đã hết hạn thực tế, giữ danh sách luôn tinh gọn.
@@ -43,14 +43,18 @@ Hệ thống cho phép quét kho nhiệm vụ chính thức từ Discord qua API
   - Hỗ trợ thêm nhanh bất kỳ nhiệm vụ nào bằng cách dán URL (`https://discord.com/quests/...`) hoặc dãy số Snowflake ID.
   - Tự động tra cứu qua API `/api/quests/lookup` và lưu trữ đồng bộ vĩnh viễn vào hệ thống.
 - **Giả lập tiến độ thông minh (Heartbeat Spoofing):**
-  - **Nhiệm vụ Xem Video:** Tự động phát hiện video/trailer game, định kỳ gửi tiến trình `video-progress` từng giây thời gian thực (1s Real-time Wall-Clock), tự động kèm `traffic_metadata_sealed` đúng chuẩn Discord Client v9 build 504649 (Chu kỳ khuyến nghị: 7s).
+  - **Nhiệm vụ Xem Video:** Tự động phát hiện video/trailer game, định kỳ gửi tiến trình `video-progress` từng giây thời gian thực (1s Real-time Wall-Clock), tự động kèm `traffic_metadata_sealed` đúng chuẩn Discord Client v9 (Chu kỳ khuyến nghị: 7s).
   - **Nhiệm vụ Chơi Game:** Giả lập `console-heartbeat` hoặc `heartbeat` an toàn chuẩn Discord Client (Chu kỳ chuẩn: 20s, hỗ trợ tinh chỉnh từ 5s đến 60s), tích lũy tiến độ mượt mà không bị delay.
+  - **Nhiệm vụ Stream/Activity:** Hỗ trợ `stream_key` và `application_id` cho `STREAM_ON_DESKTOP`, `WATCH_STREAM`, `PLAY_ACTIVITY`.
+  - **Nhiệm vụ Console:** Hỗ trợ `console-heartbeat` riêng cho Xbox, PlayStation, Nintendo.
 - **Trình điều phối hàng đợi (Sequential Queue Runner):**
   - Đảm bảo tính tuần tự: Luôn chỉ duy nhất 1 nhiệm vụ được kích hoạt chạy tại một thời điểm để bảo vệ an toàn cho tài khoản.
   - Tự động bắt đầu nhiệm vụ tiếp theo trong hàng đợi ngay khi nhiệm vụ hiện tại chạm mốc 100%.
-- **Cơ chế nhận thưởng an toàn (Safe Discord Claim):**
-  - Tách bạch quy trình nhận quà: Nhấp nút **"Nhận quà"** sẽ mở trực tiếp trang quest trên Discord (`discord.com/quests/{id}`) trong tab mới để người dùng tự xác minh Captcha chính chủ.
-  - **Đồng bộ trạng thái từ API thật:** Không tự ý đánh dấu hoàn thành; hệ thống tự động kiểm tra lại API Discord (khi chuyển tab hoặc sau khi mở link) để chỉ chuyển sang **"Hoàn thành"** khi Discord đã xác nhận quà được nhận vào tài khoản.
+- **Cơ chế nhận thưởng đa nền tảng (Multi-Platform Claim):**
+  - Tự động thử nhận thưởng qua **8 phương án** liên tiếp: Desktop Standard → Desktop Reward Modal → Desktop PC Platform → Web → Desktop No Platform → Mobile Android → Mobile iOS → Desktop Minimal.
+  - Hỗ trợ Captcha passthrough: Khi Discord yêu cầu Captcha, API trả về `captchaSitekey` và `captchaService` để client giải quyết.
+  - Tự động phát hiện nhiệm vụ đã nhận trước đó (`alreadyClaimed`).
+  - Sau khi claim thành công, tự động truy vấn `/reward-code` để lấy Gift Code và cập nhật số dư Orbs mới nhất.
 - **Giao diện Responsive Hiện Đại & Cân Đối:**
   - **Dashboard Trang chủ:** Bố cục 2 cột cân xứng tuyệt đối, card Nhật ký hoạt động trực tiếp tự động kéo dài (stretch) bằng phẳng mép đáy với các bước thao tác nhanh. Danh sách nhiệm vụ mở hiển thị tinh tế, gọn gàng, tự động rút gọn dấu `...` khi văn bản dài.
   - **Tối ưu Mobile bảng Quest (`/quests`):** Tự động ẩn cột phụ và chữ "Hoàn thành" rườm rà, bổ sung cột "Hết hạn" trực quan, mở rộng không gian cho tên nhiệm vụ và thanh tiến trình không bị chèn chữ.
@@ -91,8 +95,10 @@ discord-quest/
 │   │   ├── logout.js             # API xử lý đăng xuất phiên an toàn
 │   │   ├── refresh.js            # API làm mới dữ liệu và hồ sơ tài khoản
 │   │   └── verify.js             # API xác thực token và nạp thông tin user
+│   ├── discord-client.js         # Module chia sẻ: Build Number, Headers, Super Properties
 │   ├── ip.js                     # API nhận diện IP mạng của client
 │   └── quests/
+│       ├── claim.js              # API nhận phần thưởng quest (Claim Reward)
 │       ├── enroll.js             # API gửi yêu cầu ghi danh nhiệm vụ
 │       ├── index.js              # API quét toàn bộ quest, lọc hết hạn & số dư Orbs
 │       ├── lookup.js             # API tra cứu nhiệm vụ theo Link hoặc ID Discord
@@ -184,57 +190,489 @@ discord-quest/
 
 ## API Reference
 
-Hệ thống cung cấp các API Serverless chạy trên nền tảng Vercel Functions (hoặc Vite middleware khi chạy local):
+Hệ thống cung cấp **10 endpoint** API Serverless chạy trên nền tảng Vercel Functions (hoặc Vite middleware khi chạy local). Tất cả các endpoint sử dụng module `discord-client.js` dùng chung để tự động cào Build Number mới nhất từ Discord (cache 6 tiếng) và sinh ra 4 bộ Headers giả lập chuẩn xác: Desktop Client, Web Browser, Mobile Android và Mobile iOS.
 
-### 1. Thông tin mạng (`/api/ip`)
-- **GET `/api/ip`**
-  - Trả về địa chỉ IP mạng thật của client.
-  - Phản hồi: `{ "success": true, "ip": "42.117.xx.xx" }`
+> **Lưu ý chung:** Mọi endpoint trả về `{ "success": false, "error": "..." }` khi gặp lỗi. Các endpoint tương tác với Discord API đều hỗ trợ phát hiện và xử lý Rate Limit (HTTP 429) với trường `isRateLimited: true` và `retryAfter` (giây).
 
-### 2. Xác thực tài khoản (`/api/auth/verify`)
-- **POST `/api/auth/verify`**
-  - Xác thực User Token với máy chủ Discord và lấy dữ liệu hồ sơ.
-  - Body: `{ "token": "YOUR_DISCORD_TOKEN" }`
-  - Phản hồi: `{ "success": true, "user": { "id": "...", "username": "...", "global_name": "...", "avatar": "..." } }`
+---
 
-### 3. Làm mới tài khoản (`/api/auth/refresh`)
-- **POST `/api/auth/refresh`**
-  - Kiểm tra tính hợp lệ của token và cập nhật thông tin mới nhất từ Discord.
-  - Body: `{ "token": "YOUR_DISCORD_TOKEN" }`
+### 1. Thông tin mạng
 
-### 4. Đăng xuất phiên (`/api/auth/logout`)
-- **POST `/api/auth/logout`**
-  - Xóa phiên làm việc hiện tại an toàn.
+**`GET /api/ip`**
 
-### 5. Danh sách nhiệm vụ (`/api/quests`)
-- **GET `/api/quests?token=YOUR_DISCORD_TOKEN`**
-  - Đồng bộ toàn bộ nhiệm vụ từ Discord (Desktop, Web, Mobile Decisions, Claimed), tính toán tiến trình chuẩn, loại trừ nhiệm vụ hết hạn và lấy số dư Orbs.
-  - Query tùy chọn: `customIds=155...,155...` để quét thêm các nhiệm vụ thêm thủ công.
-  - Phản hồi: `{ "success": true, "balance": 700, "quests": [...] }`
+Trả về địa chỉ IP công cộng thật của client. Trên Vercel đọc từ header `x-forwarded-for` / `x-real-ip`; khi chạy local tự động fallback qua `api.ipify.org`.
 
-### 6. Ghi danh nhiệm vụ (`/api/quests/enroll`)
-- **POST `/api/quests/enroll`**
-  - Gửi yêu cầu đăng ký tham gia nhiệm vụ tới Discord kèm `traffic_metadata_sealed`.
-  - Body: `{ "token": "YOUR_DISCORD_TOKEN", "questId": "..." }`
-  - Phản hồi: `{ "success": true, "enrolled": true }`
+**Phản hồi thành công:**
+```json
+{ "ip": "42.117.xx.xx" }
+```
 
-### 7. Gửi tiến trình nhiệm vụ (`/api/quests/progress`)
-- **POST `/api/quests/progress`**
-  - Gửi tiến trình `video-progress` hoặc game `heartbeat` mô phỏng client Discord thật build 504649.
-  - Body: `{ "token": "...", "questId": "...", "taskType": "WATCH_VIDEO", "timestamp": 18, "applicationId": "..." }`
-  - Phản hồi: `{ "success": true, "user_status": { ... } }`
+---
 
-### 8. Tra cứu nhiệm vụ bằng Link / ID (`/api/quests/lookup`)
-- **POST `/api/quests/lookup`**
-  - Tra cứu thông tin chi tiết của bất kỳ Quest nào qua đường link Discord hoặc Snowflake ID.
-  - Body: `{ "token": "...", "questId": "https://discord.com/quests/155..." }`
-  - Phản hồi: `{ "success": true, "quest": { ... } }`
+### 2. Xác thực tài khoản
 
-### 9. Trích xuất Gift Code (`/api/quests/reward-code`)
-- **POST `/api/quests/reward-code`**
-  - Lấy mã quà tặng dạng văn bản trực tiếp từ Discord API cho các quest đã nhận thưởng.
-  - Body: `{ "token": "...", "questId": "..." }`
-  - Phản hồi: `{ "success": true, "code": "XXXX-XXXX-XXXX" }`
+**`POST /api/auth/verify`**
+
+Xác thực Discord User Token bằng cách gọi `GET https://discord.com/api/v9/users/@me` và trả về hồ sơ người dùng đã xử lý.
+
+**Body:**
+```json
+{ "token": "YOUR_DISCORD_TOKEN" }
+```
+
+**Phản hồi thành công (200):**
+```json
+{
+  "success": true,
+  "message": "Xác thực tài khoản thành công",
+  "user": {
+    "id": "123456789012345678",
+    "username": "Tên hiển thị",
+    "rawUsername": "username_gốc",
+    "tag": "@username_gốc",
+    "avatar": "https://cdn.discordapp.com/avatars/.../...png?size=128",
+    "email": "user@example.com",
+    "phone": "+84xxxxxxxxx",
+    "premiumType": 2
+  }
+}
+```
+
+**Lỗi phổ biến:**
+| HTTP Status | Ý nghĩa |
+| :--- | :--- |
+| `400` | Thiếu trường `token` trong body |
+| `401` | Token không hợp lệ hoặc đã bị Discord thu hồi |
+| `500` | Lỗi kết nối máy chủ Discord |
+
+---
+
+### 3. Làm mới tài khoản
+
+**`POST /api/auth/refresh`**
+
+Kiểm tra tính hợp lệ của token đã lưu và cập nhật thông tin hồ sơ mới nhất. Khác với `/verify`: khi token hết hạn trả về `{ "success": false, "valid": false, "expired": true }` thay vì HTTP 401, giúp frontend phân biệt giữa lỗi token và lỗi mạng.
+
+**Body:**
+```json
+{ "token": "YOUR_DISCORD_TOKEN" }
+```
+
+**Phản hồi thành công (200):**
+```json
+{
+  "success": true,
+  "valid": true,
+  "user": {
+    "id": "...", "username": "...", "rawUsername": "...", "tag": "...",
+    "avatar": "...", "email": "...", "phone": "...", "premiumType": 0
+  }
+}
+```
+
+**Phản hồi khi token hết hạn (200):**
+```json
+{
+  "success": false,
+  "valid": false,
+  "expired": true,
+  "error": "Phiên đăng nhập đã hết hạn. Vui lòng kết nối lại tài khoản."
+}
+```
+
+---
+
+### 4. Đăng xuất phiên
+
+**`POST /api/auth/logout`**
+
+Endpoint xác nhận đăng xuất phía server. Phiên dữ liệu thực tế được xóa trên client (LocalStorage).
+
+**Phản hồi (200):**
+```json
+{
+  "success": true,
+  "message": "Đăng xuất tài khoản thành công."
+}
+```
+
+---
+
+### 5. Quét danh sách nhiệm vụ
+
+**`GET /api/quests?token=TOKEN`** hoặc **`POST /api/quests`** (body: `{ "token": "..." }`)
+
+Endpoint lõi của hệ thống. Thực hiện **quét song song 6 nguồn dữ liệu** từ Discord API và hợp nhất thông minh:
+
+| # | Nguồn | Discord API | Headers |
+| :--- | :--- | :--- | :--- |
+| 1 | Desktop Active | `GET /quests/@me` | Desktop Client |
+| 2 | Web Active | `GET /quests/@me` | Web Browser |
+| 3 | Mobile Android | `GET /quests/@me` | Android App |
+| 4 | Mobile iOS | `GET /quests/@me` | iOS App |
+| 5 | Claimed/Completed | `GET /quests/@me/claimed` | Desktop Client |
+| 6 | Orbs Balance | `GET /users/@me/virtual-currency/balance` | Desktop Client |
+
+Sau đó quét thêm **Decision Engine** qua `GET /quests/get-decisions` trên **44 request song song** (11 placements × 4 platform headers) để phát hiện 100% nhiệm vụ tài trợ.
+
+**Xử lý đặc biệt:**
+- **Hydrate incomplete:** Tự động truy vấn `GET /quests/{id}` cho mỗi quest thiếu config/tasks (thử lần lượt Desktop → Web → Android → iOS).
+- **Smart Deduplication:** Loại bỏ quest "bóng ma" (pending trùng với quest đã enrolled/claimed), hợp nhất bản ghi trùng theo campaign key.
+- **Auto Gift Code:** Tự động gọi `GET /quests/{id}/reward-code` cho tối đa 10 quest đã claimed có gift code.
+- **Lọc quest rác:** Loại bỏ quest không có tên, quest đã hết hạn mà chưa làm.
+
+**Query params tùy chọn:**
+| Param | Mô tả |
+| :--- | :--- |
+| `customIds` | Danh sách ID quest thêm thủ công, phân cách bởi dấu phẩy |
+
+**Phản hồi thành công (200):**
+```json
+{
+  "success": true,
+  "version": "v2-dynamic-decision",
+  "balance": 700,
+  "quests": [
+    {
+      "id": "1551234567890",
+      "name": "Tên nhiệm vụ",
+      "publisher": "Tên game / nhà phát hành",
+      "taskType": "WATCH_VIDEO",
+      "typeName": "Xem Video",
+      "applicationId": "123456789",
+      "targetSec": 60,
+      "progSec": 45,
+      "reward": "150 Orbs",
+      "code": null,
+      "hasGiftCode": false,
+      "status": "queued",
+      "enrolledAt": "2026-10-01T12:00:00.000Z",
+      "completedAt": null,
+      "claimedAt": null,
+      "startsAt": "2026-09-28T00:00:00.000Z",
+      "expiresAt": "2026-10-15T23:59:59.000Z",
+      "isExpired": false,
+      "trafficMetadataSealed": "...",
+      "discordUrl": "https://discord.com/quests/1551234567890",
+      "videoUrl": "https://cdn.discordapp.com/...",
+      "videoThumbnail": "https://cdn.discordapp.com/..."
+    }
+  ]
+}
+```
+
+**Các giá trị `status`:**
+| Status | Ý nghĩa |
+| :--- | :--- |
+| `pending` | Chưa đăng ký tham gia |
+| `queued` | Đã đăng ký, đang chờ/đang chạy |
+| `completed` | Đã hoàn thành 100%, chờ nhận thưởng |
+| `claimed` | Đã nhận thưởng |
+
+**Các giá trị `taskType` được hỗ trợ:**
+| Task Type | Tên hiển thị |
+| :--- | :--- |
+| `WATCH_VIDEO` | Xem Video |
+| `WATCH_VIDEO_ON_MOBILE` | Xem Video (Mobile) |
+| `WATCH_STREAM` | Xem Livestream |
+| `PLAY_ON_DESKTOP` | Chơi trên PC |
+| `STREAM_ON_DESKTOP` | Stream trên PC |
+| `PLAY_ON_XBOX` | Chơi (Xbox) |
+| `PLAY_ON_PLAYSTATION` | Chơi (PS5) |
+| `PLAY_ON_NINTENDO` | Chơi (Nintendo) |
+| `PLAY_ON_MOBILE` | Chơi Mobile |
+| `PLAY_ACTIVITY` | Hoạt động Discord |
+| `FOLLOW_SOCIAL` | Theo dõi MXH |
+| `SHARE_CONTENT` | Chia sẻ nội dung |
+| `JOIN_COMMUNITY` | Tham gia nhóm |
+
+---
+
+### 6. Ghi danh nhiệm vụ
+
+**`POST /api/quests/enroll`**
+
+Gửi yêu cầu đăng ký tham gia nhiệm vụ tới Discord. Tự động nạp `traffic_metadata_sealed` từ Decision Engine nếu chưa có. Thử gửi lần lượt qua 4 bộ headers (Desktop/Web/Android/iOS) cho đến khi thành công.
+
+**Body:**
+```json
+{
+  "token": "YOUR_DISCORD_TOKEN",
+  "questId": "1551234567890",
+  "taskType": "WATCH_VIDEO",
+  "traffic_metadata_sealed": "...",
+  "metadata_sealed": "..."
+}
+```
+
+> Chỉ `token` và `questId` là bắt buộc. Các trường còn lại tự động nạp nếu thiếu.
+
+**Phản hồi thành công (200):**
+```json
+{
+  "success": true,
+  "message": "Nhận Quest thành công",
+  "user_status": { ... }
+}
+```
+
+**Phản hồi khi đã đăng ký trước đó (200):**
+```json
+{
+  "success": true,
+  "message": "Quest đã được nhận từ trước",
+  "alreadyEnrolled": true
+}
+```
+
+**Phản hồi khi bị Rate Limit (200):**
+```json
+{
+  "success": false,
+  "status": 429,
+  "retryAfter": 5,
+  "isRateLimited": true,
+  "error": "Bạn đang bị Discord giới hạn tốc độ thao tác (Rate Limit)..."
+}
+```
+
+**Phản hồi khi quest hết hạn (200):**
+```json
+{
+  "success": false,
+  "status": 400,
+  "code": 260018,
+  "isExpired": true,
+  "error": "..."
+}
+```
+
+---
+
+### 7. Gửi tiến trình nhiệm vụ
+
+**`POST /api/quests/progress`**
+
+Gửi tiến trình giả lập nhịp tim tới Discord. Tự động chọn đúng endpoint và payload dựa trên `taskType`:
+
+| Task Type | Discord Endpoint | Payload chính |
+| :--- | :--- | :--- |
+| `WATCH_VIDEO` / `WATCH_VIDEO_ON_MOBILE` | `POST /quests/{id}/video-progress` | `{ timestamp, traffic_metadata_sealed }` |
+| `PLAY_ON_XBOX` / `PLAY_ON_PLAYSTATION` / `PLAY_ON_NINTENDO` | `POST /quests/{id}/console-heartbeat` | `{ application_id, terminal }` |
+| `STREAM_ON_DESKTOP` / `WATCH_STREAM` / `PLAY_ACTIVITY` | `POST /quests/{id}/heartbeat` | `{ stream_key, application_id, terminal }` |
+| `PLAY_ON_DESKTOP` / mặc định | `POST /quests/{id}/heartbeat` | `{ application_id, terminal }` |
+
+**Cơ chế đặc biệt:**
+- **JIT Enroll (Video):** Nếu `video-progress` trả về 404, tự động gọi `POST /quests/{id}/enroll` rồi thử lại.
+- **Multi-header fallback (Video):** Nếu Desktop headers thất bại, tự động thử lại với Web headers → Mobile headers.
+- **Auto `traffic_metadata_sealed`:** Tự động nạp từ Decision Engine nếu chưa có (chỉ cho nhiệm vụ Video).
+
+**Body:**
+```json
+{
+  "token": "YOUR_DISCORD_TOKEN",
+  "questId": "1551234567890",
+  "taskType": "WATCH_VIDEO",
+  "timestamp": 18.5,
+  "applicationId": "123456789",
+  "terminal": false,
+  "traffic_metadata_sealed": "..."
+}
+```
+
+> Chỉ `token` và `questId` là bắt buộc. `timestamp` dùng cho Video (giây thực). `terminal` đặt `true` khi gửi gói tin cuối cùng (kết thúc phiên).
+
+**Phản hồi thành công (200):**
+```json
+{
+  "success": true,
+  "user_status": {
+    "enrolled_at": "...",
+    "completed_at": null,
+    "claimed_at": null,
+    "progress": {
+      "WATCH_VIDEO": { "value": 18, "target": 60 }
+    }
+  }
+}
+```
+
+**Phản hồi khi bị Rate Limit (200):**
+```json
+{
+  "success": false,
+  "status": 429,
+  "retryAfter": 5,
+  "isRateLimited": true,
+  "error": "..."
+}
+```
+
+---
+
+### 8. Tra cứu nhiệm vụ bằng Link / ID
+
+**`POST /api/quests/lookup`**
+
+Tra cứu thông tin chi tiết của bất kỳ Quest nào qua đường link Discord hoặc Snowflake ID. Tự động làm sạch URL thành ID thuần số. Thử lần lượt 4 bộ headers (Desktop → Web → Android → iOS).
+
+**Body:**
+```json
+{
+  "token": "YOUR_DISCORD_TOKEN",
+  "questId": "https://discord.com/quests/1551234567890"
+}
+```
+
+> `questId` chấp nhận cả URL đầy đủ lẫn ID thuần số.
+
+**Phản hồi thành công (200):**
+```json
+{
+  "success": true,
+  "quest": {
+    "id": "1551234567890",
+    "name": "Tên nhiệm vụ",
+    "publisher": "Tên nhà phát hành",
+    "taskType": "PLAY_ON_DESKTOP",
+    "typeName": "Chơi trên PC",
+    "targetSec": 900,
+    "progSec": 0,
+    "reward": "Gift Code Game",
+    "code": null,
+    "hasGiftCode": false,
+    "status": "pending",
+    "applicationId": "123456789",
+    "enrolledAt": null,
+    "completedAt": null,
+    "claimedAt": null,
+    "expiresAt": "2026-10-15T23:59:59.000Z",
+    "isExpired": false,
+    "discordUrl": "https://discord.com/quests/1551234567890"
+  }
+}
+```
+
+---
+
+### 9. Nhận phần thưởng nhiệm vụ
+
+**`POST /api/quests/claim`**
+
+Gọi trực tiếp `POST https://discord.com/api/v9/quests/{id}/claim-reward` để nhận phần thưởng. Hỗ trợ nhận: **Orbs** (cộng vào ví ảo), **Avatar Decoration / Profile Effect** (cấp vào kho đồ), **Gift Code** (trả về mã đổi thưởng).
+
+**Cơ chế Multi-Attempt:** Tự động thử 8 phương án payload liên tiếp với các tổ hợp `location`, `platform` và headers khác nhau:
+
+| # | Tên | Headers | Platform | Location |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | Desktop Standard | Desktop Client | Auto-detect | 11 (Quest Home) |
+| 2 | Desktop Reward Modal | Desktop Client | Auto-detect | 25 (Reward Modal) |
+| 3 | Desktop PC Platform | Desktop Client | 4 (PC) | 11 |
+| 4 | Web Location 13 | Web Browser | Auto-detect | 13 (Mobile/Web) |
+| 5 | Desktop No Platform | Desktop Client | _(bỏ qua)_ | 11 |
+| 6 | Mobile Android | Android App | Auto-detect | 11 |
+| 7 | Mobile iOS | iOS App | Auto-detect | 11 |
+| 8 | Desktop Minimal | Desktop Client | _(bỏ qua)_ | _(bỏ qua)_ |
+
+**Body:**
+```json
+{
+  "token": "YOUR_DISCORD_TOKEN",
+  "questId": "1551234567890",
+  "taskType": "PLAY_ON_DESKTOP",
+  "platform": 0,
+  "traffic_metadata_sealed": "...",
+  "captchaKey": "...",
+  "captchaRqtoken": "..."
+}
+```
+
+> Chỉ `token` và `questId` là bắt buộc. `platform`: 0 = Desktop (mặc định), 1 = Xbox, 2 = PlayStation, 3 = Switch, 4 = PC. `captchaKey` / `captchaRqtoken` dùng khi Discord yêu cầu giải Captcha.
+
+**Phản hồi thành công (200):**
+```json
+{
+  "success": true,
+  "questId": "1551234567890",
+  "code": "XXXX-XXXX-XXXX-XXXX",
+  "claimedTier": 0,
+  "balance": 850,
+  "claimedAt": "2026-10-02T12:00:00.000Z"
+}
+```
+
+> `code` là `null` nếu phần thưởng không phải Gift Code (ví dụ: Orbs, Avatar Decoration). `balance` là số dư Orbs mới nhất sau khi nhận thưởng.
+
+**Phản hồi khi đã nhận trước đó (200):**
+```json
+{
+  "success": true,
+  "alreadyClaimed": true,
+  "message": "Nhiệm vụ này đã được nhận trước đó"
+}
+```
+
+**Phản hồi khi Discord yêu cầu Captcha (200):**
+```json
+{
+  "success": false,
+  "requireCaptcha": true,
+  "captchaSitekey": "4bb5aadb-...",
+  "captchaService": "hcaptcha",
+  "captchaRqdata": "...",
+  "captchaRqtoken": "...",
+  "error": "Discord yêu cầu giải Captcha để nhận phần thưởng này"
+}
+```
+
+---
+
+### 10. Trích xuất Gift Code
+
+**`POST /api/quests/reward-code`** hoặc **`GET /api/quests/reward-code?token=TOKEN&questId=ID`**
+
+Lấy mã quà tặng Gift Code từ Discord API (`GET /quests/{id}/reward-code`) cho các quest đã nhận thưởng có phần thưởng dạng mã đổi thưởng game.
+
+**Body (POST):**
+```json
+{
+  "token": "YOUR_DISCORD_TOKEN",
+  "questId": "1551234567890"
+}
+```
+
+**Phản hồi thành công (200):**
+```json
+{
+  "success": true,
+  "questId": "1551234567890",
+  "code": "XXXX-XXXX-XXXX-XXXX",
+  "platform": 0,
+  "userId": "123456789012345678",
+  "claimedAt": "2026-10-01T12:00:00.000Z",
+  "tier": 0
+}
+```
+
+---
+
+### Module chia sẻ: Discord Client (`api/discord-client.js`)
+
+Module nội bộ không phải endpoint công khai, được sử dụng bởi tất cả các API Serverless. Cung cấp:
+
+| Chức năng | Mô tả |
+| :--- | :--- |
+| `fetchLatestBuildNumber()` | Tự động cào Build Number mới nhất từ `discord.com/app` bằng cách quét 15 script cuối cùng. Cache 6 tiếng, fallback mặc định `626571`. |
+| `getDesktopSuperProperties(buildNum)` | Sinh `X-Super-Properties` Base64 chuẩn Discord Desktop Client (Windows, Electron 37.6.0). |
+| `getWebSuperProperties(buildNum)` | Sinh `X-Super-Properties` Base64 chuẩn Web Browser (Chrome 138). |
+| `SUPER_PROPERTIES_MOBILE_ANDROID` | `X-Super-Properties` Base64 tĩnh cho Android (Samsung Galaxy S24, v225.0). |
+| `SUPER_PROPERTIES_MOBILE_IOS` | `X-Super-Properties` Base64 tĩnh cho iOS (iPhone 15 Pro, v225.0). |
+| `DISCORD_HEADERS(token, buildNum)` | Bộ headers đầy đủ giả lập Discord Desktop Client. |
+| `DISCORD_WEB_HEADERS(token, buildNum)` | Bộ headers đầy đủ giả lập Web Browser truy cập Discord. |
+| `DISCORD_MOBILE_HEADERS(token)` | Bộ headers giả lập Discord Android App. |
+| `DISCORD_IOS_HEADERS(token)` | Bộ headers giả lập Discord iOS App. |
+| `detectTaskType(config)` | Nhận diện loại nhiệm vụ từ `task_config_v2` hoặc `task_config` theo thứ tự ưu tiên chuẩn. |
+| `getTaskTypeName(taskType)` | Chuyển đổi mã task type sang tên hiển thị tiếng Việt. |
 
 ---
 
