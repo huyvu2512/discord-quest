@@ -883,8 +883,14 @@ function renderCounters() {
     } else if (state.isSyncingQuests) {
       sumProgress.innerHTML = `<span class="skeleton" style="width: 220px; height: 12px; display: inline-block; vertical-align: middle;"></span>`;
     } else {
-      const done = state.quests.filter(q => q.status === "completed" || q.status === "claimed").length;
-      sumProgress.textContent = `${runningCount} đang chạy • ${queuedCount} trong hàng đợi • ${done}/${state.quests.length} xong`;
+      const now = Date.now();
+      const validQuests = state.quests.filter(q => {
+        if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord')) return false;
+        const isExpired = q.isExpired || (q.expiresAt && new Date(q.expiresAt).getTime() <= now);
+        return !isExpired;
+      });
+      const done = validQuests.filter(q => q.status === "completed" || q.status === "claimed").length;
+      sumProgress.textContent = `${runningCount} đang chạy • ${queuedCount} trong hàng đợi • ${done}/${validQuests.length} xong`;
     }
   }
 }

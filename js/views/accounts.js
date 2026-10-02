@@ -27,9 +27,13 @@ function renderAccounts() {
       ? `<img src="${escapeHtml(a.avatar)}" alt="" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-right: 8px;">`
       : `<span class="acc-avatar-sm" style="width: 24px; height: 24px; display: inline-flex; font-size: 10px; margin-right: 8px; flex-shrink: 0;">${escapeHtml(a.username.slice(0, 2).toUpperCase())}</span>`;
 
-    const totalQuests = isCur ? state.quests.length : (a.totalQuests || 0);
+    const now = Date.now();
+    const validQuests = isCur 
+      ? state.quests.filter(q => !q.isExpired && (!q.expiresAt || new Date(q.expiresAt).getTime() > now)) 
+      : [];
+    const totalQuests = isCur ? validQuests.length : (a.totalQuests || 0);
     const doneQuests = isCur 
-      ? state.quests.filter(q => q.status === "completed" || q.status === "claimed").length 
+      ? validQuests.filter(q => q.status === "completed" || q.status === "claimed").length 
       : (a.completedCount || 0);
     const remainingQuests = Math.max(0, totalQuests - doneQuests);
 

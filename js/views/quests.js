@@ -59,11 +59,14 @@ function renderQuests() {
   }
 
   // Sắp xếp: Chưa làm (running, queued, pending) lên đầu -> Xong chưa nhận (completed) ở giữa -> Xong đã nhận (claimed) xuống dưới cùng
+  const now = Date.now();
   const activeQuests = [...state.quests]
     .filter(q => {
+      // 1. Loại bỏ các quest rác/ảo không có tên hoặc không có ứng dụng nhiệm vụ
       if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord') && q.status !== 'claimed' && q.status !== 'completed') return false;
-      if (q.isExpired && q.status !== 'claimed' && q.status !== 'completed') return false;
-      if (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now() && q.status !== 'claimed' && q.status !== 'completed') return false;
+      // 2. Ẩn tất cả nhiệm vụ đã hết hạn hẳn (dù là claimed hay pending)
+      const isExpired = q.isExpired || (q.expiresAt && new Date(q.expiresAt).getTime() <= now);
+      if (isExpired) return false;
       return true;
     })
     .sort((a, b) => {

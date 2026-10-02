@@ -383,13 +383,13 @@ export default async function handler(req, res) {
       };
     }).filter(q => {
       // 1. Loại bỏ các quest rác/ảo không có tên hoặc không có ứng dụng nhiệm vụ
-      if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord') && q.status !== 'claimed' && q.status !== 'completed') {
+      if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord')) {
         return false;
       }
-      // 2. Loại bỏ các quest chưa làm nhưng đã hết hạn theo thời gian thực (expires_at)
-      if (q.status !== 'claimed' && q.status !== 'completed') {
-        if (q.isExpired) return false;
-        if (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now()) return false;
+      // 2. Loại bỏ các quest đã hết hạn hẳn (trừ trường hợp đã claimed có mã gift code để lưu vào kho quà)
+      const isExpired = q.isExpired || (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now());
+      if (isExpired && !(q.status === 'claimed' && (q.hasGiftCode || q.code))) {
+        return false;
       }
       return true;
     });
