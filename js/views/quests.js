@@ -67,25 +67,36 @@ function renderQuests() {
       return true;
     })
     .sort((a, b) => {
-      // 1. Phân nhóm trạng thái chính:
-      // 1: running (đang chạy) -> 2: queued (hàng đợi) -> 3: pending (chưa làm) -> 4: completed (chờ nhận quà) -> 5: claimed (đã nhận)
-      const order = { running: 1, queued: 2, pending: 3, completed: 4, claimed: 5 };
-      const statusDiff = (order[a.status] || 99) - (order[b.status] || 99);
-      if (statusDiff !== 0) return statusDiff;
+      // 1. PHÂN NHÓM CHÍNH:
+      // Nhóm 1: Chưa làm hoặc chưa nhận (completed, running, queued, pending) -> LÊN ĐẦU HẾT
+      // Nhóm 2: Đã làm rồi (claimed) -> CHO HẾT XUỐNG DƯỚI
+      const isDoneA = a.status === 'claimed' ? 1 : 0;
+      const isDoneB = b.status === 'claimed' ? 1 : 0;
+      if (isDoneA !== isDoneB) return isDoneA - isDoneB;
 
-      // 2. TRONG MỤC CHƯA LÀM (running / queued / pending):
-      if (a.status === 'running' || a.status === 'queued' || a.status === 'pending') {
-        // 2.1 Ưu tiên Xem Video trước (18s / 1-2 phút) lên trên cùng trước các game PC 15 phút
+      // 2. TRONG NHÓM CHƯA LÀM HOẶC CHƯA NHẬN (completed, running, queued, pending):
+      if (!isDoneA) {
+        // 2.1 completed (chờ nhận quà: xong rồi, cần claim ngay) -> running (đang chạy) -> queued (hàng đợi) -> pending (chưa làm)
+        const subOrder = { completed: 1, running: 2, queued: 3, pending: 4 };
+        const subDiff = (subOrder[a.status] || 99) - (subOrder[b.status] || 99);
+        if (subDiff !== 0) return subDiff;
+
+        // 2.2 Sắp hết hạn lên trước để kịp làm / kịp nhận quà!
+        const expA = a.expiresAt ? new Date(a.expiresAt).getTime() : Infinity;
+        const expB = b.expiresAt ? new Date(b.expiresAt).getTime() : Infinity;
+        if (expA !== expB) return expA - expB;
+
+        // 2.3 Ưu tiên Xem Video trước (18s / 1-2 phút) lên trên cùng trước các game PC 15 phút
         const isVideoA = a.taskType?.includes('VIDEO') ? 0 : 1;
         const isVideoB = b.taskType?.includes('VIDEO') ? 0 : 1;
         if (isVideoA !== isVideoB) return isVideoA - isVideoB;
 
-        // 2.2 Nếu cùng là video: ưu tiên thời lượng nhanh hơn (18s trước 134s)
+        // 2.4 Nếu cùng là video: ưu tiên thời lượng nhanh hơn (18s trước 134s)
         if (isVideoA === 0 && (a.targetSec !== b.targetSec)) {
           return (a.targetSec || 0) - (b.targetSec || 0);
         }
 
-        // 2.3 Nhiệm vụ mới nhất lên trên: theo startsAt hoặc ID Snowflake Discord
+        // 2.5 Nhiệm vụ mới hơn lên trên
         const timeA = a.startsAt ? new Date(a.startsAt).getTime() : 0;
         const timeB = b.startsAt ? new Date(b.startsAt).getTime() : 0;
         if (timeA !== timeB) return timeB - timeA;
@@ -93,25 +104,29 @@ function renderQuests() {
         return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
       }
 
-      // 3. TRONG MỤC CHƯA NHẬN (completed - chờ nhận quà):
-      if (a.status === 'completed') {
-        // Nhiệm vụ mới hoàn thành gần đây nhất lên trên cùng
-        const timeA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
-        const timeB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
-        if (timeA !== timeB) return timeB - timeA;
+      // 3. TRONG NHÓM ĐÃ LÀM RỒI (claimed):
+      // 3.1 Còn hạn (chưa hết hạn) ở trên, Đã hết hạn (màu đỏ) tống xuống dưới cùng
+      const now = Date.now();
+      const isExpiredA = a.isExpired || (a.expiresAt && new Date(a.expiresAt).getTime() <= now) ? 1 : 0;
+      const isExpiredB = b.isExpired || (b.expiresAt && new Date(b.expiresAt).getTime() <= now) ? 1 : 0;
+      if (isExpiredA !== isExpiredB) return isExpiredA - isExpiredB;
 
-        return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+      // 3.2 Nếu cùng còn hạn: sắp xếp theo hạn chót tăng dần (expiresAt)
+      if (!isExpiredA) {
+        const expA = a.expiresAt ? new Date(a.expiresAt).getTime() : Infinity;
+        const expB = b.expiresAt ? new Date(b.expiresAt).getTime() : Infinity;
+        if (expA !== expB) return expA - expB;
       }
 
-      // 4. TRONG MỤC ĐÃ NHẬN (claimed - hoàn tất):
-      if (a.status === 'claimed') {
-        // Nhiệm vụ mới nhận gần đây nhất lên trên cùng, nhiệm vụ cũ đẩy xuống dưới
-        const timeA = a.claimedAt ? new Date(a.claimedAt).getTime() : (a.completedAt ? new Date(a.completedAt).getTime() : 0);
-        const timeB = b.claimedAt ? new Date(b.claimedAt).getTime() : (b.completedAt ? new Date(b.completedAt).getTime() : 0);
-        if (timeA !== timeB) return timeB - timeA;
+      // 3.3 Nếu cùng đã hết hạn: nhiệm vụ hết hạn gần đây nhất lên trước, hết hạn từ rất lâu (tháng 5, 8) tống xuống dưới cùng
+      const expA = a.expiresAt ? new Date(a.expiresAt).getTime() : 0;
+      const expB = b.expiresAt ? new Date(b.expiresAt).getTime() : 0;
+      if (expA !== expB) return expB - expA;
 
-        return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
-      }
+      // 3.4 Fallback theo thời điểm nhận/hoàn thành hoặc ID Snowflake
+      const timeA = a.claimedAt ? new Date(a.claimedAt).getTime() : (a.completedAt ? new Date(a.completedAt).getTime() : 0);
+      const timeB = b.claimedAt ? new Date(b.claimedAt).getTime() : (b.completedAt ? new Date(b.completedAt).getTime() : 0);
+      if (timeA !== timeB) return timeB - timeA;
 
       return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
     });

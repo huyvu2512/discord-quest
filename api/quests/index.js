@@ -277,12 +277,14 @@ export default async function handler(req, res) {
       let progSec = Math.min(targetSec, progressVal);
 
       let status = 'pending';
-      if (q.user_status?.claimed_at || q._source === 'claimed') {
+      if (q.user_status?.claimed_at) {
         status = 'claimed';
       } else if (q.user_status?.completed_at || progSec >= targetSec) {
         status = 'completed';
       } else if (q.user_status?.enrolled_at) {
         status = 'queued';
+      } else if (q._source === 'claimed') {
+        status = 'claimed';
       }
 
       // ĐÃ XONG HOẶC ĐÃ CLAIM -> MẶC ĐỊNH LUÔN FULL 100%
@@ -504,22 +506,56 @@ export default async function handler(req, res) {
 
     const deduplicatedQuests = Array.from(campaignMap.values());
 
-    // Sắp xếp danh sách trả về một cách ổn định, đồng bộ (deterministic sort)
+    // Sắp xếp danh sách trả về:
+    // 1. Nhóm chưa làm hoặc chưa nhận lên trên hết (completed, running, queued, pending)
+    // 2. Nhóm đã làm rồi (claimed) cho hết xuống dưới
     deduplicatedQuests.sort((a, b) => {
-      const order = { running: 1, queued: 2, pending: 3, completed: 4, claimed: 5 };
-      const statusDiff = (order[a.status] || 99) - (order[b.status] || 99);
-      if (statusDiff !== 0) return statusDiff;
+      const isDoneA = a.status === 'claimed' ? 1 : 0;
+      const isDoneB = b.status === 'claimed' ? 1 : 0;
+      if (isDoneA !== isDoneB) return isDoneA - isDoneB;
 
-      const isVideoA = a.taskType?.includes('VIDEO') ? 0 : 1;
-      const isVideoB = b.taskType?.includes('VIDEO') ? 0 : 1;
-      if (isVideoA !== isVideoB) return isVideoA - isVideoB;
+      if (!isDoneA) {
+        const subOrder = { completed: 1, running: 2, queued: 3, pending: 4 };
+        const subDiff = (subOrder[a.status] || 99) - (subOrder[b.status] || 99);
+        if (subDiff !== 0) return subDiff;
 
-      if (isVideoA === 0 && (a.targetSec !== b.targetSec)) {
-        return (a.targetSec || 0) - (b.targetSec || 0);
+        const expA = a.expiresAt ? new Date(a.expiresAt).getTime() : Infinity;
+        const expB = b.expiresAt ? new Date(b.expiresAt).getTime() : Infinity;
+        if (expA !== expB) return expA - expB;
+
+        const isVideoA = a.taskType?.includes('VIDEO') ? 0 : 1;
+        const isVideoB = b.taskType?.includes('VIDEO') ? 0 : 1;
+        if (isVideoA !== isVideoB) return isVideoA - isVideoB;
+
+        if (isVideoA === 0 && (a.targetSec !== b.targetSec)) {
+          return (a.targetSec || 0) - (b.targetSec || 0);
+        }
+
+        const timeA = a.startsAt ? new Date(a.startsAt).getTime() : 0;
+        const timeB = b.startsAt ? new Date(b.startsAt).getTime() : 0;
+        if (timeA !== timeB) return timeB - timeA;
+
+        return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
       }
 
-      const timeA = a.startsAt ? new Date(a.startsAt).getTime() : 0;
-      const timeB = b.startsAt ? new Date(b.startsAt).getTime() : 0;
+      // Nhóm đã làm rồi (claimed): Còn hạn xếp trên, Hết hạn tống xuống dưới cùng
+      const now = Date.now();
+      const isExpiredA = a.isExpired || (a.expiresAt && new Date(a.expiresAt).getTime() <= now) ? 1 : 0;
+      const isExpiredB = b.isExpired || (b.expiresAt && new Date(b.expiresAt).getTime() <= now) ? 1 : 0;
+      if (isExpiredA !== isExpiredB) return isExpiredA - isExpiredB;
+
+      if (!isExpiredA) {
+        const expA = a.expiresAt ? new Date(a.expiresAt).getTime() : Infinity;
+        const expB = b.expiresAt ? new Date(b.expiresAt).getTime() : Infinity;
+        if (expA !== expB) return expA - expB;
+      }
+
+      const expA = a.expiresAt ? new Date(a.expiresAt).getTime() : 0;
+      const expB = b.expiresAt ? new Date(b.expiresAt).getTime() : 0;
+      if (expA !== expB) return expB - expA;
+
+      const timeA = a.claimedAt ? new Date(a.claimedAt).getTime() : (a.completedAt ? new Date(a.completedAt).getTime() : 0);
+      const timeB = b.claimedAt ? new Date(b.claimedAt).getTime() : (b.completedAt ? new Date(b.completedAt).getTime() : 0);
       if (timeA !== timeB) return timeB - timeA;
 
       return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
