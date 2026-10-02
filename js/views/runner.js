@@ -249,6 +249,7 @@ window.claimQuest = async function(id, btn) {
       body: JSON.stringify({
         token: currentAcc.token,
         questId: q.id,
+        taskType: q.taskType || null,
         trafficMetadataSealed: q.trafficMetadataSealed || null
       })
     });
@@ -299,11 +300,11 @@ window.claimQuest = async function(id, btn) {
     }
 
     const errMsg = data.error || 'Lỗi nhận thưởng từ Discord API';
-    addLog("error", `[Nhận quà] Thất bại: ${errMsg}. Bấm nút ↗ bên cạnh để mở Discord.`);
-    toast(`${errMsg}. Vui lòng thử nút ↗ bên cạnh để nhận trên Discord.`, "error");
+    addLog("error", `[Nhận quà] Thất bại: ${errMsg}`);
+    toast(errMsg, "error");
   } catch (err) {
     addLog("error", `[Nhận quà] Lỗi kết nối: ${err.message}`);
-    toast("Lỗi kết nối khi nhận thưởng. Thử nút ↗ bên cạnh.", "error");
+    toast("Lỗi kết nối khi nhận thưởng.", "error");
   } finally {
     if (btn && q.status !== 'claimed') {
       btn.disabled = false;

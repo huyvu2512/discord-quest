@@ -17,6 +17,26 @@ import {
   DISCORD_IOS_HEADERS
 } from '../discord-client.js';
 
+function formatDiscordError(errJson, status, errText) {
+  if (errJson && typeof errJson === 'object') {
+    if (errJson.errors && typeof errJson.errors === 'object') {
+      const details = [];
+      for (const [field, fieldVal] of Object.entries(errJson.errors)) {
+        if (fieldVal?._errors?.length) {
+          details.push(`${field}: ${fieldVal._errors.map(e => e.message || e.code).join(', ')}`);
+        }
+      }
+      if (details.length > 0) {
+        return `${errJson.message || 'Lỗi dữ liệu'}: ${details.join('; ')}`;
+      }
+    }
+    if (errJson.message) {
+      return errJson.message;
+    }
+  }
+  return `HTTP ${status}: ${errText.slice(0, 120)}`;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method Not Allowed' });
@@ -27,7 +47,7 @@ export default async function handler(req, res) {
     try { body = JSON.parse(body); } catch {}
   }
 
-  const { token, questId } = body || {};
+  const { token, questId, taskType, platform: reqPlatform } = body || {};
   if (!token || !questId) {
     return res.status(400).json({ success: false, error: 'Thiếu token hoặc questId' });
   }
@@ -50,43 +70,87 @@ export default async function handler(req, res) {
       } catch {}
     }
 
-    // Thử qua các nền tảng: Desktop, Web, Mobile Android, Mobile iOS
+    // Xác định platform integer chuẩn của Discord:
+    // 0: CROSS_PLATFORM / DESKTOP (mặc định của Discord cho game PC & quest đa nền tảng)
+    // 1: XBOX
+    // 2: PLAYSTATION
+    // 3: SWITCH
+    // 4: PC
+    let targetPlatform = 0;
+    if (typeof reqPlatform === 'number') {
+      targetPlatform = reqPlatform;
+    } else if (taskType) {
+      const tt = String(taskType).toUpperCase();
+      if (tt.includes('XBOX')) targetPlatform = 1;
+      else if (tt.includes('PLAYSTATION')) targetPlatform = 2;
+      else if (tt.includes('SWITCH')) targetPlatform = 3;
+      else targetPlatform = 0; // DESKTOP / PC default
+    }
+
+    // Helper tạo payload sạch (chỉ kèm traffic_metadata_sealed nếu là string hợp lệ, không gửi null)
+    const buildPayload = (platformVal, locationVal) => {
+      const p = {
+        location: locationVal,
+        is_targeted: false
+      };
+      if (typeof platformVal === 'number') {
+        p.platform = platformVal;
+      }
+      if (typeof traffic_metadata_sealed === 'string' && traffic_metadata_sealed.length > 0) {
+        p.traffic_metadata_sealed = traffic_metadata_sealed;
+      }
+      return p;
+    };
+
+    // Danh sách các phương án gửi payload tương thích 100% với schema Discord
     const attempts = [
+      // 1. Desktop tiêu chuẩn Discord client (location 11: QUEST_HOME_DESKTOP)
       {
-        name: 'desktop',
+        name: 'desktop_standard',
         headers: DISCORD_HEADERS(token, buildNum),
-        payload: {
-          platform: null,
-          location: 11,
-          traffic_metadata_sealed: traffic_metadata_sealed || null
-        }
+        payload: buildPayload(targetPlatform, 11)
       },
+      // 2. Desktop Reward Modal (location 25: REWARD_MODAL - giao diện popup nhận quà)
       {
-        name: 'web',
-        headers: DISCORD_WEB_HEADERS(token, buildNum),
-        payload: {
-          platform: null,
-          location: 13,
-          traffic_metadata_sealed: traffic_metadata_sealed || null
-        }
+        name: 'desktop_reward_modal',
+        headers: DISCORD_HEADERS(token, buildNum),
+        payload: buildPayload(targetPlatform, 25)
       },
+      // 3. Desktop với platform = 4 (PC explicit nếu targetPlatform = 0)
+      ...(targetPlatform === 0 ? [{
+        name: 'desktop_pc_platform',
+        headers: DISCORD_HEADERS(token, buildNum),
+        payload: buildPayload(4, 11)
+      }] : []),
+      // 4. Web client headers (location 13: QUEST_BAR_MOBILE / Web)
+      {
+        name: 'web_location_13',
+        headers: DISCORD_WEB_HEADERS(token, buildNum),
+        payload: buildPayload(targetPlatform, 13)
+      },
+      // 5. Desktop không truyền platform (chỉ truyền location & is_targeted)
+      {
+        name: 'desktop_no_platform',
+        headers: DISCORD_HEADERS(token, buildNum),
+        payload: buildPayload(undefined, 11)
+      },
+      // 6. Mobile Android client
       {
         name: 'mobile_android',
         headers: DISCORD_MOBILE_HEADERS(token),
-        payload: {
-          platform: null,
-          location: 11,
-          traffic_metadata_sealed: traffic_metadata_sealed || null
-        }
+        payload: buildPayload(targetPlatform, 11)
       },
+      // 7. Mobile iOS client
       {
         name: 'mobile_ios',
         headers: DISCORD_IOS_HEADERS(token),
-        payload: {
-          platform: null,
-          location: 11,
-          traffic_metadata_sealed: traffic_metadata_sealed || null
-        }
+        payload: buildPayload(targetPlatform, 11)
+      },
+      // 8. Payload rỗng tối giản (dự phòng)
+      {
+        name: 'desktop_minimal',
+        headers: DISCORD_HEADERS(token, buildNum),
+        payload: {}
       }
     ];
 
@@ -130,8 +194,11 @@ export default async function handler(req, res) {
           });
         }
 
-        lastError = errJson.message || `HTTP ${discordRes.status}: ${errText.slice(0, 100)}`;
+        const formattedErr = formatDiscordError(errJson, discordRes.status, errText);
+        console.warn(`[API Claim] Attempt [${att.name}] thất bại (${discordRes.status}):`, formattedErr);
+        lastError = formattedErr;
       } catch (e) {
+        console.warn(`[API Claim] Attempt [${att.name}] lỗi kết nối:`, e.message);
         lastError = e.message;
       }
     }
