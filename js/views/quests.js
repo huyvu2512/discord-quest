@@ -105,17 +105,39 @@ function renderQuests() {
 
     if (q.status === "claimed") {
       tagHtml = `<span class="tag tag-claimed">Hoàn thành</span>`;
-      actionHtml = `<span style="font-size: 11px; color: var(--text-muted); padding: 4px 6px;">Hoàn thành</span>`;
+      actionHtml = `
+        <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
+          <span style="font-size: 11px; color: var(--text-muted); padding: 4px 6px;">Hoàn thành</span>
+          <a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="Mở nhiệm vụ trên Discord">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+          </a>
+        </div>
+      `;
     } else if (q.status === "completed") {
       tagHtml = `<span class="tag tag-completed">Chờ claim</span>`;
-      actionHtml = `<button class="btn btn-primary btn-sm" onclick="claimQuest('${q.id}')">Nhận quà</button>`;
+      actionHtml = `
+        <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
+          <button class="btn btn-primary btn-sm" onclick="claimQuest('${q.id}', this)">Nhận quà</button>
+          <a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="Mở nhiệm vụ trên Discord">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+          </a>
+        </div>
+      `;
     } else if (q.status === "running") {
       tagHtml = `<span class="tag tag-running">● Đang chạy</span>`;
-      actionHtml = `<a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Link ↗</a>`;
+      actionHtml = `
+        <a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="Mở nhiệm vụ trên Discord">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+        </a>
+      `;
     } else {
       // Chưa làm (pending, queued)
       tagHtml = `<span class="tag tag-pending">Chưa làm</span>`;
-      actionHtml = `<a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Link ↗</a>`;
+      actionHtml = `
+        <a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="Mở nhiệm vụ trên Discord">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+        </a>
+      `;
     }
 
     return `

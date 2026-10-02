@@ -111,6 +111,7 @@ function renderRunner() {
 
     let statusTag = "";
     let actionBtn = "";
+    const questUrl = q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home');
 
     if (q.status === "running") {
       statusTag = `<span class="tag tag-running">● Đang chạy</span>`;
@@ -120,10 +121,24 @@ function renderRunner() {
       actionBtn = `<button class="btn btn-secondary btn-run btn-sm" onclick="prioritizeQuest('${q.id}')">Chạy</button>`;
     } else if (q.status === "completed") {
       statusTag = `<span class="tag tag-completed">Chờ nhận quà</span>`;
-      actionBtn = `<button class="btn btn-primary btn-sm" onclick="claimQuest('${q.id}')">Nhận quà</button>`;
+      actionBtn = `
+        <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
+          <button class="btn btn-primary btn-sm" onclick="claimQuest('${q.id}', this)">Nhận quà</button>
+          <a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="Mở nhiệm vụ trên Discord">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+          </a>
+        </div>
+      `;
     } else if (q.status === "claimed") {
       statusTag = `<span class="tag tag-claimed">Hoàn thành</span>`;
-      actionBtn = `<span style="font-size: 11px; color: var(--text-muted); padding: 4px 6px;">Hoàn thành</span>`;
+      actionBtn = `
+        <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
+          <span style="font-size: 11px; color: var(--text-muted); padding: 4px 6px;">Hoàn thành</span>
+          <a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 32px; width: 32px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="Mở nhiệm vụ trên Discord">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+          </a>
+        </div>
+      `;
     } else {
       statusTag = `<span class="tag tag-pending">Chưa chạy</span>`;
       actionBtn = `<button class="btn btn-secondary btn-run btn-sm" onclick="startQuest('${q.id}')">Chạy</button>`;
@@ -205,15 +220,94 @@ window.pauseQuest = function(id) {
   if (typeof renderAll === 'function') renderAll();
 };
 
-window.claimQuest = function(id) {
+// NHẬN THƯỞNG: GỌI TRỰC TIẾP API DISCORD /api/quests/claim
+window.claimQuest = async function(id, btn) {
   const q = state.quests.find(x => x.id === id);
   if (!q) return;
 
+  const currentAcc = state.accounts.find(a => a.id === state.activeAccId) || state.accounts[0];
+  if (!currentAcc || !currentAcc.token) {
+    toast("Không tìm thấy Discord Token hợp lệ", "error");
+    return;
+  }
+
   const url = q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home');
 
-  // Mở tab Discord trực tiếp để người dùng tự nhận và giải captcha
-  window.open(url, '_blank', 'noopener,noreferrer');
+  let origBtnHtml = "";
+  if (btn) {
+    origBtnHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner" style="width: 12px; height: 12px; border-width: 2px;"></span> Đang nhận...`;
+  }
 
-  addLog("info", `[Nhận quà] Đã mở link Discord cho "${q.name}". Sau khi bạn nhận quà trên Discord, web sẽ tự đồng bộ trạng thái từ API.`);
-  toast(`Đang mở Discord để nhận quà...`, "info");
+  addLog("info", `[Nhận quà] Đang gọi API nhận thưởng cho "${q.name}"...`);
+
+  try {
+    const res = await fetch('/api/quests/claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: currentAcc.token,
+        questId: q.id,
+        trafficMetadataSealed: q.trafficMetadataSealed || null
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (data.requireCaptcha) {
+      addLog("warn", `[Nhận quà] Discord yêu cầu Captcha cho "${q.name}". Đang mở trang Discord...`);
+      toast("Discord yêu cầu xác thực Captcha! Đang mở trang Discord...", "warning");
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    if (res.ok && data.success) {
+      q.status = 'claimed';
+      q.claimedAt = data.claimedAt || new Date().toISOString();
+      if (data.code) {
+        q.code = data.code;
+        q.hasGiftCode = true;
+      }
+      if (typeof data.balance === 'number') {
+        currentAcc.orbs = data.balance;
+      }
+
+      // Lưu mã quà vào state.rewards nếu có
+      if (q.code) {
+        if (!Array.isArray(state.rewards)) state.rewards = [];
+        const existR = state.rewards.find(r => r.id === q.id || r.code === q.code);
+        if (!existR) {
+          state.rewards.unshift({
+            id: q.id,
+            questName: q.name,
+            account: currentAcc.username ? `@${currentAcc.username}` : "Tài khoản",
+            type: q.reward || "Gift Code",
+            code: q.code,
+            discordUrl: url,
+            claimedAt: q.claimedAt
+          });
+        }
+      }
+
+      saveState();
+      renderAll();
+
+      addLog("success", `[Nhận quà] Thành công! Đã nhận "${q.reward}" cho "${q.name}".`);
+      toast(`Nhận thưởng "${q.reward}" thành công!`, "success");
+      return;
+    }
+
+    const errMsg = data.error || 'Lỗi nhận thưởng từ Discord API';
+    addLog("error", `[Nhận quà] Thất bại: ${errMsg}. Bấm nút ↗ bên cạnh để mở Discord.`);
+    toast(`${errMsg}. Vui lòng thử nút ↗ bên cạnh để nhận trên Discord.`, "error");
+  } catch (err) {
+    addLog("error", `[Nhận quà] Lỗi kết nối: ${err.message}`);
+    toast("Lỗi kết nối khi nhận thưởng. Thử nút ↗ bên cạnh.", "error");
+  } finally {
+    if (btn && q.status !== 'claimed') {
+      btn.disabled = false;
+      btn.innerHTML = origBtnHtml || "Nhận quà";
+    }
+  }
 };
