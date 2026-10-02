@@ -522,17 +522,26 @@ export default async function handler(req, res) {
     const deduplicatedQuests = Array.from(campaignMap.values());
 
     // Sắp xếp danh sách trả về:
-    // 1. Nhóm chưa làm hoặc chưa nhận lên trên hết (completed, running, queued, pending)
-    // 2. Nhóm đã làm rồi (claimed) cho hết xuống dưới
+    // 1. Nhóm chưa làm (running, queued, pending) lên đầu tiên
+    // 2. Nhóm đã làm xong nhưng chưa nhận thưởng (completed) xếp dưới các quest chưa làm
+    // 3. Nhóm đã làm và đã nhận rồi (claimed) cho hết xuống dưới
     deduplicatedQuests.sort((a, b) => {
-      const isDoneA = a.status === 'claimed' ? 1 : 0;
-      const isDoneB = b.status === 'claimed' ? 1 : 0;
-      if (isDoneA !== isDoneB) return isDoneA - isDoneB;
+      const getTier = (status) => {
+        if (status === 'running' || status === 'queued' || status === 'pending') return 1;
+        if (status === 'completed') return 2;
+        if (status === 'claimed') return 3;
+        return 4;
+      };
 
-      if (!isDoneA) {
-        const subOrder = { completed: 1, running: 2, queued: 3, pending: 4 };
-        const subDiff = (subOrder[a.status] || 99) - (subOrder[b.status] || 99);
-        if (subDiff !== 0) return subDiff;
+      const tierA = getTier(a.status);
+      const tierB = getTier(b.status);
+      if (tierA !== tierB) return tierA - tierB;
+
+      // 1. Trong nhóm chưa làm hoặc đang làm (running, queued, pending)
+      if (tierA === 1) {
+        const runA = a.status === 'running' ? 0 : 1;
+        const runB = b.status === 'running' ? 0 : 1;
+        if (runA !== runB) return runA - runB;
 
         const expA = a.expiresAt ? new Date(a.expiresAt).getTime() : Infinity;
         const expB = b.expiresAt ? new Date(b.expiresAt).getTime() : Infinity;
@@ -545,6 +554,23 @@ export default async function handler(req, res) {
         if (isVideoA === 0 && (a.targetSec !== b.targetSec)) {
           return (a.targetSec || 0) - (b.targetSec || 0);
         }
+
+        const timeA = a.startsAt ? new Date(a.startsAt).getTime() : 0;
+        const timeB = b.startsAt ? new Date(b.startsAt).getTime() : 0;
+        if (timeA !== timeB) return timeB - timeA;
+
+        return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+      }
+
+      // 2. Trong nhóm đã làm xong nhưng chưa nhận thưởng (completed)
+      if (tierA === 2) {
+        const expA = a.expiresAt ? new Date(a.expiresAt).getTime() : Infinity;
+        const expB = b.expiresAt ? new Date(b.expiresAt).getTime() : Infinity;
+        if (expA !== expB) return expA - expB;
+
+        const isVideoA = a.taskType?.includes('VIDEO') ? 0 : 1;
+        const isVideoB = b.taskType?.includes('VIDEO') ? 0 : 1;
+        if (isVideoA !== isVideoB) return isVideoA - isVideoB;
 
         const timeA = a.startsAt ? new Date(a.startsAt).getTime() : 0;
         const timeB = b.startsAt ? new Date(b.startsAt).getTime() : 0;

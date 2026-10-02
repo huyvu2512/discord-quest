@@ -68,35 +68,61 @@ function renderQuests() {
     })
     .sort((a, b) => {
       // 1. PHÂN NHÓM CHÍNH:
-      // Nhóm 1: Chưa làm hoặc chưa nhận (completed, running, queued, pending) -> LÊN ĐẦU HẾT
-      // Nhóm 2: Đã làm rồi (claimed) -> CHO HẾT XUỐNG DƯỚI
-      const isDoneA = a.status === 'claimed' ? 1 : 0;
-      const isDoneB = b.status === 'claimed' ? 1 : 0;
-      if (isDoneA !== isDoneB) return isDoneA - isDoneB;
+      // Nhóm 1: Chưa làm xong (running, queued, pending) -> LÊN ĐẦU TIÊN
+      // Nhóm 2: Đã làm xong nhưng chưa nhận thưởng (completed) -> XẾP DƯỚI CÁC QUEST CHƯA LÀM
+      // Nhóm 3: Đã làm và đã nhận quà (claimed) -> DƯỚI CÙNG
+      const getTier = (status) => {
+        if (status === 'running' || status === 'queued' || status === 'pending') return 1;
+        if (status === 'completed') return 2;
+        if (status === 'claimed') return 3;
+        return 4;
+      };
 
-      // 2. TRONG NHÓM CHƯA LÀM HOẶC CHƯA NHẬN (completed, running, queued, pending):
-      if (!isDoneA) {
-        // 2.1 completed (chờ nhận quà: xong rồi, cần claim ngay) -> running (đang chạy) -> queued (hàng đợi) -> pending (chưa làm)
-        const subOrder = { completed: 1, running: 2, queued: 3, pending: 4 };
-        const subDiff = (subOrder[a.status] || 99) - (subOrder[b.status] || 99);
-        if (subDiff !== 0) return subDiff;
+      const tierA = getTier(a.status);
+      const tierB = getTier(b.status);
+      if (tierA !== tierB) return tierA - tierB;
 
-        // 2.2 Sắp hết hạn lên trước để kịp làm / kịp nhận quà!
+      // 2. TRONG NHÓM 1: CHƯA LÀM HOẶC ĐANG LÀM (running, queued, pending)
+      if (tierA === 1) {
+        // Đang chạy ưu tiên lên trên cùng
+        const runA = a.status === 'running' ? 0 : 1;
+        const runB = b.status === 'running' ? 0 : 1;
+        if (runA !== runB) return runA - runB;
+
+        // Sắp hết hạn lên trước để kịp làm!
         const expA = a.expiresAt ? new Date(a.expiresAt).getTime() : Infinity;
         const expB = b.expiresAt ? new Date(b.expiresAt).getTime() : Infinity;
         if (expA !== expB) return expA - expB;
 
-        // 2.3 Ưu tiên Xem Video trước (18s / 1-2 phút) lên trên cùng trước các game PC 15 phút
+        // Ưu tiên Xem Video trước (18s / 1-2 phút) lên trên cùng trước các game PC 15 phút
         const isVideoA = a.taskType?.includes('VIDEO') ? 0 : 1;
         const isVideoB = b.taskType?.includes('VIDEO') ? 0 : 1;
         if (isVideoA !== isVideoB) return isVideoA - isVideoB;
 
-        // 2.4 Nếu cùng là video: ưu tiên thời lượng nhanh hơn (18s trước 134s)
+        // Nếu cùng là video: ưu tiên thời lượng nhanh hơn (18s trước 134s)
         if (isVideoA === 0 && (a.targetSec !== b.targetSec)) {
           return (a.targetSec || 0) - (b.targetSec || 0);
         }
 
-        // 2.5 Nhiệm vụ mới hơn lên trên
+        // Nhiệm vụ mới hơn lên trên
+        const timeA = a.startsAt ? new Date(a.startsAt).getTime() : 0;
+        const timeB = b.startsAt ? new Date(b.startsAt).getTime() : 0;
+        if (timeA !== timeB) return timeB - timeA;
+
+        return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+      }
+
+      // 3. TRONG NHÓM 2: ĐÃ LÀM XONG NHƯNG CHƯA NHẬN THƯỞNG (completed)
+      if (tierA === 2) {
+        // Sắp hết hạn lên trước để kịp nhận quà!
+        const expA = a.expiresAt ? new Date(a.expiresAt).getTime() : Infinity;
+        const expB = b.expiresAt ? new Date(b.expiresAt).getTime() : Infinity;
+        if (expA !== expB) return expA - expB;
+
+        const isVideoA = a.taskType?.includes('VIDEO') ? 0 : 1;
+        const isVideoB = b.taskType?.includes('VIDEO') ? 0 : 1;
+        if (isVideoA !== isVideoB) return isVideoA - isVideoB;
+
         const timeA = a.startsAt ? new Date(a.startsAt).getTime() : 0;
         const timeB = b.startsAt ? new Date(b.startsAt).getTime() : 0;
         if (timeA !== timeB) return timeB - timeA;
