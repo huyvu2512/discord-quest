@@ -144,15 +144,19 @@ function getRewardItems() {
           if (targetQ && !targetQ.code) targetQ.code = r.code;
         }
       } else {
+        const matchQuest = (state.quests || []).find(q => (q.id && r.id && q.id === r.id) || (q.name && r.questName && normalizeQuestKey(q.name) === normalizeQuestKey(r.questName)));
+        const qId = r.id || matchQuest?.id;
+        const discordUrl = qId ? `https://discord.com/quests/${qId}` : (r.link && r.link.includes('discord.com/quests') ? r.link : 'https://discord.com/quest-home');
+
         items.push({
-          id: r.id,
+          id: qId,
           questName: r.questName,
           account: r.account || accName,
           type: r.type || "Gift Code",
           code: r.code || null,
           status: "claimed",
           pct: 100,
-          discordUrl: r.link || "https://discord.com/quest-home",
+          discordUrl: discordUrl,
           redeemLink: r.link || "https://discord.com/quest-home",
           expiry: r.expiry || "Còn hạn dùng"
         });
@@ -215,8 +219,10 @@ function renderRewards() {
       `;
     } else if (r.status === 'completed') {
       statusCol = `<span class="tag tag-completed">Chờ lấy mã</span>`;
+      const qId = r.id || ((state.quests || []).find(q => q.name && r.questName && normalizeQuestKey(q.name) === normalizeQuestKey(r.questName))?.id);
+      const discordQuestUrl = qId ? `https://discord.com/quests/${qId}` : (r.discordUrl || 'https://discord.com/quest-home');
       codeCol = `
-        <a href="${r.discordUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 12px; font-size: 12px; border-radius: 6px;" title="Mở Discord để lấy mã Gift Code">
+        <a href="${discordQuestUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 12px; font-size: 12px; border-radius: 6px;" title="Mở nhiệm vụ trên Discord">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
           <span>Lấy Mã trên Discord</span>
         </a>
@@ -224,10 +230,9 @@ function renderRewards() {
     } else {
       // claimed
       statusCol = `<span class="tag tag-claimed">Đã nhận mã</span>`;
-      const linkUrl = r.redeemLink || r.discordUrl;
-      const linkTitle = (r.redeemLink && !r.redeemLink.includes('discord.com'))
-        ? `Mở trang đổi quà ${escapeHtml(r.questName)}`
-        : 'Xem trên Discord';
+      const qId = r.id || ((state.quests || []).find(q => q.name && r.questName && normalizeQuestKey(q.name) === normalizeQuestKey(r.questName))?.id);
+      const discordQuestUrl = qId ? `https://discord.com/quests/${qId}` : (r.discordUrl || 'https://discord.com/quest-home');
+      const linkTitle = 'Mở nhiệm vụ trên Discord';
 
       if (r.code) {
         codeCol = `
@@ -236,7 +241,7 @@ function renderRewards() {
               <span class="discord-code-text" title="${escapeHtml(r.code)}">${escapeHtml(r.code)}</span>
               <button class="discord-code-copy-btn" onclick="copyRewardCode(this, '${escapeHtml(r.code)}', event)">Sao chép</button>
             </div>
-            <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="${linkTitle}">
+            <a href="${discordQuestUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="${linkTitle}">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
             </a>
           </div>
@@ -248,7 +253,7 @@ function renderRewards() {
               <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
               <span>Lấy Mã Quà</span>
             </button>
-            <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="${linkTitle}">
+            <a href="${discordQuestUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="${linkTitle}">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
             </a>
           </div>
