@@ -1,6 +1,6 @@
 # API Reference
 
-Hệ thống cung cấp **10 endpoint** API Serverless chạy trên nền tảng Vercel Functions (hoặc Vite middleware khi chạy local). Tất cả các endpoint sử dụng module `discord-client.js` dùng chung để tự động cào Build Number mới nhất từ Discord (cache 6 tiếng) và sinh ra 4 bộ Headers giả lập chuẩn xác: Desktop Client, Web Browser, Mobile Android và Mobile iOS.
+Hệ thống cung cấp **9 endpoint** API Serverless chạy trên nền tảng Vercel Functions (hoặc Vite middleware khi chạy local). Tất cả các endpoint sử dụng module `discord-client.js` dùng chung để tự động cào Build Number mới nhất từ Discord (cache 6 tiếng) và sinh ra 4 bộ Headers giả lập chuẩn xác: Desktop Client, Web Browser, Mobile Android và Mobile iOS.
 
 > **Lưu ý chung:** Mọi endpoint trả về `{ "success": false, "error": "..." }` khi gặp lỗi. Các endpoint tương tác với Discord API đều hỗ trợ phát hiện và xử lý Rate Limit (HTTP 429) với trường `isRateLimited: true` và `retryAfter` (giây).
 
@@ -365,79 +365,7 @@ Tra cứu thông tin chi tiết của bất kỳ Quest nào qua đường link D
 
 ---
 
-## 9. Nhận phần thưởng nhiệm vụ
-
-**`POST /api/quests/claim`**
-
-Gọi trực tiếp `POST https://discord.com/api/v9/quests/{id}/claim-reward` để nhận phần thưởng. Hỗ trợ nhận: **Orbs** (cộng vào ví ảo), **Avatar Decoration / Profile Effect** (cấp vào kho đồ), **Gift Code** (trả về mã đổi thưởng).
-
-**Cơ chế Multi-Attempt:** Tự động thử 8 phương án payload liên tiếp với các tổ hợp `location`, `platform` và headers khác nhau:
-
-| # | Tên | Headers | Platform | Location |
-| :--- | :--- | :--- | :--- | :--- |
-| 1 | Desktop Standard | Desktop Client | Auto-detect | 11 (Quest Home) |
-| 2 | Desktop Reward Modal | Desktop Client | Auto-detect | 25 (Reward Modal) |
-| 3 | Desktop PC Platform | Desktop Client | 4 (PC) | 11 |
-| 4 | Web Location 13 | Web Browser | Auto-detect | 13 (Mobile/Web) |
-| 5 | Desktop No Platform | Desktop Client | _(bỏ qua)_ | 11 |
-| 6 | Mobile Android | Android App | Auto-detect | 11 |
-| 7 | Mobile iOS | iOS App | Auto-detect | 11 |
-| 8 | Desktop Minimal | Desktop Client | _(bỏ qua)_ | _(bỏ qua)_ |
-
-**Body:**
-```json
-{
-  "token": "YOUR_DISCORD_TOKEN",
-  "questId": "1551234567890",
-  "taskType": "PLAY_ON_DESKTOP",
-  "platform": 0,
-  "traffic_metadata_sealed": "...",
-  "captchaKey": "...",
-  "captchaRqtoken": "..."
-}
-```
-
-> Chỉ `token` và `questId` là bắt buộc. `platform`: 0 = Desktop (mặc định), 1 = Xbox, 2 = PlayStation, 3 = Switch, 4 = PC. `captchaKey` / `captchaRqtoken` dùng khi Discord yêu cầu giải Captcha.
-
-**Phản hồi thành công (200):**
-```json
-{
-  "success": true,
-  "questId": "1551234567890",
-  "code": "XXXX-XXXX-XXXX-XXXX",
-  "claimedTier": 0,
-  "balance": 850,
-  "claimedAt": "2026-10-02T12:00:00.000Z"
-}
-```
-
-> `code` là `null` nếu phần thưởng không phải Gift Code (ví dụ: Orbs, Avatar Decoration). `balance` là số dư Orbs mới nhất sau khi nhận thưởng.
-
-**Phản hồi khi đã nhận trước đó (200):**
-```json
-{
-  "success": true,
-  "alreadyClaimed": true,
-  "message": "Nhiệm vụ này đã được nhận trước đó"
-}
-```
-
-**Phản hồi khi Discord yêu cầu Captcha (200):**
-```json
-{
-  "success": false,
-  "requireCaptcha": true,
-  "captchaSitekey": "4bb5aadb-...",
-  "captchaService": "hcaptcha",
-  "captchaRqdata": "...",
-  "captchaRqtoken": "...",
-  "error": "Discord yêu cầu giải Captcha để nhận phần thưởng này"
-}
-```
-
----
-
-## 10. Trích xuất Gift Code
+## 9. Trích xuất Gift Code
 
 **`POST /api/quests/reward-code`** hoặc **`GET /api/quests/reward-code?token=TOKEN&questId=ID`**
 

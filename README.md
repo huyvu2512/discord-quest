@@ -36,7 +36,7 @@ Hệ thống cho phép quét kho nhiệm vụ chính thức từ Discord qua API
 - 🔍 **Quét nhiệm vụ đa nguồn** — Đồng bộ từ Desktop, Web, Mobile (Android + iOS) và Decision Engine (Placements 0 ➔ 10), tổng cộng 44+ request song song.
 - 🎯 **Đồng bộ thuần API** — 100% dữ liệu lấy trực tiếp từ Discord API, không cache cũ, đồng nhất trên mọi thiết bị.
 - ⚡ **Giả lập tiến độ thông minh** — Xem Video (7s), Chơi Game (20s), Stream, Console với heartbeat chuẩn Discord Client.
-- 🎁 **Nhận thưởng đa nền tảng** — Tự động thử 8 phương án claim (Desktop/Web/Mobile), hỗ trợ Captcha passthrough.
+- 🎁 **Mở nhận thưởng trực tiếp** — Nút Nhận quà dẫn thẳng tới trang nhiệm vụ Discord để nhận phần thưởng an toàn, tiện lợi.
 - 📋 **Hàng đợi tuần tự** — Chạy 1 quest tại một thời điểm, tự động chuyển quest tiếp theo khi đạt 100%.
 - 🔑 **Trích xuất Gift Code** — Tự động lấy mã quà từ Discord cho các quest game đối tác.
 - 👥 **Đa tài khoản** — Thêm và chuyển đổi nhanh giữa nhiều tài khoản Discord.
@@ -62,15 +62,14 @@ Hệ thống cho phép quét kho nhiệm vụ chính thức từ Discord qua API
 
 ```text
 discord-quest/
-├── api/                          # Vercel Serverless Functions (10 endpoints)
+├── api/                          # Vercel Serverless Functions (9 endpoints)
 │   ├── auth/                     # Xác thực, làm mới, đăng xuất
 │   │   ├── logout.js
 │   │   ├── refresh.js
 │   │   └── verify.js
 │   ├── discord-client.js         # Module chia sẻ: Build Number, Headers, Super Properties
 │   ├── ip.js                     # Nhận diện IP mạng
-│   └── quests/                   # Quét, ghi danh, tiến trình, claim, tra cứu, gift code
-│       ├── claim.js
+│   └── quests/                   # Quét, ghi danh, tiến trình, tra cứu, gift code
 │       ├── enroll.js
 │       ├── index.js
 │       ├── lookup.js
@@ -127,7 +126,7 @@ npm run build
 
 ## API Overview
 
-Hệ thống cung cấp **10 endpoint** API Serverless. Chi tiết đầy đủ xem tại 👉 **[docs/API.md](./docs/API.md)**
+Hệ thống cung cấp **9 endpoint** API Serverless. Chi tiết đầy đủ xem tại 👉 **[docs/API.md](./docs/API.md)**
 
 | # | Endpoint | Method | Mô tả |
 | :--- | :--- | :--- | :--- |
@@ -139,8 +138,7 @@ Hệ thống cung cấp **10 endpoint** API Serverless. Chi tiết đầy đủ 
 | 6 | `/api/quests/enroll` | POST | Ghi danh tham gia nhiệm vụ |
 | 7 | `/api/quests/progress` | POST | Gửi heartbeat tiến trình |
 | 8 | `/api/quests/lookup` | POST | Tra cứu quest theo Link/ID |
-| 9 | `/api/quests/claim` | POST | Nhận phần thưởng quest |
-| 10 | `/api/quests/reward-code` | POST/GET | Trích xuất Gift Code |
+| 9 | `/api/quests/reward-code` | POST/GET | Trích xuất Gift Code |
 
 ---
 

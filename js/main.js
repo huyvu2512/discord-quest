@@ -546,18 +546,6 @@ function bindActionButtons() {
     }
   });
 
-  // Modal Giải Captcha Discord
-  const captchaModal = document.getElementById("modal-captcha");
-  document.getElementById("btn-close-captcha-modal")?.addEventListener("click", () => captchaModal?.classList.remove("open"));
-  document.getElementById("btn-cancel-captcha")?.addEventListener("click", () => captchaModal?.classList.remove("open"));
-  captchaModal?.addEventListener("click", (e) => {
-    if (e.target === captchaModal) captchaModal.classList.remove("open");
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && captchaModal?.classList.contains("open")) {
-      captchaModal.classList.remove("open");
-    }
-  });
 
   document.getElementById("btn-submit-custom-quest")?.addEventListener("click", async () => {
     const input = document.getElementById("input-custom-quest");
@@ -1025,7 +1013,8 @@ function renderHome() {
         } else if (q.status === "queued") {
           actionBtn = `<button class="btn btn-secondary btn-sm" onclick="startQuest('${q.id}')">Chạy</button>`;
         } else if (q.status === "completed") {
-          actionBtn = `<button class="btn btn-primary btn-sm" onclick="claimQuest('${q.id}')">Nhận quà</button>`;
+          const questUrl = q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home');
+          actionBtn = `<a href="${questUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Nhận quà</a>`;
         } else if (q.status === "claimed") {
           actionBtn = `<span class="tag tag-claimed">Hoàn thành</span>`;
         }

@@ -9,7 +9,6 @@ import enrollHandler from './api/quests/enroll.js';
 import progressHandler from './api/quests/progress.js';
 import lookupHandler from './api/quests/lookup.js';
 import rewardCodeHandler from './api/quests/reward-code.js';
-import claimHandler from './api/quests/claim.js';
 
 function readJsonBody(req) {
   return new Promise((resolve) => {
@@ -93,9 +92,6 @@ export default defineConfig({
           }
           if (pathname === '/api/quests/reward-code') {
             return rewardCodeHandler(req, res);
-          }
-          if (pathname === '/api/quests/claim') {
-            return claimHandler(req, res);
           }
           if (pathname === '/api/quests') {
             return questsHandler(req, res);
