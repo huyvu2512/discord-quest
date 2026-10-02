@@ -48,7 +48,7 @@ export default async function handler(req, res) {
   }
 
   const { token, questId, taskType, timestamp, applicationId, terminal } = body || {};
-  const trafficMetadataSealed = body.traffic_metadata_sealed || body.trafficMetadataSealed || null;
+  let trafficMetadataSealed = body.traffic_metadata_sealed || body.trafficMetadataSealed || null;
   if (!token || !questId) {
     return res.status(400).json({ success: false, error: 'Thiếu token hoặc questId' });
   }
@@ -59,10 +59,25 @@ export default async function handler(req, res) {
     let discordUrl = '';
     let payload = {};
 
+    // Tự động nạp traffic_metadata_sealed từ get-decisions nếu chưa có cho nhiệm vụ Video
+    if (isVideo && !trafficMetadataSealed) {
+      try {
+        const decUrl = 'https://discord.com/api/v9/quests/get-decisions?placement=1&num_decisions_requested=5';
+        const decRes = await fetch(decUrl, { headers: DISCORD_WEB_HEADERS(token) });
+        if (decRes.ok) {
+          const decData = await decRes.json();
+          trafficMetadataSealed = decData.traffic_metadata_sealed || decData.quest?.traffic_metadata_sealed || null;
+        }
+      } catch {}
+    }
+
     if (isVideo) {
       discordUrl = `https://discord.com/api/v9/quests/${questId}/video-progress`;
-      payload = { timestamp: typeof timestamp === 'number' ? timestamp : 10 };
+      // Chuẩn timestamp dạng số thực tương tự Video Player native của Discord
+      const numTs = typeof timestamp === 'number' ? timestamp : parseFloat(timestamp) || 10;
+      payload = { timestamp: Number(numTs.toFixed(4)) };
       headers = DISCORD_WEB_HEADERS(token);
+      headers['Referer'] = 'https://discord.com/quest-home';
     } else if (taskType?.includes('CONSOLE') || taskType?.includes('XBOX') || taskType?.includes('PLAYSTATION') || taskType?.includes('NINTENDO')) {
       discordUrl = `https://discord.com/api/v9/quests/${questId}/console-heartbeat`;
       payload = {

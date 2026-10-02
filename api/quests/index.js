@@ -265,13 +265,12 @@ export default async function handler(req, res) {
       const lowerName = name.toLowerCase();
 
       let taskType = detectTaskType(config);
-      // Tự động nhận diện nhiệm vụ Xem Video dựa trên tên nhà tài trợ / video / trailer
-      if (lowerName.includes('video') || lowerName.includes('trailer') || lowerName.includes('monopoly') || 
-          lowerName.includes('dumb ways') || lowerName.includes('wolverine') || lowerName.includes('runescape') || 
-          lowerName.includes('star wars') || lowerName.includes('phantom blade') || lowerName.includes('subnautica') || 
-          lowerName.includes('backrooms') || lowerName.includes('dawnwalker') || lowerName.includes('nba 2k27') ||
-          lowerName.includes('control') || lowerName.includes('giants')) {
-        taskType = 'WATCH_VIDEO';
+      // Tự động nhận diện nhiệm vụ Xem Video dựa trên từ khóa video/trailer thực tế nếu chưa có task cụ thể
+      const hasDefinedTask = Boolean(config.task_config_v2?.tasks || config.task_config?.tasks);
+      if (!hasDefinedTask || taskType === 'PLAY_ON_DESKTOP') {
+        if (lowerName.includes('video') || lowerName.includes('trailer') || lowerName.includes('march of giants') || lowerName.includes('control resonant')) {
+          taskType = 'WATCH_VIDEO';
+        }
       }
 
       const tasks = config.task_config_v2?.tasks ?? config.task_config?.tasks ?? {};

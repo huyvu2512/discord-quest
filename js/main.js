@@ -55,10 +55,11 @@ document.addEventListener("DOMContentLoaded", () => {
       // Chỉ gửi POST /enroll cho các nhiệm vụ Game PC, Console hoặc Stream!
       const isVideo = current.taskType === 'WATCH_VIDEO' || current.taskType === 'WATCH_VIDEO_ON_MOBILE' || (typeof current.taskType === 'string' && current.taskType.includes('VIDEO'));
 
-      // Bắt buộc phải enroll trước khi gửi tiến độ (kể cả Video hay Game).
-      // Giống như cơ chế của các dự án T3 (Orion, Vencord), Discord yêu cầu phải nhận quest (enroll)
-      // thì endpoint /video-progress mới tồn tại và nhận timestamp, nếu không Discord sẽ trả về 404 Not Found.
-      if (!current.enrolledAt) {
+      // 1. Chỉ thực hiện enroll với các nhiệm vụ Game PC, Console, Stream (những nhiệm vụ thực sự yêu cầu tham gia).
+      // BỎ QUA HOÀN TOÀN BƯỚC ENROLL ĐỐI VỚI NHIỆM VỤ XEM VIDEO (WATCH_VIDEO):
+      // Discord phát video trực tiếp qua Showcase/Quest Home, KHÔNG CÓ endpoint /enroll.
+      // Việc cố tình gửi POST /enroll cho video quest sẽ bị Discord trả về lỗi hoặc dính án phạt HTTP 429 Rate Limit hàng ngàn giây.
+      if (!isVideo && !current.enrolledAt) {
         addLog("info", `[Auto] Nhận Quest "${current.name}" trên Discord...`);
         const enrollRes = await fetch("/api/quests/enroll", {
           method: "POST",
@@ -80,8 +81,9 @@ document.addEventListener("DOMContentLoaded", () => {
           btnRun?.classList.remove("hidden");
           btnStop?.classList.add("hidden");
 
-          addLog("warn", `[Rate Limit] Discord giới hạn tốc độ: ${enrollData.error || 'Vui lòng chờ ít giây rồi thử lại'}. Đã tạm dừng.`);
-          toast(enrollData.error || "Discord đang giới hạn thao tác (Rate Limit)", "warn");
+          const waitSec = Math.ceil(enrollData.retryAfter || 5);
+          addLog("warn", `[Rate Limit] Discord giới hạn tốc độ (chờ ${waitSec}s): ${enrollData.error || 'Vui lòng chờ ít giây rồi thử lại'}. Đã tạm dừng.`);
+          toast(enrollData.error || `Discord đang giới hạn thao tác (Rate Limit: ${waitSec}s)`, "warn");
           return;
         }
 
@@ -111,10 +113,21 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           return; // Dừng lại, không gửi heartbeat
         }
+      } else if (isVideo && !current.enrolledAt) {
+        current.enrolledAt = new Date().toISOString();
       }
 
       // 2. Gửi tiến độ thật (Heartbeat hoặc Video Progress)
-      const nextTimestamp = isVideo ? Math.min(current.targetSec, current.progSec + 6) : current.progSec;
+      let nextTimestamp;
+      if (isVideo) {
+        // Nhịp chuẩn Discord Video Player: Tăng tiến độ theo thời gian thực mỗi nhịp tick (6s) kèm chút sai số tự nhiên (jitter)
+        const jitter = (Math.random() * 0.4 - 0.2); // dao động nhẹ ±0.2s
+        const step = Math.max(1, 6 + jitter);
+        const calculatedTs = (current.progSec || 0) + step;
+        nextTimestamp = Number(Math.min(current.targetSec, calculatedTs).toFixed(4));
+      } else {
+        nextTimestamp = current.progSec;
+      }
 
       // QUAN TRỌNG: Luôn gửi terminal: false khi đang chạy để giữ session sống và Discord tiếp tục tích lũy thời gian.
       // Tuyệt đối KHÔNG gửi terminal: true trước khi Discord xác nhận hoàn thành (tránh bị kẹt ở 14m 59s / 899s).
@@ -145,8 +158,9 @@ document.addEventListener("DOMContentLoaded", () => {
         btnRun?.classList.remove("hidden");
         btnStop?.classList.add("hidden");
 
-        addLog("warn", `[Rate Limit] Gửi tiến độ chạm giới hạn Discord: ${progData.error || 'Vui lòng chờ ít giây'}. Đã tạm dừng.`);
-        toast(progData.error || "Discord đang giới hạn thao tác (Rate Limit)", "warn");
+        const waitSec = Math.ceil(progData.retryAfter || 5);
+        addLog("warn", `[Rate Limit] Gửi tiến độ chạm giới hạn Discord (chờ ${waitSec}s): ${progData.error || 'Vui lòng chờ ít giây'}. Đã tạm dừng.`);
+        toast(`Discord giới hạn thao tác: Thử lại sau ${waitSec}s`, "warn");
         return;
       }
 
