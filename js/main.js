@@ -112,23 +112,20 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // 2. Gửi tiến độ thật (Heartbeat hoặc Video Progress)
+      if (!current._runStartedAt) {
+        current._runStartedAt = Date.now();
+        current._baseProgSec = current.progSec || 0;
+      }
+      const elapsedRealSec = Math.floor((Date.now() - current._runStartedAt) / 1000);
+
       let nextTimestamp;
       if (isVideo) {
-        if (!current._runStartedAt) {
-          current._runStartedAt = Date.now();
-          current._baseProgSec = current.progSec || 0;
-        }
-
-        // Tính toán đúng thời gian thực tế đã trôi qua kể từ khi bắt đầu chạy
-        const elapsedRealSec = Math.floor((Date.now() - current._runStartedAt) / 1000);
-        
         // Không gửi ping ảo nếu vừa mới bấm chạy dưới 5 giây (trừ khi đã có tiến độ trước đó)
         if (elapsedRealSec < 5 && (current.progSec || 0) === 0) {
           return;
         }
 
         const realSec = Math.min(current.targetSec, (current._baseProgSec || 0) + elapsedRealSec);
-        current.progSec = realSec;
 
         // Nếu đã đủ thời gian targetSec, luôn gửi CHÍNH XÁC targetSec (không dùng jitter âm) để Discord kích hoạt hoàn thành 100%
         if (realSec >= current.targetSec) {
@@ -139,11 +136,12 @@ document.addEventListener("DOMContentLoaded", () => {
           nextTimestamp = Number(Math.max(1, realSec + jitter).toFixed(4));
         }
       } else {
-        nextTimestamp = current.progSec;
+        nextTimestamp = (current._baseProgSec || 0) + elapsedRealSec;
       }
 
-      // QUAN TRỌNG: Gửi terminal: true khi nhiệm vụ game đã chạm mốc targetSec
-      const isTerminal = !isVideo && (current.progSec >= current.targetSec);
+      // QUAN TRỌNG: Gửi terminal: true khi nhiệm vụ game thực tế đã đạt đủ targetSec
+      const realProgressSec = (current._baseProgSec || 0) + elapsedRealSec;
+      const isTerminal = !isVideo && (realProgressSec >= current.targetSec || current.progSec >= current.targetSec);
 
       const progRes = await fetch("/api/quests/progress", {
         method: "POST",
@@ -186,21 +184,25 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
         if (typeof discordProg === 'number') {
-          // Tuyệt đối không để giá trị làm tròn của Discord kéo lùi tiến trình về targetSec - 1
-          if (discordProg >= current.progSec) {
-            current.progSec = Math.min(current.targetSec, discordProg);
-            current._baseProgSec = current.progSec;
-            current._runStartedAt = Date.now();
-          }
+          // Luôn cập nhật tiến độ thực tế theo phản hồi chính xác từ Discord API
+          current.progSec = Math.min(current.targetSec, discordProg);
+          current._baseProgSec = current.progSec;
+          current._runStartedAt = Date.now();
         } else if (isVideo) {
           current.progSec = Math.min(current.targetSec, Math.ceil(nextTimestamp));
         }
 
-        const isCompleted = Boolean(uStatus?.completed_at) || (current.progSec >= current.targetSec);
+        // BẮT BUỘC KIỂM TRA CHẶT CHẼ THEO DISCORD API:
+        // Tuyệt đối không tự ý đổi thành completed dựa trên bộ đếm local!
+        // Chỉ hoàn thành khi Discord API trả về xác nhận thật sự:
+        const isCompleted = Boolean(uStatus?.completed_at) || 
+          (typeof discordProg === 'number' && discordProg >= current.targetSec) ||
+          (isVideo && progRes.ok && progData.success && nextTimestamp >= current.targetSec);
 
         if (isCompleted) {
           current.status = "completed";
           current.progSec = current.targetSec;
+          current.completedAt = uStatus?.completed_at || new Date().toISOString();
           delete current._runStartedAt;
           delete current._baseProgSec;
 
@@ -265,6 +267,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const raw = localStorage.getItem("dqt_settings");
       const s = raw ? JSON.parse(raw) : {};
       const isVideo = current ? (current.taskType === 'WATCH_VIDEO' || current.taskType === 'WATCH_VIDEO_ON_MOBILE' || (typeof current.taskType === 'string' && current.taskType.includes('VIDEO'))) : true;
+      
+      // Nếu nhiệm vụ game đang ở những giây cuối (còn <= 15s), tự động rút ngắn delay để gửi terminal heartbeat đúng lúc
+      if (current && !isVideo && current.targetSec) {
+        const elapsedRealSec = current._runStartedAt ? Math.floor((Date.now() - current._runStartedAt) / 1000) : 0;
+        const realSec = (current._baseProgSec || 0) + elapsedRealSec;
+        const remainSec = current.targetSec - Math.max(current.progSec || 0, realSec);
+        if (remainSec <= 15) {
+          return Math.max(3000, Math.max(0, remainSec) * 1000 + 1000);
+        }
+      }
+
       let baseSec = isVideo ? (parseInt(s.videoInterval, 10) || 7) : (parseInt(s.gameInterval, 10) || 20);
       if (s.randomJitter !== false) {
         // Lệch ngẫu nhiên ±1s cho video, ±2s cho game để giả lập người thật
@@ -307,9 +320,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const elapsedRealSec = Math.floor((Date.now() - current._runStartedAt) / 1000);
-    const calculatedSec = Math.min(current.targetSec, (current._baseProgSec || 0) + elapsedRealSec);
+    // Giao diện tự động đếm giây khi đang chạy, nhưng BẮT BUỘC chỉ đếm tới tối đa targetSec - 1.
+    // Giây cuối cùng (100% / Hoàn thành) PHẢI do Discord API phản hồi xác nhận.
+    const maxSimulatedSec = Math.max(0, (current.targetSec || 1) - 1);
+    const calculatedSec = Math.min(maxSimulatedSec, (current._baseProgSec || 0) + elapsedRealSec);
 
-    if (calculatedSec !== current.progSec && calculatedSec <= current.targetSec) {
+    if (calculatedSec !== current.progSec && calculatedSec <= maxSimulatedSec) {
       current.progSec = calculatedSec;
       if ((state.activeTab === "quests" || state.activeTab === "runner") && typeof renderQuests === "function") {
         renderQuests();

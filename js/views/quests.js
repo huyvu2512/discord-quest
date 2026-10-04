@@ -180,15 +180,10 @@ function renderQuests() {
   }
 
   tbody.innerHTML = activeQuests.map(q => {
-    const isDone = q.status === "completed" || q.status === "claimed" || (q.targetSec > 0 && q.progSec >= q.targetSec);
-    if (isDone) {
-      q.progSec = q.targetSec;
-      if (q.status !== "claimed") {
-        q.status = "completed";
-      }
-    }
-    const pct = isDone ? 100 : Math.min(99, Math.floor((q.progSec / q.targetSec) * 100));
-    const remain = isDone ? 0 : Math.max(0, q.targetSec - q.progSec);
+    // Trạng thái hoàn thành BẮT BUỘC phải do Discord API xác nhận thật, không tự ý gán status trong hàm render
+    const isDone = q.status === "completed" || q.status === "claimed";
+    const pct = isDone ? 100 : Math.min(99, Math.floor(((q.progSec || 0) / (q.targetSec || 1)) * 100));
+    const remain = isDone ? 0 : Math.max(1, (q.targetSec || 0) - (q.progSec || 0));
 
     const isExpiredQuest = q.isExpired || (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now());
     const expShort = formatExpiryShort(q.expiresAt);
