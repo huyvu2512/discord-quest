@@ -22,7 +22,7 @@
 ---
 
 <div align="center">
-  <img src="public/assets/preview.png" alt="Giao diện Discord Quest" width="100%">
+  <img src="public/preview.png" alt="Giao diện Discord Quest" width="100%">
 </div>
 
 ---
@@ -82,9 +82,8 @@ discord-quest/
 │   ├── state.js                  # Quản lý trạng thái và lưu trữ localStorage
 │   └── views/                    # Các module hiển thị (Accounts, Quests, Rewards)
 ├── public/                       # Tài nguyên tĩnh, favicon, sitemap và preview
-│   ├── assets/                   # Ảnh xem trước giao diện ứng dụng
-│   │   └── preview.png
 │   ├── favicon.ico               # Favicon chuẩn
+│   ├── preview.png               # Ảnh xem trước giao diện ứng dụng
 │   ├── robots.txt                # Cấu hình robot tìm kiếm
 │   └── sitemap.xml               # Sơ đồ trang web phục vụ SEO
 ├── docs/                         # Tài liệu kỹ thuật
