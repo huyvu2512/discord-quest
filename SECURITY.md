@@ -1,45 +1,22 @@
-# Chính sách bảo mật
+# Chính Sách Bảo Mật (Security Policy)
 
-## Báo cáo lỗ hổng bảo mật
+## Phạm vi và Mục đích
 
-Nếu bạn phát hiện lỗ hổng bảo mật trong dự án **Discord Quest**, vui lòng **KHÔNG** tạo Issue công khai. Thay vào đó:
+Dự án này được xây dựng hoàn toàn với mục đích học tập, nghiên cứu về cơ chế quản lý phiên, giao thức Discord Gateway/HTTP API và tự động hóa tác vụ web mang tính chất phi thương mại. Mọi hành vi sử dụng công cụ này vào mục đích trái phép, can thiệp tài khoản không thuộc quyền sở hữu hoặc vi phạm Điều khoản dịch vụ của Discord đều bị nghiêm cấm.
 
-1. Gửi email trực tiếp đến **huyvu2512** qua [GitHub Profile](https://github.com/huyvu2512).
-2. Hoặc tạo **Security Advisory** riêng tư trên GitHub.
+## Xử lý Dữ liệu Người dùng
 
-## Phạm vi bảo mật
+1. **Không lưu trữ Token trên server:** Các hàm Serverless và backend không lưu trữ bất kỳ Discord Token, thông tin tài khoản hay mật khẩu người dùng vào cơ sở dữ liệu nào. Dữ liệu chỉ được truyền tạm thời trong bộ nhớ RAM để giao tiếp trực tiếp với Discord API và được giải phóng tự động ngay sau khi request hoàn tất.
+2. **Lưu trữ cục bộ an toàn:** Trên trình duyệt, danh sách tài khoản, cấu hình và trạng thái nhiệm vụ chỉ được lưu tạm thời trong `localStorage` của máy khách (client-side) nhằm duy trì trạng thái làm việc và sẽ bị xóa sạch hoàn toàn khi người dùng nhấn nút Đăng xuất hoặc Xóa dữ liệu.
+3. **Kết nối mã hóa HTTPS:** Mọi luồng giao tiếp giữa trình duyệt, proxy serverless và Discord API đều được mã hóa toàn trình qua kết nối HTTPS / TLS tiêu chuẩn.
+4. **Tiêu đề bảo mật:** Hệ thống cấu hình sẵn các tiêu đề bảo mật (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `X-XSS-Protection: 1; mode=block`, `Referrer-Policy: strict-origin-when-cross-origin`) trên mạng lưới phân phối Vercel Edge Network.
 
-### Trong phạm vi xử lý
-- Lỗ hổng trong các API Serverless (`/api/*`)
-- Vấn đề rò rỉ token hoặc thông tin nhạy cảm
-- Lỗi xác thực và phân quyền
-- Cross-Site Scripting (XSS) trong giao diện web
+## Báo cáo Lỗ hổng Bảo mật
 
-### Ngoài phạm vi
-- Các vấn đề liên quan đến Discord API hoặc hạ tầng Discord
-- Lỗi bảo mật trên nền tảng Vercel
-- Các vấn đề phía trình duyệt của người dùng
+Nếu bạn phát hiện bất kỳ vấn đề bảo mật tiềm ẩn nào liên quan đến mã nguồn của dự án này, vui lòng thực hiện theo các bước sau:
 
-## Xử lý Token Discord
-
-- **Không bao giờ** lưu Discord Token trên server hoặc database.
-- Token chỉ được lưu trên LocalStorage của trình duyệt người dùng.
-- Mọi request API chỉ truyền token qua body hoặc query params trong phiên làm việc hiện tại.
-- Không ghi log token vào console hoặc file log trên server.
-
-## Tiêu đề bảo mật (Security Headers)
-
-Hệ thống đã cấu hình sẵn các tiêu đề bảo mật qua `vercel.json`:
-
-| Header | Giá trị |
-| :--- | :--- |
-| `X-Content-Type-Options` | `nosniff` |
-| `X-Frame-Options` | `SAMEORIGIN` |
-| `X-XSS-Protection` | `1; mode=block` |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` |
-
-## Thời gian phản hồi
-
-- Xác nhận nhận được báo cáo: trong vòng **48 giờ**
-- Đánh giá và phân loại: trong vòng **7 ngày**
-- Phát hành bản vá (nếu cần): trong vòng **14 ngày**
+1. Tuyệt đối không công khai lỗ hổng qua hệ thống Issue công khai của GitHub.
+2. Gửi thông tin chi tiết về lỗ hổng kèm các bước tái hiện tới kênh liên hệ cá nhân của tác giả:
+   - Trang thông tin: https://huyvu2512.io.vn
+   - Hồ sơ GitHub: https://github.com/huyvu2512
+3. Tác giả sẽ tiếp nhận, đánh giá mức độ nghiêm trọng và phát hành bản cập nhật vá lỗi trong thời gian sớm nhất.
