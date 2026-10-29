@@ -8,23 +8,10 @@ const initialActiveId = savedAccounts.some(a => a.id === savedActiveId)
   ? savedActiveId
   : (savedAccounts[0]?.id || null);
 
-// Xóa bỏ triệt để cache quest cũ khỏi localStorage để 100% dữ liệu luôn lấy sống từ Discord API
+// Xóa bỏ cache cũ khỏi localStorage để 100% dữ liệu luôn lấy sống từ Discord API
 try {
   localStorage.removeItem("dqt_quests");
-} catch {}
-
-let savedRewards = JSON.parse(localStorage.getItem("dqt_rewards") || "[]");
-savedRewards = savedRewards.filter(r => {
-  // Chỉ lưu giữ những phần thưởng thực sự CÓ MÃ CODE khả dụng
-  if (!r.code || typeof r.code !== 'string' || !r.code.trim()) return false;
-  if (r.code === "3Y22-PJSM-CVJM-ZCDY" || r.code === "026154290182") return false;
-  const t = (r.type || '').toLowerCase();
-  if (t.includes('orb') || /avatar|decoration|profile effect|collectible|badge|khung/i.test(t)) return false;
-  return true;
-});
-
-try {
-  localStorage.setItem("dqt_rewards", JSON.stringify(savedRewards));
+  localStorage.removeItem("dqt_rewards");
 } catch {}
 
 function getTabFromUrl() {
@@ -38,7 +25,7 @@ function getTabFromUrl() {
 const state = {
   accounts: savedAccounts,
   quests: [], // 100% nạp sống từ Discord API khi vào web hoặc bấm Quét Quest
-  rewards: savedRewards,
+  rewards: [], // 100% nạp sống từ Discord API
   activeAccId: initialActiveId,
   activeTab: getTabFromUrl(),
   filter: "all",
