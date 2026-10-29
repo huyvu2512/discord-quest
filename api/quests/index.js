@@ -297,6 +297,9 @@ export default async function handler(req, res) {
         const name = (cfg.messages?.quest_name || cfg.application?.name || '').toLowerCase();
         if (name.includes('orb')) return false;
         if (/avatar|decoration|profile effect|collectible|badge|khung/i.test(name)) return false;
+        if (name.includes('video') || name.includes('trailer')) return false;
+        const taskType = detectTaskType(cfg);
+        if (taskType === 'WATCH_VIDEO' || taskType === 'WATCH_VIDEO_ON_MOBILE' || String(taskType || '').includes('VIDEO')) return false;
         return true;
       })
       .sort((a, b) => {
@@ -680,8 +683,15 @@ export default async function handler(req, res) {
       return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
     });
 
-    // Tự động lấy Gift Code thật từ Discord (/reward-code) cho các quest đã claimed có mã quà
-    const claimedGiftQuests = deduplicatedQuests.filter(q => q.status === 'claimed' && q.hasGiftCode && !q.code);
+    // Tự động lấy Gift Code thật từ Discord (/reward-code) cho các quest game đã claimed
+    const claimedGiftQuests = deduplicatedQuests.filter(q => {
+      if (q.status !== 'claimed' || q.code) return false;
+      const lower = (q.name || '').toLowerCase();
+      if (lower.includes('orb') || /avatar|decoration|profile effect|collectible|badge|khung/i.test(lower)) return false;
+      if (lower.includes('video') || lower.includes('trailer') || q.taskType?.includes('VIDEO')) return false;
+      return true;
+    });
+
     if (claimedGiftQuests.length > 0) {
       await Promise.allSettled(
         claimedGiftQuests.slice(0, 10).map(async q => {
@@ -693,7 +703,24 @@ export default async function handler(req, res) {
               const codeData = await codeRes.json();
               if (codeData?.code) {
                 q.code = codeData.code;
+                q.hasGiftCode = true;
                 if (codeData.tier != null) q.claimedTier = codeData.tier;
+
+                // Tự động nạp tên phần thưởng chi tiết và link đổi quà từ Discord nếu thiếu
+                if (!q.reward || q.reward === 'Phần thưởng Discord' || !q.redeemLink) {
+                  try {
+                    const fullRes = await fetch(`https://discord.com/api/v9/quests/${q.id}`, { headers: desktopHeaders });
+                    if (fullRes.ok) {
+                      const fullQ = await fullRes.json();
+                      const cfg = fullQ.config || fullQ;
+                      const rewards = cfg.rewards_config?.rewards || [];
+                      if (rewards.length > 0) {
+                        q.reward = rewards[0].messages?.name || q.reward;
+                        q.redeemLink = rewards[0].redemption_link || q.redeemLink;
+                      }
+                    }
+                  } catch {}
+                }
               }
             }
           } catch (e) {
