@@ -17,26 +17,10 @@ let savedRewards = JSON.parse(localStorage.getItem("dqt_rewards") || "[]");
 savedRewards = savedRewards.filter(r => {
   // Chỉ lưu giữ những phần thưởng thực sự CÓ MÃ CODE khả dụng
   if (!r.code || typeof r.code !== 'string' || !r.code.trim()) return false;
+  if (r.code === "3Y22-PJSM-CVJM-ZCDY" || r.code === "026154290182") return false;
   const t = (r.type || '').toLowerCase();
   if (t.includes('orb') || /avatar|decoration|profile effect|collectible|badge|khung/i.test(t)) return false;
   return true;
-});
-
-// Khôi phục và đảm bảo các mã code hợp lệ của tài khoản không bao giờ bị mất
-const knownRewardCodes = [
-  { questName: "Apex VS Street Fighter 6 Event", type: "Kung Fu Coach tracker set", code: "3Y22-PJSM-CVJM-ZCDY" },
-  { questName: "ROBLOX", type: "Blurple 8-Bit Wings", code: "026154290182" }
-];
-knownRewardCodes.forEach(kr => {
-  if (!savedRewards.some(r => r.code === kr.code)) {
-    savedRewards.push({
-      questName: kr.questName,
-      type: kr.type,
-      code: kr.code,
-      status: "claimed",
-      expiry: "Còn hạn dùng"
-    });
-  }
 });
 
 try {

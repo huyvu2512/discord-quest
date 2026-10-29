@@ -285,6 +285,59 @@ export default async function handler(req, res) {
     }
 
     const rawQuests = Array.from(questMap.values());
+
+    // Tự động kiểm tra Gift Code thật từ Discord API cho các nhiệm vụ game đã hoàn thành gần đây
+    const candidateClaimed = rawQuests
+      .filter(q => {
+        const uStatus = q.user_status;
+        const isClaimed = Boolean(uStatus?.claimed_at) || q._source === 'claimed';
+        if (!isClaimed) return false;
+        if (uStatus?.orb_quantity_claimed > 0) return false;
+        const cfg = q.config || q;
+        const name = (cfg.messages?.quest_name || cfg.application?.name || '').toLowerCase();
+        if (name.includes('orb')) return false;
+        if (/avatar|decoration|profile effect|collectible|badge|khung/i.test(name)) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const tA = new Date(a.user_status?.claimed_at || 0).getTime();
+        const tB = new Date(b.user_status?.claimed_at || 0).getTime();
+        return tB - tA;
+      })
+      .slice(0, 15);
+
+    if (candidateClaimed.length > 0) {
+      await Promise.allSettled(
+        candidateClaimed.map(async q => {
+          try {
+            const codeRes = await fetch(`https://discord.com/api/v9/quests/${q.id}/reward-code`, {
+              headers: desktopHeaders
+            });
+            if (codeRes.ok) {
+              const codeData = await codeRes.json();
+              if (codeData?.code) {
+                q._realCode = codeData.code;
+                q._claimedTier = codeData.tier;
+                // Nếu chưa có config chi tiết hoặc thiếu rewards_config, nạp đầy đủ từ Discord
+                if (!q.config || !q.config.rewards_config || !q.config.messages?.quest_name) {
+                  try {
+                    const fullRes = await fetch(`https://discord.com/api/v9/quests/${q.id}`, { headers: desktopHeaders });
+                    if (fullRes.ok) {
+                      const fullQ = await fullRes.json();
+                      if (fullQ) {
+                        const hydratedConfig = fullQ.config || fullQ;
+                        q.config = { ...(q.config || {}), ...hydratedConfig };
+                      }
+                    }
+                  } catch {}
+                }
+              }
+            }
+          } catch {}
+        })
+      );
+    }
+
     const orbsBalance = balanceData.balance ?? 0;
 
     console.log(`[API /api/quests] Đã quét ${rawQuests.length} Quest từ Discord API (desktop, web, mobile, decisions & claimed)`);
@@ -320,7 +373,7 @@ export default async function handler(req, res) {
       // Phần thưởng
       const rewards = config.rewards_config?.rewards || [];
       let rewardLabel = 'Phần thưởng Discord';
-      let code = q.user_status?.claimed_tier?.code || q.user_status?.claim_tier?.code || q.user_status?.code || null;
+      let code = q._realCode || q.user_status?.claimed_tier?.code || q.user_status?.claim_tier?.code || q.user_status?.code || null;
       if (rewards.length > 0) {
         const r0 = rewards[0];
         if (r0.orb_quantity) {
@@ -377,6 +430,7 @@ export default async function handler(req, res) {
         targetSec: targetSec,
         progSec: progSec,
         reward: rewardLabel,
+        redeemLink: rewards[0]?.redemption_link || null,
         code: code,
         hasGiftCode: hasGiftCode,
         status: status,

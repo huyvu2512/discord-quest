@@ -34,7 +34,7 @@ function isGiftCodeQuest(q) {
 }
 
 function getRedeemUrl(quest) {
-  return quest.discordUrl || (quest.id ? `https://discord.com/quests/${quest.id}` : 'https://discord.com/quest-home');
+  return quest.redeemLink || quest.discordUrl || (quest.id ? `https://discord.com/quests/${quest.id}` : 'https://discord.com/quest-home');
 }
 
 function normalizeQuestKey(str) {
@@ -241,7 +241,8 @@ function renderRewards() {
       statusCol = `<span class="tag tag-claimed">Đã nhận mã</span>`;
       const qId = r.id || ((state.quests || []).find(q => q.name && r.questName && normalizeQuestKey(q.name) === normalizeQuestKey(r.questName))?.id);
       const discordQuestUrl = qId ? `https://discord.com/quests/${qId}` : (r.discordUrl || 'https://discord.com/quest-home');
-      const linkTitle = 'Mở nhiệm vụ trên Discord';
+      const actionLink = r.redeemLink || discordQuestUrl;
+      const linkTitle = r.redeemLink && !r.redeemLink.includes('discord.com/quests') ? 'Mở trang đổi mã phần thưởng' : 'Mở nhiệm vụ trên Discord';
 
       if (r.code) {
         codeCol = `
@@ -250,7 +251,7 @@ function renderRewards() {
               <span class="discord-code-text" title="${escapeHtml(r.code)}">${escapeHtml(r.code)}</span>
               <button class="discord-code-copy-btn" onclick="copyRewardCode(this, '${escapeHtml(r.code)}', event)">Sao chép</button>
             </div>
-            <a href="${discordQuestUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="${linkTitle}">
+            <a href="${actionLink}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; flex-shrink: 0;" title="${linkTitle}">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
             </a>
           </div>
