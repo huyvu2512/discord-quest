@@ -80,18 +80,15 @@ function getRewardItems() {
   (state.quests || []).forEach(q => {
     if (!isGiftCodeQuest(q)) return;
 
+    // 1. Ẩn tất cả nhiệm vụ đã hết hạn hẳn (giống bên tab Quest)
+    const isExpired = q.isExpired || (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now());
+    if (isExpired) return;
+
     const isDone = q.status === "completed" || q.status === "claimed";
 
-    // 1. Bỏ qua nhiệm vụ đã claimed nhưng không có mã code (mã hết hạn hoặc đợt phát code đã đóng)
+    // 2. Bỏ qua nhiệm vụ đã claimed nhưng không có mã code (mã hết hạn hoặc đợt phát code đã đóng)
     if (q.status === "claimed" && (!q.code || typeof q.code !== 'string' || !q.code.trim())) {
       return;
-    }
-
-    // 2. Bỏ qua nhiệm vụ chưa làm nhưng đã hết hạn sử dụng
-    if (!isDone) {
-      if (q.isExpired || (q.expiresAt && new Date(q.expiresAt).getTime() <= Date.now())) {
-        return;
-      }
     }
 
     const redeemLink = getRedeemUrl(q);
@@ -111,7 +108,10 @@ function getRewardItems() {
       pct: pct,
       discordUrl: q.discordUrl || (q.id ? `https://discord.com/quests/${q.id}` : 'https://discord.com/quest-home'),
       redeemLink: redeemLink,
-      expiry: "Còn hạn dùng"
+      expiresAt: q.expiresAt || null,
+      expShort: formatExpiryShort(q.expiresAt),
+      expFull: formatExpiryFull(q.expiresAt),
+      expiry: formatExpiryShort(q.expiresAt)
     };
 
     const existingIdx = findItemIndex(newItem);
@@ -130,6 +130,8 @@ function getRewardItems() {
   // 2. Gộp thêm từ state.rewards (chỉ bổ sung nếu có chuỗi mã code thật và chưa có trong state.quests):
   (state.rewards || []).forEach(r => {
     if (!r.code || typeof r.code !== 'string' || !r.code.trim()) return;
+    const isExp = r.isExpired || (r.expiresAt && new Date(r.expiresAt).getTime() <= Date.now());
+    if (isExp) return;
     if (isGiftCodeQuest(r)) {
       const candidate = {
         id: r.id,
@@ -183,7 +185,7 @@ function renderRewards() {
 
   // Khi đang tải/đồng bộ quest từ Discord: Hiển thị Skeleton loading và chờ đồng bộ hoàn tất
   if (state.isSyncingQuests) {
-    showTableSkeleton("rewards-tbody", 3, 5);
+    showTableSkeleton("rewards-tbody", 3, 6);
     return;
   }
 
@@ -192,7 +194,7 @@ function renderRewards() {
   if (items.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5">
+        <td colspan="6">
           <div class="empty-state">
             <div class="empty-title">Chưa có nhiệm vụ có mã quà</div>
             <div class="empty-desc">Khi tài khoản có nhiệm vụ tặng Gift Code (Roblox, Apex, Star Wars, NBA...), nhiệm vụ sẽ xuất hiện tại đây để bạn bấm Chạy và lấy mã đổi thưởng.</div>
@@ -276,6 +278,9 @@ function renderRewards() {
         <td class="col-hide-mobile" style="color: var(--text-sub);">${escapeHtml(r.account)}</td>
         <td class="col-hide-mobile">
           <span class="tag tag-completed" style="color: #fff; background: rgba(88, 101, 242, 0.15); border-color: rgba(88, 101, 242, 0.3);">${escapeHtml(r.type)}</span>
+        </td>
+        <td class="quest-expiry-cell font-mono" style="font-size: 11.5px; color: ${r.expiresAt && new Date(r.expiresAt).getTime() <= Date.now() ? 'var(--red)' : 'var(--text-sub)'}; white-space: nowrap;" title="Hạn chót: ${escapeHtml(r.expFull || formatExpiryFull(r.expiresAt))}">
+          ${r.expShort || formatExpiryShort(r.expiresAt)}
         </td>
         <td class="col-hide-mobile">${statusCol}</td>
         <td style="text-align: right; white-space: nowrap;">${codeCol}</td>

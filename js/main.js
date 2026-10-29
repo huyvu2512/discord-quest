@@ -372,7 +372,7 @@ window.switchTabTo = function(tab, updateHistory = true) {
   // Kích hoạt Skeleton loading cho bảng tương ứng
   if (tab === "accounts") showTableSkeleton("accounts-tbody", 2, 6);
   if (tab === "quests") showTableSkeleton("quests-tbody", 4, 7);
-  if (tab === "rewards") showTableSkeleton("rewards-tbody", 3, 5);
+  if (tab === "rewards") showTableSkeleton("rewards-tbody", 3, 6);
 
   setTimeout(() => {
     renderAll();
@@ -468,7 +468,7 @@ function bindActionButtons() {
 
     // Hiển thị Skeleton loading trên bảng Quest & Mã quà
     showTableSkeleton("quests-tbody", 4, 7);
-    showTableSkeleton("rewards-tbody", 3, 5);
+    showTableSkeleton("rewards-tbody", 3, 6);
 
     await window.syncQuestsFromDiscord(true);
 
@@ -1156,7 +1156,7 @@ window.syncQuestsFromDiscord = async function(showToasts = false) {
 
   // Luôn hiển thị Skeleton Shimmer khi đang tải/đồng bộ, tuyệt đối KHÔNG hiện danh sách cũ
   if (state.activeTab === "quests" || state.activeTab === "runner") showTableSkeleton("quests-tbody", 4, 7);
-  if (state.activeTab === "rewards") showTableSkeleton("rewards-tbody", 3, 5);
+  if (state.activeTab === "rewards") showTableSkeleton("rewards-tbody", 3, 6);
 
   addLog("info", `[Đồng bộ] Gửi GET /api/quests (@${acc.username})...`);
 
