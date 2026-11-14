@@ -151,6 +151,10 @@
 .layout {
   display: flex;
   min-height: calc(100vh - 64px);
+  width: 100%;
+  max-width: 100vw;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 /* Sidebar */
@@ -327,6 +331,9 @@
   padding: 20px 24px;
   background: var(--bg-app);
   max-width: 1300px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .tab-content {

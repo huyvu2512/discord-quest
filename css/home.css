@@ -8,6 +8,8 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* 1. Welcome / Hero Banner */
@@ -211,6 +213,9 @@
   grid-template-columns: 1.55fr 1fr;
   gap: 18px;
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .home-col-left {
@@ -218,6 +223,10 @@
   flex-direction: column;
   gap: 18px;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .home-col-right {
@@ -225,12 +234,19 @@
   flex-direction: column;
   gap: 18px;
   min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .home-quests-card {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* Card Nhật Ký cố định kích thước ban đầu, tự cuộn bên trong khi có log dài */
@@ -255,6 +271,8 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .home-section-header {
@@ -303,6 +321,10 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .home-quest-row {
@@ -314,6 +336,11 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   transition: background 0.15s ease, border-color 0.15s ease;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .home-quest-row:hover {
@@ -336,7 +363,7 @@
 }
 
 .quest-row-main {
-  flex: 1;
+  flex: 1 1 0%;
   min-width: 0;
   overflow: hidden;
 }
@@ -348,6 +375,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .quest-row-sub {
@@ -355,12 +386,19 @@
   color: var(--text-muted);
   margin-top: 2px;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
 }
 
 .quest-row-desc {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -951,12 +989,19 @@
     font-size: 11px;
     margin-top: 1px;
     min-width: 0;
+    width: 100%;
+    max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: block;
   }
 
   .quest-row-desc {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
