@@ -61,6 +61,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/modal.css">
   <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/badges.css">
 
   <!-- Vercel Web Analytics & Speed Insights -->
   <script defer src="/_vercel/insights/script.js"></script>
@@ -141,6 +142,18 @@
               <span class="nav-count" id="count-rewards">0</span>
             </div>
             <span class="nav-text">Mã quà</span>
+          </button>
+          <button class="nav-btn" data-tab="badges" id="nav-btn-badges" title="Lấy huy hiệu">
+            <div class="nav-icon-box">
+              <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9.68 13.69L12 11.93l2.31 1.76-.88-2.85L15.75 9h-2.84L12 6.19 11.09 9H8.25l2.31 1.84-.88 2.85zM20 10c0-4.42-3.58-8-8-8s-8 3.58-8 8c0 2.03.76 3.87 2 5.28V23l6-2 6 2v-7.72c1.24-1.41 2-3.25 2-5.28zm-8-6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6zm0 15l-4 1.02v-3.1c1.18.68 2.54 1.08 4 1.08s2.82-.4 4-1.08v3.1L12 19z"/></svg>
+            </div>
+            <span class="nav-text">Lấy huy hiệu</span>
+          </button>
+          <button class="nav-btn" data-tab="playtime" id="nav-btn-playtime" title="Chạy huy hiệu">
+            <div class="nav-icon-box">
+              <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <span class="nav-text">Chạy huy hiệu</span>
           </button>
           <button class="nav-btn" data-tab="logs" id="nav-btn-logs" title="Nhật ký">
             <div class="nav-icon-box">
@@ -487,6 +500,28 @@
           </div>
         </section>
 
+        <!-- ================= TAB 4.1: LẤY HUY HIỆU ================= -->
+        <section class="tab-content" id="tab-badges">
+          <div class="top-row">
+            <div>
+              <h2 class="page-title">Lấy Huy Hiệu Discord</h2>
+              <p class="page-sub">Nhận hoặc chuyển đổi nhanh huy hiệu HypeSquad House và kiểm tra các huy hiệu hiện có trên hồ sơ.</p>
+            </div>
+          </div>
+          <div id="badges-view-root"></div>
+        </section>
+
+        <!-- ================= TAB 4.2: CHẠY HUY HIỆU (PLAYTIME) ================= -->
+        <section class="tab-content" id="tab-playtime">
+          <div class="top-row">
+            <div>
+              <h2 class="page-title">Chạy Huy Hiệu Game</h2>
+              <p class="page-sub">Tăng cấp huy hiệu Thời gian chơi và Trò chơi đa dạng cho tài khoản đang chọn.</p>
+            </div>
+          </div>
+          <div id="playtime-view-root"></div>
+        </section>
+
         <!-- ================= TAB 5: LOGS ================= -->
         <section class="tab-content" id="tab-logs">
           <div class="top-row">
@@ -795,6 +830,8 @@
   <script src="js/views/quests.js"></script>
   <script src="js/views/accounts.js"></script>
   <script src="js/views/rewards.js"></script>
+  <script src="js/views/badges.js"></script>
+  <script src="js/views/playtime.js"></script>
   <script src="js/views/logs.js"></script>
   <script src="js/main.js"></script>
 </body>

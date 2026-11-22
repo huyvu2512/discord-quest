@@ -18,7 +18,8 @@ function getTabFromUrl() {
   if (typeof window === "undefined") return "home";
   const path = (window.location.pathname || "").replace(/^\/+|\/+$/g, '').toLowerCase();
   if (path === "runner" || path === "quest") return "quests";
-  const validTabs = ["accounts", "quests", "rewards", "logs", "settings"];
+  if (path === "badge-runner" || path === "games" || path === "playtime") return "playtime";
+  const validTabs = ["accounts", "quests", "rewards", "badges", "playtime", "logs", "settings"];
   return validTabs.includes(path) ? path : "home";
 }
 
@@ -156,7 +157,21 @@ function toast(msg, type = "info") {
 function addLog(level, text) {
   const time = new Date().toTimeString().split(" ")[0];
   state.logs.push({ time, level, text });
-  if (state.logs.length > 200) state.logs.shift();
+  if (state.logs.length > 300) state.logs.shift();
   if (typeof renderLogs === 'function') renderLogs();
   if (typeof renderHomeLogs === 'function') renderHomeLogs();
 }
+window.addLog = addLog;
+
+window.isQuestRunning = function() {
+  if (typeof state === 'undefined') return false;
+  if (state.isRunningAll) return true;
+  if (Array.isArray(state.quests)) {
+    return state.quests.some(q => q.status === "running" || q.status === "queued");
+  }
+  return false;
+};
+
+window.isPlaytimeRunning = function() {
+  return Boolean(typeof badgeRunnerState !== 'undefined' && badgeRunnerState.isRunning);
+};

@@ -25,9 +25,14 @@ document.addEventListener("DOMContentLoaded", () => {
   renderAll();
   checkSessionOnStartup();
   syncQuestsFromDiscord(false);
+  if (typeof window.loadBadgeProfile === "function") window.loadBadgeProfile(false);
 
-  // Kích hoạt tab ban đầu theo URL đường dẫn (VD: /accounts, /quests, hoặc / cho trang chủ)
+  // Kích hoạt tab ban đầu theo URL đường dẫn (VD: /accounts, /quests, /playtime, hoặc / cho trang chủ)
   const initialTab = getTabFromUrl();
+  const canonicalPath = initialTab === "home" ? "/" : `/${initialTab}`;
+  if (window.location.pathname !== canonicalPath) {
+    window.history.replaceState({ tab: initialTab }, "", canonicalPath);
+  }
   window.switchTabTo(initialTab, false);
 
   window.addEventListener("popstate", () => {
@@ -206,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
           delete current._runStartedAt;
           delete current._baseProgSec;
 
-          addLog("success", `★ Hoàn thành nhiệm vụ "${current.name}" (100%)!`);
+          addLog("success", `Hoàn thành nhiệm vụ "${current.name}" (100%)!`);
           toast(`Hoàn thành: "${current.name}"!`, "success");
 
           // CHỈ TỰ ĐỘNG CHUYỂN TIẾP KHI NGƯỜI DÙNG BẬT CHẾ ĐỘ "CHẠY TẤT CẢ" (state.isRunningAll === true)
@@ -224,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
               const btnStop = document.getElementById("btn-stop-all");
               btnRun?.classList.remove("hidden");
               btnStop?.classList.add("hidden");
-              addLog("success", `★ Toàn bộ nhiệm vụ trong hàng đợi đã hoàn tất!`);
+              addLog("success", `Toàn bộ nhiệm vụ trong hàng đợi đã hoàn tất!`);
             }
           } else {
             // Khi chạy đơn lẻ 1 quest -> Xong là DỪNG LẠI hoàn toàn, không tự ý chạy quest khác!
@@ -347,7 +352,8 @@ document.addEventListener("DOMContentLoaded", () => {
 // Chuyển tab với hiệu ứng Skeleton Loading & Điều hướng URL theo miền /
 window.switchTabTo = function(tab, updateHistory = true) {
   if (tab === "runner") tab = "quests";
-  const validTabs = ["home", "accounts", "quests", "rewards", "logs", "settings"];
+  if (tab === "badge-runner" || tab === "games") tab = "playtime";
+  const validTabs = ["home", "accounts", "quests", "rewards", "badges", "playtime", "logs", "settings"];
   if (!validTabs.includes(tab)) tab = "home";
 
   if (state.accounts.length === 0 && (tab === "quests" || tab === "rewards")) {
@@ -415,6 +421,12 @@ function bindActionButtons() {
     if (state.accounts.length === 0) {
       toast("Chưa có tài khoản nào được kết nối!", "warn");
       window.switchTabTo("accounts");
+      return;
+    }
+
+    if (typeof window.isPlaytimeRunning === 'function' && window.isPlaytimeRunning()) {
+      toast("Đang có tiến trình cày huy hiệu Playtime! Vui lòng dừng Playtime trước khi chạy Quest.", "warn");
+      addLog("warn", "[Quest] Không thể chạy: Tiến trình cày huy hiệu Playtime đang chạy song song.");
       return;
     }
 
@@ -845,6 +857,11 @@ function renderCounters() {
     } else {
       btnRunAll.classList.remove("hidden");
       btnStopAll.classList.add("hidden");
+      if (typeof window.isPlaytimeRunning === 'function' && window.isPlaytimeRunning()) {
+        btnRunAll.title = "Đang chạy Playtime, vui lòng dừng Playtime trước khi chạy Quest";
+      } else {
+        btnRunAll.title = "";
+      }
     }
   }
 
@@ -937,6 +954,11 @@ function renderAll() {
   renderAccounts();
   renderQuests();
   renderRewards();
+  if (state.activeTab === "badges" && typeof renderBadges === "function") renderBadges();
+  if (state.activeTab === "playtime") {
+    if (typeof renderPlaytime === "function") renderPlaytime();
+    else if (typeof renderBadgeRunner === "function") renderBadgeRunner();
+  }
   renderLogs();
   renderHome();
 }

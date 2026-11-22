@@ -208,6 +208,9 @@ function renderQuests() {
     } else if (isRunningAll) {
       // Chạy tất cả: ẩn nút chạy, hiện Hàng chờ #...
       actionBtn = `<span class="tag tag-pending font-mono" style="display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 10px; font-size: 11.5px; border-radius: 6px; font-weight: 500;">Hàng chờ #${queueOrder++}</span>`;
+    } else if (typeof window.isPlaytimeRunning === 'function' && window.isPlaytimeRunning()) {
+      // Đang chạy Playtime: khóa nút chạy
+      actionBtn = `<button class="btn btn-secondary btn-run btn-sm" disabled style="opacity: 0.45; cursor: not-allowed;" title="Đang chạy cày huy hiệu Playtime, vui lòng dừng Playtime trước khi chạy Quest">Chạy</button>`;
     } else if (hasRunning) {
       // Chạy từng cái 1: khóa nút chạy của các quest còn lại
       actionBtn = `<button class="btn btn-secondary btn-run btn-sm" disabled style="opacity: 0.45; cursor: not-allowed;" title="Tạm dừng nhiệm vụ đang chạy để chọn nhiệm vụ này">Chạy</button>`;
@@ -253,6 +256,12 @@ function renderQuests() {
 
 // Bắt đầu 1 quest (chạy đơn lẻ theo yêu cầu người dùng, không tự động nối đuôi)
 window.startQuest = function(id) {
+  if (typeof window.isPlaytimeRunning === 'function' && window.isPlaytimeRunning()) {
+    toast("Đang có tiến trình cày huy hiệu Playtime! Vui lòng dừng Playtime trước khi chạy Quest.", "warn");
+    addLog("warn", "[Quest] Không thể chạy: Tiến trình cày huy hiệu Playtime đang chạy song song.");
+    return;
+  }
+
   // Tắt chế độ Chạy Tất Cả
   state.isRunningAll = false;
 

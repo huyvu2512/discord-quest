@@ -9,6 +9,9 @@ import enrollHandler from './api/quests/enroll.js';
 import progressHandler from './api/quests/progress.js';
 import lookupHandler from './api/quests/lookup.js';
 import rewardCodeHandler from './api/quests/reward-code.js';
+import hypesquadHandler from './api/badges/hypesquad.js';
+import badgeGamesHandler from './api/badges/games.js';
+import badgeScienceHandler from './api/badges/science.js';
 
 function readJsonBody(req) {
   return new Promise((resolve) => {
@@ -64,7 +67,7 @@ export default defineConfig({
           adaptRes(res);
           req.query = Object.fromEntries(parsedUrl.searchParams.entries());
 
-          if (req.method === 'POST') {
+          if (req.method === 'POST' || req.method === 'DELETE') {
             req.body = await readJsonBody(req);
           }
 
@@ -95,6 +98,15 @@ export default defineConfig({
           }
           if (pathname === '/api/quests') {
             return questsHandler(req, res);
+          }
+          if (pathname === '/api/badges/hypesquad') {
+            return hypesquadHandler(req, res);
+          }
+          if (pathname === '/api/badges/games') {
+            return badgeGamesHandler(req, res);
+          }
+          if (pathname === '/api/badges/science') {
+            return badgeScienceHandler(req, res);
           }
 
           next();
