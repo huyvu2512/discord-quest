@@ -48,7 +48,7 @@ Hệ thống hỗ trợ quét kho nhiệm vụ chính thức từ Discord qua AP
 - Chạy huy hiệu Playtime & Game Variety - Gửi telemetry game qua Discord Science API theo từng game để nâng cấp mốc Thời gian chơi (5.000+ giờ) và Trò chơi đa dạng (100+ game), có khóa chống chạy song song với Quest.
 - Đồng bộ tiến độ khi tạm dừng - Tự động gửi ngay phần thời gian tích lũy lên Discord khi bấm Tạm dừng / Dừng tất cả để tránh lệch giây.
 - Lưu trữ cục bộ an toàn - Toàn bộ token và thông tin tài khoản chỉ được lưu trong localStorage của trình duyệt, không lưu trữ trên bất kỳ server trung gian nào.
-- Giao diện tối ưu - Thiết kế giao diện nền tối (Dark mode) hiện đại, hỗ trợ đầy đủ hiệu ứng chuyển động và tương thích mượt mà trên cả máy tính lẫn điện thoại.
+- Giao diện tối ưu - Thiết kế giao diện nền tối (Dark mode) hiện đại, hỗ trợ đầy đủ hiệu ứng chuyển động, hiển thị trực tiếp tổng số Nhiệm Vụ đã hoàn thành (từ huy hiệu Quest) và số dư Orbs trên thanh tiêu đề, kèm nút Làm mới trang dùng chung và tối ưu gọn gàng trên cả máy tính lẫn điện thoại.
 - Theo dõi hệ thống - Tích hợp sẵn Vercel Web Analytics và Speed Insights để theo dõi lưu lượng truy cập và chỉ số hiệu năng trang web.
 
 ---

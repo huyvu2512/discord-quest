@@ -2,12 +2,70 @@
  * CONTROLLER: BỘ ĐẾM, SIDEBAR & ĐIỀU PHỐI RENDER (js/controllers/counters.js)
  */
 
+function extractCompletedQuestsFromBadges(user) {
+  const badges = Array.isArray(user?.directoryBadges) ? user.directoryBadges : [];
+  const questBadge = badges.find(b => Number(b.badge_id) === 14 || b.id === 'quest_completed');
+  if (!questBadge) return null;
+
+  let count = null;
+  if (Array.isArray(questBadge.progress) && questBadge.progress.length > 0 && Number.isFinite(Number(questBadge.progress[0].current))) {
+    count = Number(questBadge.progress[0].current);
+  } else if (typeof questBadge.info_label === 'string') {
+    const m = questBadge.info_label.match(/(\d[\d.,]*)/);
+    if (m) {
+      const parsed = parseInt(m[1].replace(/[.,]/g, ''), 10);
+      if (Number.isFinite(parsed)) count = parsed;
+    }
+  }
+
+  const iconUrl = questBadge.simple_icon_url || questBadge.simple_icon_raster_url || null;
+  return { count, iconUrl };
+}
+
 function renderCounters() {
   const hasAcc = state.accounts.length > 0;
   const currentAcc = state.accounts.find(a => a.id === state.activeAccId) || state.accounts[0];
   const activeOrbs = (currentAcc && currentAcc.orbs != null) ? currentAcc.orbs : 0;
   const orbsEl = document.getElementById("nav-orbs");
   if (orbsEl) orbsEl.textContent = hasAcc ? `${activeOrbs.toLocaleString()} Orbs` : "—";
+
+  const completedQuestsEl = document.getElementById("nav-completed-quests");
+  const questBadgeIconEl = document.getElementById("nav-quest-badge-icon");
+  const questBadgeFallbackEl = document.getElementById("nav-quest-badge-fallback");
+
+  let completedQuests = currentAcc && currentAcc.completedQuestsTotal != null ? currentAcc.completedQuestsTotal : null;
+  let questIconUrl = currentAcc && currentAcc.questBadgeIconUrl ? currentAcc.questBadgeIconUrl : null;
+
+  if (typeof badgeProfileState !== 'undefined' && badgeProfileState?.user && currentAcc && !badgeProfileState.customToken) {
+    const sameUser = !badgeProfileState.user.id || !currentAcc.id || String(badgeProfileState.user.id) === String(currentAcc.id);
+    if (sameUser) {
+      const extracted = extractCompletedQuestsFromBadges(badgeProfileState.user);
+      if (extracted) {
+        if (extracted.count != null) {
+          completedQuests = extracted.count;
+          currentAcc.completedQuestsTotal = extracted.count;
+        }
+        if (extracted.iconUrl) {
+          questIconUrl = extracted.iconUrl;
+          currentAcc.questBadgeIconUrl = extracted.iconUrl;
+        }
+      }
+    }
+  }
+
+  if (completedQuestsEl) {
+    completedQuestsEl.textContent = (hasAcc && completedQuests != null) ? `${completedQuests.toLocaleString()} Quest` : "—";
+  }
+  if (questBadgeIconEl && questBadgeFallbackEl) {
+    if (hasAcc && questIconUrl) {
+      if (questBadgeIconEl.src !== questIconUrl) questBadgeIconEl.src = questIconUrl;
+      questBadgeIconEl.style.display = "block";
+      questBadgeFallbackEl.style.display = "none";
+    } else {
+      questBadgeIconEl.style.display = "none";
+      questBadgeFallbackEl.style.display = "";
+    }
+  }
 
   const runningCount = state.quests.filter(q => q.status === "running").length;
   const queuedCount = state.quests.filter(q => q.status === "queued").length;

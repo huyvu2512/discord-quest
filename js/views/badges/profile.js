@@ -89,6 +89,7 @@ window.loadBadgeProfile = async function(force = false) {
     }
   } finally {
     badgeProfileState.loading = false;
+    if (typeof renderCounters === 'function') renderCounters();
     renderBadges();
     if (state.activeTab === 'playtime' || state.activeTab === 'games') {
       if (typeof renderPlaytime === 'function') renderPlaytime();

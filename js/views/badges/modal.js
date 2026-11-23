@@ -85,7 +85,7 @@ function renderBadgesModal() {
               </svg>
             </button>
             <div class="badges-detail-scroller" style="display:flex;align-items:center;justify-content:center;color:var(--text-sub);font-size:13px;text-align:center;">
-              ${badgeProfileState.loading ? 'Đang kết nối Discord API (/users/@me/badges)...' : 'Không lấy được dữ liệu chi tiết từ /users/@me/badges cho tài khoản này. Hãy bấm Làm mới để thử lại.'}
+              ${badgeProfileState.loading ? 'Đang kết nối Discord API (/users/@me/badges)...' : 'Không lấy được dữ liệu chi tiết từ /users/@me/badges cho tài khoản này. Hãy bấm Làm mới trên thanh công cụ để thử lại.'}
             </div>
           </div>
         </div>
