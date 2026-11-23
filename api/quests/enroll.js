@@ -4,7 +4,7 @@ import {
   DISCORD_WEB_HEADERS,
   DISCORD_MOBILE_HEADERS,
   DISCORD_IOS_HEADERS
-} from '../discord-client.js';
+} from '../../lib/discord-client.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

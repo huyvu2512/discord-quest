@@ -1,6 +1,6 @@
 import { defineConfig, createLogger } from 'vite';
 import fs from 'fs';
-import { serverLog } from './api/logger.js';
+import { serverLog } from './lib/logger.js';
 import ipHandler from './api/ip.js';
 import verifyHandler from './api/auth/verify.js';
 import refreshHandler from './api/auth/refresh.js';

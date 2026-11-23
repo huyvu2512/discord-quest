@@ -1,7 +1,7 @@
 import {
   fetchLatestBuildNumber,
   DISCORD_HEADERS
-} from '../discord-client.js';
+} from '../../lib/discord-client.js';
 
 export default async function handler(req, res) {
   let token = req.query?.token || req.headers?.authorization;

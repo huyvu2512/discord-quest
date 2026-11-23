@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { fetchLatestBuildNumber, DISCORD_HEADERS } from '../discord-client.js';
+import { fetchLatestBuildNumber, DISCORD_HEADERS } from '../../lib/discord-client.js';
 
 function parseBody(req) {
   let b = req.body;

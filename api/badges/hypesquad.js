@@ -1,4 +1,4 @@
-import { fetchLatestBuildNumber, DISCORD_HEADERS } from '../discord-client.js';
+import { fetchLatestBuildNumber, DISCORD_HEADERS } from '../../lib/discord-client.js';
 
 const FLAG_BADGES = [
   { bit: 1 << 0, id: 'staff', name: 'Discord Staff', color: '#5865F2' },

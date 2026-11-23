@@ -436,7 +436,7 @@ Tự động nạp `analytics_token` từ `GET /users/@me?with_analytics_token=t
 
 ---
 
-## Module chia sẻ: Discord Client (`api/discord-client.js`)
+## Module chia sẻ: Discord Client (`lib/discord-client.js`)
 
 Module nội bộ không phải endpoint công khai, được sử dụng bởi tất cả các API Serverless. Cung cấp:
 

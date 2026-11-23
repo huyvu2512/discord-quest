@@ -15,8 +15,8 @@ import {
   DISCORD_IOS_HEADERS,
   detectTaskType,
   getTaskTypeName
-} from '../discord-client.js';
-import { serverLog } from '../logger.js';
+} from '../../lib/discord-client.js';
+import { serverLog } from '../../lib/logger.js';
 
 export default async function handler(req, res) {
   let token = req.query?.token || req.headers?.authorization;

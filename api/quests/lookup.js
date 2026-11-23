@@ -11,7 +11,7 @@ import {
   DISCORD_IOS_HEADERS,
   detectTaskType,
   getTaskTypeName
-} from '../discord-client.js';
+} from '../../lib/discord-client.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

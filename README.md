@@ -82,8 +82,9 @@ discord-quest/
 │   │   ├── lookup.js
 │   │   ├── progress.js
 │   │   └── reward-code.js
-│   ├── discord-client.js         # Module cấu hình chung: Build Number, Headers, Client State
 │   ├── ip.js                     # Xác định địa chỉ IP mạng
+├── lib/                          # Module dùng chung (không tính vào Serverless Functions)
+│   ├── discord-client.js         # Build Number, Headers, Client State
 │   └── logger.js                 # Logger terminal chuẩn hóa theo định dạng web
 ├── assets/                       # Ảnh chụp màn hình và tài nguyên minh họa
 ├── css/                          # Hệ thống stylesheet Dark Theme (đã tách module)
