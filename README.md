@@ -44,6 +44,9 @@ Hệ thống hỗ trợ quét kho nhiệm vụ chính thức từ Discord qua AP
 - Hàng đợi tự động tuần tự - Hỗ trợ chế độ Chạy Tất Cả với hàng đợi thông minh, tự động chuyển tiếp nhiệm vụ kế tiếp ngay khi nhiệm vụ hiện tại hoàn tất.
 - Trích xuất Gift Code tự động - Nhận diện và bóc tách mã quà tặng từ các nhiệm vụ game đối tác, lưu trữ an toàn trong kho mã để sử dụng bất cứ lúc nào.
 - Quản lý đa tài khoản - Dễ dàng thêm, kiểm tra tính hợp lệ và chuyển đổi linh hoạt giữa nhiều tài khoản Discord mà không cần đăng nhập lại.
+- Quản lý & lấy huy hiệu Discord - Kiểm tra toàn bộ huy hiệu sở hữu/mở khóa, nhận hoặc đổi nhanh HypeSquad House (Bravery, Brilliance, Balance) chỉ với 1 click.
+- Chạy huy hiệu Playtime & Game Variety - Gửi telemetry game qua Discord Science API theo từng game để nâng cấp mốc Thời gian chơi (5.000+ giờ) và Trò chơi đa dạng (100+ game), có khóa chống chạy song song với Quest.
+- Đồng bộ tiến độ khi tạm dừng - Tự động gửi ngay phần thời gian tích lũy lên Discord khi bấm Tạm dừng / Dừng tất cả để tránh lệch giây.
 - Lưu trữ cục bộ an toàn - Toàn bộ token và thông tin tài khoản chỉ được lưu trong localStorage của trình duyệt, không lưu trữ trên bất kỳ server trung gian nào.
 - Giao diện tối ưu - Thiết kế giao diện nền tối (Dark mode) hiện đại, hỗ trợ đầy đủ hiệu ứng chuyển động và tương thích mượt mà trên cả máy tính lẫn điện thoại.
 - Theo dõi hệ thống - Tích hợp sẵn Vercel Web Analytics và Speed Insights để theo dõi lưu lượng truy cập và chỉ số hiệu năng trang web.
@@ -69,31 +72,40 @@ discord-quest/
 │   │   ├── logout.js
 │   │   ├── refresh.js
 │   │   └── verify.js
+│   ├── badges/                   # API Huy hiệu & Discord Science Telemetry
+│   │   ├── games.js              # Lọc kho game Windows hợp lệ từ Discord CDN
+│   │   ├── hypesquad.js          # Đọc hồ sơ huy hiệu, tham gia / rời HypeSquad
+│   │   └── science.js            # Gửi sự kiện launch_game & running_game_heartbeat
+│   ├── quests/                   # Xử lý nhiệm vụ: Quét, nhận, gửi nhịp tim, lấy gift code
+│   │   ├── enroll.js
+│   │   ├── index.js
+│   │   ├── lookup.js
+│   │   ├── progress.js
+│   │   └── reward-code.js
 │   ├── discord-client.js         # Module cấu hình chung: Build Number, Headers, Client State
 │   ├── ip.js                     # Xác định địa chỉ IP mạng
-│   └── quests/                   # Xử lý nhiệm vụ: Quét, nhận, gửi nhịp tim, lấy gift code
-│       ├── enroll.js
-│       ├── index.js
-│       ├── lookup.js
-│       ├── progress.js
-│       └── reward-code.js
+│   └── logger.js                 # Logger terminal chuẩn hóa theo định dạng web
 ├── assets/                       # Ảnh chụp màn hình và tài nguyên minh họa
-├── css/                          # Hệ thống stylesheet Dark Theme
-├── js/                           # Mã nguồn JavaScript phía client
-│   ├── main.js                   # Điều phối giao diện và vòng lặp tiến trình
-│   ├── state.js                  # Quản lý trạng thái và lưu trữ localStorage
-│   └── views/                    # Các module hiển thị (Accounts, Quests, Rewards)
-├── public/                       # Tài nguyên tĩnh, favicon, sitemap và preview
-│   ├── favicon.ico               # Favicon chuẩn
-│   ├── preview.png               # Ảnh xem trước giao diện ứng dụng
-│   ├── robots.txt                # Cấu hình robot tìm kiếm
-│   └── sitemap.xml               # Sơ đồ trang web phục vụ SEO
+├── css/                          # Hệ thống stylesheet Dark Theme (đã tách module)
+│   ├── base/                     # Responsive breakpoints
+│   ├── components/               # Base components, skeleton shimmer, settings
+│   ├── views/                    # Home, Badges, Badge Modal, Playtime Runner
+│   ├── layout.css
+│   ├── modal.css
+│   └── variables.css
+├── js/                           # Mã nguồn JavaScript phía client (đã tách module)
+│   ├── controllers/              # Counters, Nav, Queue, Settings, Sync, Token
+│   ├── utils/                    # IP, Log, PWA, Skeleton, Toast
+│   ├── views/                    # Accounts, Badges/, Home, Logs, Playtime/, Quests, Rewards
+│   ├── main.js                   # Bootstrapper khởi tạo ứng dụng
+│   └── state.js                  # Quản lý trạng thái lõi & localStorage
+├── public/                       # Tài nguyên tĩnh, icon HypeSquad, favicon, sitemap
 ├── docs/                         # Tài liệu kỹ thuật
 │   └── API.md                    # Tài liệu đặc tả API Serverless
 ├── index.html                    # Giao diện người dùng chính
 ├── package.json                  # Cấu hình dự án và dependencies
 ├── vercel.json                   # Cấu hình định tuyến và Security Headers
-├── vite.config.js                # Cấu hình dev server và middleware
+├── vite.config.js                # Cấu hình dev server, API middleware và logger
 ├── SECURITY.md                   # Chính sách bảo mật và quy trình báo lỗi
 ├── LICENSE                       # Giấy phép mã nguồn mở MIT
 └── README.md                     # Tài liệu hướng dẫn dự án
@@ -146,6 +158,9 @@ Hệ thống cung cấp các endpoint backend phục vụ xác thực và xử l
 | `/api/quests/progress` | POST | Gửi nhịp tim (heartbeat) hoặc tiến độ video |
 | `/api/quests/lookup` | POST | Tra cứu thông tin nhiệm vụ theo link hoặc ID |
 | `/api/quests/reward-code` | POST/GET | Trích xuất Gift Code của các nhiệm vụ đã hoàn thành |
+| `/api/badges/hypesquad` | GET/POST/DELETE | Lấy danh sách huy hiệu hồ sơ, tham gia hoặc rời HypeSquad House |
+| `/api/badges/games` | GET | Lấy danh sách game Windows hợp lệ từ Discord CDN |
+| `/api/badges/science` | POST | Gửi sự kiện telemetry `launch_game` & `running_game_heartbeat` lên Discord |
 
 ---
 

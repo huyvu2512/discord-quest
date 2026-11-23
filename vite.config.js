@@ -1,5 +1,6 @@
-import { defineConfig } from 'vite';
+import { defineConfig, createLogger } from 'vite';
 import fs from 'fs';
+import { serverLog } from './api/logger.js';
 import ipHandler from './api/ip.js';
 import verifyHandler from './api/auth/verify.js';
 import refreshHandler from './api/auth/refresh.js';
@@ -40,9 +41,26 @@ function adaptRes(res) {
   return res;
 }
 
+const customLogger = createLogger();
+const origInfo = customLogger.info.bind(customLogger);
+customLogger.info = (msg, options) => {
+  if (typeof msg === 'string' && (
+    msg.includes('ready in') ||
+    msg.includes('show help') ||
+    msg.includes('hmr update') ||
+    msg.includes('page reload')
+  )) {
+    return;
+  }
+  origInfo(msg, options);
+};
+
 export default defineConfig({
+  customLogger,
+  clearScreen: false,
   server: {
-    port: 3000
+    port: 3000,
+    host: true
   },
   plugins: [
     {
@@ -56,6 +74,20 @@ export default defineConfig({
     {
       name: 'local-dev-apis',
       configureServer(server) {
+        server.printUrls = () => {
+          const urls = server.resolvedUrls || { local: ['http://localhost:3000/'], network: [] };
+          console.log('');
+          console.log(`\x1b[32m✔\x1b[0m \x1b[1m[Server]\x1b[0m    Khởi chạy máy chủ thành công`);
+          console.log('');
+          for (const url of urls.local || []) {
+            console.log(`  \x1b[32m➜\x1b[0m  \x1b[1mLocal:\x1b[0m    \x1b[36m${url.replace(/\/$/, '')}\x1b[0m`);
+          }
+          for (const url of urls.network || []) {
+            console.log(`  \x1b[32m➜\x1b[0m  \x1b[1mNetwork:\x1b[0m  \x1b[36m${url.replace(/\/$/, '')}\x1b[0m`);
+          }
+          console.log('');
+        };
+
         server.middlewares.use(async (req, res, next) => {
           const parsedUrl = new URL(req.url || '/', 'http://localhost:3000');
           const pathname = parsedUrl.pathname;
@@ -63,6 +95,14 @@ export default defineConfig({
           if (!pathname.startsWith('/api/')) {
             return next();
           }
+
+          const startTime = Date.now();
+          res.on('finish', () => {
+            const ms = Date.now() - startTime;
+            const status = res.statusCode || 200;
+            const level = status >= 500 ? 'error' : (status >= 400 ? 'warn' : 'success');
+            serverLog(level, `${req.method} ${pathname} (${status}, ${ms}ms)`);
+          });
 
           adaptRes(res);
           req.query = Object.fromEntries(parsedUrl.searchParams.entries());

@@ -1,6 +1,6 @@
 # API Reference
 
-Hệ thống cung cấp **9 endpoint** API Serverless chạy trên nền tảng Vercel Functions (hoặc Vite middleware khi chạy local). Tất cả các endpoint sử dụng module `discord-client.js` dùng chung để tự động cào Build Number mới nhất từ Discord (cache 6 tiếng) và sinh ra 4 bộ Headers giả lập chuẩn xác: Desktop Client, Web Browser, Mobile Android và Mobile iOS.
+Hệ thống cung cấp **12 endpoint** API Serverless chạy trên nền tảng Vercel Functions (hoặc Vite middleware khi chạy local). Tất cả các endpoint sử dụng module `discord-client.js` dùng chung để tự động cào Build Number mới nhất từ Discord (cache 6 tiếng) và sinh ra 4 bộ Headers giả lập chuẩn xác: Desktop Client, Web Browser, Mobile Android và Mobile iOS.
 
 > **Lưu ý chung:** Mọi endpoint trả về `{ "success": false, "error": "..." }` khi gặp lỗi. Các endpoint tương tác với Discord API đều hỗ trợ phát hiện và xử lý Rate Limit (HTTP 429) với trường `isRateLimited: true` và `retryAfter` (giây).
 
@@ -389,6 +389,48 @@ Lấy mã quà tặng Gift Code từ Discord API (`GET /quests/{id}/reward-code`
   "userId": "123456789012345678",
   "claimedAt": "2026-10-01T12:00:00.000Z",
   "tier": 0
+}
+```
+
+---
+
+## 10. Quản lý Huy hiệu & HypeSquad
+
+**`GET /api/badges/hypesquad?token=TOKEN`**
+
+Lấy thông tin tài khoản, ngôi nhà HypeSquad hiện tại, danh sách huy hiệu trên hồ sơ (`/users/{id}/profile`) và danh mục huy hiệu chi tiết kèm tiến trình (`/users/@me/badges`).
+
+**`POST /api/badges/hypesquad`**
+
+Gắn hoặc đổi ngôi nhà HypeSquad (`houseId`: `1` = Bravery, `2` = Brilliance, `3` = Balance).
+
+**`DELETE /api/badges/hypesquad`**
+
+Rời khỏi HypeSquad House hiện tại.
+
+---
+
+## 11. Danh sách Game hợp lệ (Discord CDN)
+
+**`GET /api/badges/games?limit=10&random=true&q=...`**
+
+Tải và cache (12 giờ) danh sách game từ `https://cdn.discordapp.com/detectables/games.json`, chỉ lọc các game có executable hệ `win32` thật để phục vụ chạy huy hiệu.
+
+---
+
+## 12. Gửi Telemetry Huy hiệu Playtime / Variety
+
+**`POST /api/badges/science`**
+
+Tự động nạp `analytics_token` từ `GET /users/@me?with_analytics_token=true` (nếu chưa có) và gửi chuỗi sự kiện `running_game_heartbeat` (initial) ➔ `launch_game` ➔ `running_game_heartbeat` (final) tới `https://discord.com/api/v9/science`.
+
+**Body:**
+```json
+{
+  "token": "YOUR_DISCORD_TOKEN",
+  "games": [{ "id": "...", "name": "...", "exe": "..." }],
+  "hoursPerGame": 10,
+  "mode": "both"
 }
 ```
 

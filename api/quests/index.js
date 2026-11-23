@@ -16,6 +16,7 @@ import {
   detectTaskType,
   getTaskTypeName
 } from '../discord-client.js';
+import { serverLog } from '../logger.js';
 
 export default async function handler(req, res) {
   let token = req.query?.token || req.headers?.authorization;
@@ -41,13 +42,14 @@ export default async function handler(req, res) {
       .then(async r => {
         if (!r.ok) {
           const txt = await r.text().catch(() => '');
-          console.warn(`[API Quests Desktop] HTTP ${r.status}: ${txt.slice(0, 300)}`);
+          const cleanErr = txt.trim().startsWith('<') ? 'Rate Limit / Cloudflare HTML' : txt.slice(0, 80);
+          serverLog('warn', `[/api/quests] Desktop HTTP ${r.status}: ${cleanErr}`);
           return { quests: [], excluded_quests: [] };
         }
         return r.json();
       })
       .catch(err => {
-        console.warn('[API Quests Desktop] Lỗi:', err.message);
+        serverLog('warn', `[/api/quests] Desktop lỗi: ${err.message}`);
         return { quests: [], excluded_quests: [] };
       });
 
@@ -56,13 +58,14 @@ export default async function handler(req, res) {
       .then(async r => {
         if (!r.ok) {
           const txt = await r.text().catch(() => '');
-          console.warn(`[API Quests Web] HTTP ${r.status}: ${txt.slice(0, 300)}`);
+          const cleanErr = txt.trim().startsWith('<') ? 'Rate Limit / Cloudflare HTML' : txt.slice(0, 80);
+          serverLog('warn', `[/api/quests] Web HTTP ${r.status}: ${cleanErr}`);
           return { quests: [], excluded_quests: [] };
         }
         return r.json();
       })
       .catch(err => {
-        console.warn('[API Quests Web] Lỗi:', err.message);
+        serverLog('warn', `[/api/quests] Web lỗi: ${err.message}`);
         return { quests: [], excluded_quests: [] };
       });
 
@@ -342,8 +345,6 @@ export default async function handler(req, res) {
     }
 
     const orbsBalance = balanceData.balance ?? 0;
-
-    console.log(`[API /api/quests] Đã quét ${rawQuests.length} Quest từ Discord API (desktop, web, mobile, decisions & claimed)`);
 
     const formattedQuests = rawQuests.map(q => {
       const config = q.config || q || {};
@@ -745,7 +746,7 @@ export default async function handler(req, res) {
       quests: deduplicatedQuests
     });
   } catch (err) {
-    console.error('Lỗi API Quests:', err);
+    serverLog('error', `[/api/quests] Lỗi hệ thống: ${err.message}`);
     return res.status(500).json({
       success: false,
       error: 'Lỗi tải Quest từ Discord: ' + err.message

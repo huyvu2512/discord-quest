@@ -1,0 +1,57 @@
+/* ==========================================================================
+   SKELETON LOADING SHIMMER (css/components/skeleton.css)
+   ========================================================================== */
+
+.skeleton {
+  background: linear-gradient(90deg, #232529 25%, #303339 50%, #232529 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite ease-in-out;
+  border-radius: 4px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-text {
+  height: 13px;
+  width: 85%;
+}
+
+.skeleton-subtext {
+  height: 10px;
+  width: 50%;
+  margin-top: 4px;
+}
+
+.skeleton-tag {
+  height: 18px;
+  width: 72px;
+  border-radius: 4px;
+}
+
+.skeleton-bar {
+  height: 6px;
+  width: 100%;
+  border-radius: 99px;
+}
+
+.skeleton-btn {
+  height: 24px;
+  width: 54px;
+  border-radius: var(--radius);
+}
+
+.skeleton-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}

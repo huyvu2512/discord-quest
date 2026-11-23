@@ -1,0 +1,363 @@
+/* ==========================================================================
+   HOMEPAGE & DASHBOARD RESPONSIVE BREAKPOINTS (css/base/responsive.css)
+   ========================================================================== */
+
+@media (max-width: 1080px) {
+  .home-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .home-main-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .home-col-left,
+  .home-col-right {
+    width: 100%;
+    min-width: 0;
+    gap: 16px;
+    height: auto;
+  }
+
+  .home-logs-section-card {
+    min-height: 290px;
+    height: 290px;
+  }
+
+  .home-logs-mini-box {
+    height: 210px;
+    min-height: 210px;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-dash-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 14px;
+  }
+
+  /* 1. Welcome / Hero Banner */
+  .home-welcome-banner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 14px;
+    gap: 14px;
+    border-radius: var(--radius);
+  }
+
+  .welcome-brand-text {
+    gap: 6px;
+  }
+
+  .welcome-title {
+    font-size: 16px;
+  }
+
+  /* Tạm ẩn ô 'Hệ thống sẵn sàng' trên mobile cho gọn gàng */
+  .welcome-badge {
+    display: none !important;
+  }
+
+  .welcome-sub {
+    white-space: normal;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  /* FIX VẤN ĐỀ 1: Các nút bấm trên banner không bị bẹp/co lại */
+  .welcome-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  /* Nút Quét Nhiệm Vụ (Primary) full 100% bề ngang ở dòng 1 */
+  .welcome-actions .btn:first-child {
+    grid-column: 1 / -1;
+    height: 42px;
+    min-height: 42px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(88, 101, 242, 0.35);
+    justify-content: center;
+  }
+
+  /* 2 nút Thêm Token và Tiến Độ chia đều 50% - 50% ở dòng 2 */
+  .welcome-actions .btn:not(:first-child) {
+    height: 38px;
+    min-height: 38px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0 8px;
+    white-space: nowrap;
+    justify-content: center;
+  }
+
+  .welcome-actions .btn svg {
+    flex-shrink: 0;
+  }
+
+  /* 2. Thống kê 4 ô: 2 cột gọn gàng, cân xứng trên mobile */
+  .home-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .stat-card {
+    padding: 12px 12px;
+    min-height: 84px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .stat-card-value {
+    font-size: 20px;
+    margin: 4px 0 2px 0;
+  }
+
+  .stat-card-label {
+    font-size: 10.5px;
+  }
+
+  .stat-icon-wrap {
+    width: 26px;
+    height: 26px;
+  }
+
+  .stat-icon-wrap svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .stat-status-text {
+    font-size: 10.5px;
+    max-width: 100%;
+  }
+
+  /* FIX VẤN ĐỀ 2: Các khung / card không bao giờ bị phóng to hoặc tràn ra viền */
+  .home-main-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100%;
+    max-width: 100%;
+    gap: 14px;
+  }
+
+  .home-col-left,
+  .home-col-right {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 14px;
+    box-sizing: border-box;
+  }
+
+  .home-section-card {
+    padding: 14px 12px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: var(--radius);
+  }
+
+  .home-section-header {
+    gap: 8px;
+    min-width: 0;
+    padding-bottom: 10px;
+  }
+
+  .home-section-title {
+    font-size: 13.5px;
+    min-width: 0;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .home-view-all-btn {
+    font-size: 11.5px;
+    padding: 4px 4px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* Tối ưu danh sách nhiệm vụ trên mobile: bố cục 1 dòng gọn gàng (Avatar - Nội dung - Nút hành động) */
+  .home-quests-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .home-quest-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .quest-row-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 12.5px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  .quest-row-main {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .quest-row-title {
+    font-size: 12.5px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .quest-row-sub {
+    font-size: 11px;
+    margin-top: 1px;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+
+  .quest-row-desc {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .quest-row-action {
+    flex-shrink: 0;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .quest-row-action .btn {
+    height: 26px;
+    padding: 0 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .quest-row-action .tag {
+    font-size: 10.5px;
+    padding: 2px 7px;
+  }
+
+  /* Card Mini Logs Console trên mobile: giữ cố định kích thước, tự cuộn bên trong */
+  .home-logs-section-card {
+    height: 290px;
+    min-height: 290px;
+    max-height: 290px;
+    flex: unset;
+    box-sizing: border-box;
+  }
+
+  .home-logs-mini-box {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 10px 10px;
+    font-size: 11px;
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
+    flex: unset;
+    box-sizing: border-box;
+  }
+
+  .home-log-row {
+    min-width: 0;
+    max-width: 100%;
+    gap: 6px;
+  }
+
+  .home-log-row .log-time {
+    font-size: 10px;
+  }
+
+  .home-log-row .log-msg {
+    min-width: 0;
+    flex: 1;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* Widget Tài khoản & các khối bên cột phải */
+  .home-account-box,
+  .acc-widget-user,
+  .acc-widget-metrics,
+  .home-features-list,
+  .home-steps-list {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .acc-widget-user {
+    padding: 8px 10px;
+  }
+
+  .acc-widget-name {
+    font-size: 13px;
+  }
+
+  .home-step-row {
+    padding: 8px 10px;
+    min-width: 0;
+  }
+
+  .step-text {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .home-feature-item {
+    padding: 8px 10px;
+    min-width: 0;
+  }
+
+  .feature-content {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .welcome-actions .btn:not(:first-child) {
+    font-size: 11.5px;
+    padding: 0 4px;
+    gap: 4px;
+  }
+}

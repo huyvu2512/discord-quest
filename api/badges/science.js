@@ -38,10 +38,11 @@ async function fetchAnalyticsToken(token, headers) {
   return data.analytics_token;
 }
 
-function buildGameSessionEvents(game, durationMs, heartbeatSession, launchSignature, seqState) {
+function buildGameSessionEvents(game, durationMs, heartbeatSession, seqState) {
   const sessionId = crypto.randomUUID();
+  const launchSignature = crypto.randomUUID();
   const now = Date.now();
-  const start = now - durationMs > 0 ? now - durationMs : now;
+  const start = now - Math.min(durationMs, 60000);
   const gameId = String(game.id);
   const gameName = String(game.name || 'Game');
   const gameExe = String(game.exe || 'game.exe');
@@ -70,7 +71,7 @@ function buildGameSessionEvents(game, durationMs, heartbeatSession, launchSignat
       media_session_id: null,
       launch_signature: launchSignature,
       client_app_state: 'focused',
-      client_send_timestamp: start
+      client_send_timestamp: now
     }
   };
 
@@ -108,7 +109,7 @@ function buildGameSessionEvents(game, durationMs, heartbeatSession, launchSignat
       client_performance_memory: null,
       cpu_core_count: null,
       accessibility_features: 0,
-      client_send_timestamp: start + 100
+      client_send_timestamp: now
     }
   };
 
@@ -190,7 +191,7 @@ export default async function handler(req, res) {
         ? (45 + Math.floor(Math.random() * 76)) * 1000 // Random 45s - 120s cho mỗi game
         : durationMs;
       totalDurationMs += perGameMs;
-      events.push(...buildGameSessionEvents(g, perGameMs, heartbeatSession, launchSignature, seqState));
+      events.push(...buildGameSessionEvents(g, perGameMs, heartbeatSession, seqState));
     }
 
     const sciRes = await fetch('https://discord.com/api/v9/science', {

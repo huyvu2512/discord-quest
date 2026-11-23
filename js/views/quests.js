@@ -302,6 +302,9 @@ window.pauseQuest = function(id) {
   state.isRunningAll = false;
   const target = state.quests.find(x => x.id === id);
   if (target) {
+    if (target.status === "running" && typeof window.flushQuestProgressOnStop === "function") {
+      window.flushQuestProgressOnStop(target);
+    }
     target.status = "pending";
     delete target._runStartedAt;
     delete target._baseProgSec;
@@ -312,6 +315,9 @@ window.pauseQuest = function(id) {
   // Chuyển toàn bộ các quest còn lại trong hàng đợi về pending
   state.quests.forEach(q => {
     if (q.status === "queued" || q.status === "running") {
+      if (q.status === "running" && typeof window.flushQuestProgressOnStop === "function") {
+        window.flushQuestProgressOnStop(q);
+      }
       q.status = "pending";
       delete q._runStartedAt;
       delete q._baseProgSec;

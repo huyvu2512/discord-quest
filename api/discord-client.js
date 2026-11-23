@@ -7,54 +7,65 @@
  * 4. Nhận diện loại nhiệm vụ từ Discord task_config chuẩn 100%
  */
 
+import { serverLog } from './logger.js';
+
 let cachedBuildNumber = 626571;
 let lastBuildFetchedAt = 0;
+let inFlightBuildPromise = null;
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 tiếng tự làm mới một lần
 
 export async function fetchLatestBuildNumber() {
   if (Date.now() - lastBuildFetchedAt < CACHE_TTL_MS && cachedBuildNumber) {
     return cachedBuildNumber;
   }
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
-    const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36';
-    const r = await fetch('https://discord.com/app', {
-      headers: { 'User-Agent': ua },
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
-    if (r.ok) {
-      const html = await r.text();
-      const re = /<script[^>]+src=["'](\/assets\/[^"']+\.js)["']/g;
-      let match;
-      const scriptUrls = [];
-      while ((match = re.exec(html)) !== null) {
-        scriptUrls.push(match[1]);
-      }
-
-      // Quét ngược từ 15 script cuối cùng
-      for (const url of scriptUrls.slice(-15).reverse()) {
-        try {
-          const sRes = await fetch(`https://discord.com${url}`, {
-            headers: { 'User-Agent': ua }
-          });
-          const text = await sRes.text();
-          const m = text.match(/buildNumber["\s:]+["\s]*(\d{5,7})/i) || text.match(/client_build_number["\s:]+["\s]*(\d{5,7})/i);
-          if (m && m[1]) {
-            cachedBuildNumber = parseInt(m[1], 10);
-            lastBuildFetchedAt = Date.now();
-            console.log(`[Discord Build] Cập nhật Build Number Discord thành công: ${cachedBuildNumber}`);
-            return cachedBuildNumber;
-          }
-        } catch {}
-      }
-    }
-  } catch (err) {
-    console.warn(`[Discord Build] Không thể lấy build mới từ Discord (${err.message}), dùng build hiện tại: ${cachedBuildNumber}`);
+  if (inFlightBuildPromise) {
+    return inFlightBuildPromise;
   }
-  return cachedBuildNumber || 626571;
+  inFlightBuildPromise = (async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36';
+      const r = await fetch('https://discord.com/app', {
+        headers: { 'User-Agent': ua },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (r.ok) {
+        const html = await r.text();
+        const re = /<script[^>]+src=["'](\/assets\/[^"']+\.js)["']/g;
+        let match;
+        const scriptUrls = [];
+        while ((match = re.exec(html)) !== null) {
+          scriptUrls.push(match[1]);
+        }
+
+        // Quét ngược từ 15 script cuối cùng
+        for (const url of scriptUrls.slice(-15).reverse()) {
+          try {
+            const sRes = await fetch(`https://discord.com${url}`, {
+              headers: { 'User-Agent': ua }
+            });
+            const text = await sRes.text();
+            const m = text.match(/buildNumber["\s:]+["\s]*(\d{5,7})/i) || text.match(/client_build_number["\s:]+["\s]*(\d{5,7})/i);
+            if (m && m[1]) {
+              cachedBuildNumber = parseInt(m[1], 10);
+              lastBuildFetchedAt = Date.now();
+              serverLog('info', `[Discord Build] Cập nhật Build Number thành công: ${cachedBuildNumber}`);
+              return cachedBuildNumber;
+            }
+          } catch {}
+        }
+      }
+    } catch (err) {
+      serverLog('warn', `[Discord Build] Không thể lấy build mới (${err.message}), dùng build hiện tại: ${cachedBuildNumber}`);
+    } finally {
+      inFlightBuildPromise = null;
+    }
+    return cachedBuildNumber || 626571;
+  })();
+  return inFlightBuildPromise;
 }
 
 export function getCachedBuildNumber() {

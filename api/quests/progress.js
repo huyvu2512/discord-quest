@@ -5,6 +5,7 @@ import {
   DISCORD_MOBILE_HEADERS,
   DISCORD_IOS_HEADERS
 } from '../discord-client.js';
+import { serverLog } from '../logger.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -115,7 +116,7 @@ export default async function handler(req, res) {
 
     // 2. NẾU BỊ 404 VÀ LÀ NHIỆM VỤ VIDEO: Tự động thử JIT Enroll trên Discord
     if (discordRes.status === 404 && isVideo) {
-      console.log(`[Video Progress] Quest ${questId} chưa enroll (404), tiến hành JIT Enroll...`);
+      serverLog('info', `[/api/quests/progress] Quest ${questId} chưa enroll (404), tiến hành JIT Enroll...`);
       try {
         const enrollRes = await fetch(`https://discord.com/api/v9/quests/${questId}/enroll`, {
           method: 'POST',
@@ -128,7 +129,7 @@ export default async function handler(req, res) {
           })
         });
 
-        console.log(`[Video Progress] JIT Enroll status cho ${questId}:`, enrollRes.status);
+        serverLog('info', `[/api/quests/progress] JIT Enroll ${questId} -> HTTP ${enrollRes.status}`);
         if (enrollRes.status === 429) {
           const rateLimitData = await enrollRes.json().catch(() => ({}));
           const retryAfter = rateLimitData.retry_after || 5;
@@ -143,7 +144,7 @@ export default async function handler(req, res) {
 
         const enrollData = await enrollRes.json().catch(() => ({}));
         if (enrollRes.ok || enrollData.code === 260017 || enrollData.message?.toLowerCase().includes('already enrolled')) {
-          console.log(`[Video Progress] Enroll thành công (hoặc đã tham gia), thử lại video-progress...`);
+          serverLog('info', `[/api/quests/progress] Đã enroll ${questId}, thử lại video-progress...`);
           discordRes = await fetch(discordUrl, {
             method: 'POST',
             headers,
@@ -151,7 +152,7 @@ export default async function handler(req, res) {
           });
         }
       } catch (e) {
-        console.warn(`[Video Progress] Lỗi JIT Enroll:`, e.message);
+        serverLog('warn', `[/api/quests/progress] Lỗi JIT Enroll: ${e.message}`);
       }
     }
 

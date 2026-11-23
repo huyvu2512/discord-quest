@@ -238,6 +238,10 @@
   font-weight: 600;
 }
 
+.mobile-nav-more-btn {
+  display: none;
+}
+
 .nav-btn.disabled {
   opacity: 0.35;
   cursor: not-allowed;
@@ -522,27 +526,82 @@
   }
 
   .nav {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     width: 100%;
-    justify-content: space-around;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
+    padding: 0 2px;
   }
 
-  .nav-btn {
-    flex: 1;
+  .sidebar:not(.mobile-nav-expanded) .nav-btn:nth-child(n+5) {
+    display: none;
+  }
+
+  .nav-btn,
+  .mobile-nav-more-btn {
+    width: 100%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 3px;
     padding: 6px 2px;
+    border: none;
     border-radius: 8px;
     position: relative;
     text-align: center;
     background: transparent;
     color: var(--text-muted);
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .mobile-nav-more-btn {
+    grid-column: 5;
+    grid-row: 1;
+  }
+
+  .mobile-nav-more-btn .nav-icon-box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-nav-more-btn .nav-icon {
+    width: 22px;
+    height: 22px;
+    color: var(--text-sub);
+    transition: transform 0.2s ease, color 0.15s ease;
+  }
+
+  .mobile-nav-more-btn .nav-text {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-sub);
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+
+  .mobile-nav-more-btn.has-active-extra {
+    background: rgba(88, 101, 242, 0.15);
+  }
+
+  .mobile-nav-more-btn.has-active-extra .nav-icon {
+    color: var(--blurple);
+  }
+
+  .mobile-nav-more-btn.has-active-extra .nav-text {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .sidebar.mobile-nav-expanded .mobile-more-arrow {
+    transform: rotate(180deg);
+    color: var(--blurple);
   }
 
   .nav-btn .nav-icon-box {
@@ -590,15 +649,18 @@
   }
 
   @media (max-width: 420px) {
-    .nav-btn {
+    .nav-btn,
+    .mobile-nav-more-btn {
       padding: 5px 1px;
       gap: 2px;
     }
-    .nav-btn .nav-icon {
+    .nav-btn .nav-icon,
+    .mobile-nav-more-btn .nav-icon {
       width: 19px;
       height: 19px;
     }
-    .nav-btn .nav-text {
+    .nav-btn .nav-text,
+    .mobile-nav-more-btn .nav-text {
       font-size: 10px;
       letter-spacing: -0.3px;
     }

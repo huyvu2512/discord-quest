@@ -1,0 +1,634 @@
+/* ==========================================================================
+   PLAYTIME / BADGE RUNNER VIEW (css/views/playtime.css)
+   ========================================================================== */
+
+.badge-runner-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.runner-card {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.runner-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.runner-card-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-card-acc {
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+.runner-card-acc strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.mode-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mode-pill-btn {
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  color: var(--text-sub);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mode-pill-btn:hover {
+  border-color: var(--border-light);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+}
+
+.mode-pill-btn.active {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-light);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.mode-pill-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  display: block;
+}
+
+.mode-pill-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.mode-pill-btn.active .mode-pill-desc {
+  color: var(--text-sub);
+}
+
+.runner-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.preset-chip {
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.preset-chip:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--border-light);
+  color: #fff;
+}
+
+.preset-chip.active {
+  background: rgba(88, 101, 242, 0.22);
+  border-color: #5865f2;
+  color: #fff;
+}
+
+.preset-chip.highlight {
+  background: rgba(88, 101, 242, 0.12);
+  border-color: rgba(88, 101, 242, 0.4);
+  color: #bfa5ff;
+}
+
+.preset-chip.highlight:hover {
+  background: rgba(88, 101, 242, 0.25);
+  border-color: #5865f2;
+  color: #fff;
+}
+
+.runner-footer-bar {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.runner-summary-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.runner-summary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  color: #fff;
+}
+
+.runner-summary-chip.runner-chip-available {
+  background: rgba(88, 166, 255, 0.08);
+  border-color: rgba(88, 166, 255, 0.28);
+}
+
+.runner-summary-chip.runner-chip-available .runner-chip-lbl {
+  color: #79c0ff;
+  font-weight: 500;
+}
+
+.runner-summary-chip.runner-chip-available .runner-chip-val {
+  color: #f2f3f5;
+  font-weight: 400;
+}
+
+.runner-chip-lbl {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.runner-chip-val {
+  color: #f2f3f5;
+  font-weight: 400;
+}
+
+.runner-progress-box {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.runner-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.runner-mini-console {
+  flex: 1 1 0%;
+  height: 180px;
+  min-height: 175px;
+  max-height: 185px;
+  overflow-y: auto;
+}
+
+.mode-pill-btn.disabled,
+.mode-pill-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+.runner-maxed-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(87, 242, 135, 0.1);
+  border: 1px solid rgba(87, 242, 135, 0.25);
+  color: #57f287;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+/* Hai bảng mốc cấp độ (10 Cấp) bên dưới Runner */
+.runner-tier-boards-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 14px;
+  width: 100%;
+}
+
+.runner-tier-board-card {
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.runner-tier-board-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  min-height: 28px;
+}
+
+.runner-tier-board-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.runner-tier-board-icon-wrap {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main);
+  flex-shrink: 0;
+}
+
+.runner-tier-board-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.runner-tier-status-pill {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.runner-tier-status-pill.maxed {
+  background: rgba(240, 178, 50, 0.14);
+  color: #f0b232;
+  border-color: rgba(240, 178, 50, 0.35);
+}
+
+.runner-tier-status-pill.active {
+  background: rgba(88, 101, 242, 0.15);
+  color: #bfa5ff;
+  border-color: rgba(88, 101, 242, 0.35);
+}
+
+.runner-tier-status-pill.locked {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.runner-tier-board-sub {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mốc tiến trình chuẩn Discord (2 Icon 2 bên + Thanh tiến trình & Text ở giữa) */
+.runner-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 10px 0;
+  padding: 0 1px;
+}
+
+.runner-progress-art-wrap {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.runner-progress-art-wrap.locked {
+  opacity: 0.35;
+  filter: grayscale(0.85);
+}
+
+.runner-progress-art {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+}
+
+.runner-progress-art-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-sub);
+}
+
+.runner-progress-center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runner-progress-text {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #dbdee1;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-progress-track {
+  width: 100%;
+  height: 6px;
+  background: #35373c;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.runner-progress-fill {
+  height: 100%;
+  background: #5865f2;
+  border-radius: 99px;
+  transition: width 0.35s ease;
+}
+
+.runner-progress-fill.maxed {
+  background: #57f287;
+}
+
+/* Backward-compatible classes */
+.runner-tier-progress-track {
+  width: 100%;
+  height: 6px;
+  background: #35373c;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.runner-tier-progress-fill {
+  height: 100%;
+  background: #5865f2;
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+.runner-tier-progress-fill.maxed {
+  background: #57f287;
+}
+
+.runner-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.runner-tier-grid.single-row {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 1px 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.runner-tier-grid.single-row::-webkit-scrollbar {
+  display: none;
+}
+
+.runner-tier-grid.single-row .runner-tier-slot {
+  flex: 0 0 calc((100% - 4 * 6px) / 5);
+  width: calc((100% - 4 * 6px) / 5);
+  max-width: calc((100% - 4 * 6px) / 5);
+  box-sizing: border-box;
+}
+
+.runner-tier-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 5px 2px 4px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+  user-select: none;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.runner-tier-slot.unlocked {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.runner-tier-slot.current {
+  border-color: #5865f2;
+  background: rgba(88, 101, 242, 0.12);
+  box-shadow: 0 0 0 1px rgba(88, 101, 242, 0.3);
+}
+
+.runner-tier-slot.locked {
+  opacity: 0.42;
+}
+
+.runner-tier-slot:hover {
+  opacity: 0.95;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.runner-tier-slot-art {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.runner-tier-slot-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.runner-tier-slot-fallback-svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-sub);
+}
+
+.runner-tier-slot.unlocked .runner-tier-slot-fallback-svg {
+  color: #fff;
+}
+
+.runner-tier-slot.current .runner-tier-slot-fallback-svg {
+  color: #5865f2;
+}
+
+.runner-tier-slot-name {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #f2f3f5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.15;
+}
+
+.runner-tier-slot-milestone {
+  font-size: 8.5px;
+  color: var(--text-muted);
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+@media (max-width: 1024px) {
+  .badge-runner-layout,
+  .runner-tier-boards-layout {
+    grid-template-columns: 1fr;
+  }
+  .runner-mini-console {
+    flex: none;
+    height: 210px;
+    min-height: 210px;
+    max-height: 210px;
+  }
+}
+
+@media (max-width: 860px) {
+  .runner-card {
+    padding: 14px;
+  }
+  .runner-card-head {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+  }
+  .mode-selector-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .mode-pill-btn {
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .mode-pill-name {
+    font-size: 11.5px;
+  }
+  .mode-pill-desc {
+    font-size: 9.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .runner-form-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .runner-tier-board-card {
+    padding: 10px 12px;
+  }
+  .runner-footer-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .runner-summary-chips {
+    justify-content: space-between;
+  }
+  .runner-footer-bar > div:last-child,
+  .runner-footer-bar > div:last-child .btn {
+    width: 100%;
+    justify-content: center;
+    height: 36px;
+  }
+}
+
+@media (max-width: 520px) {
+  .runner-tier-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .runner-tier-grid.single-row .runner-tier-slot {
+    flex: 0 0 calc((100% - 2 * 6px) / 3);
+    width: calc((100% - 2 * 6px) / 3);
+    max-width: calc((100% - 2 * 6px) / 3);
+  }
+}
