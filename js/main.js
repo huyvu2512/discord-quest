@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindActionButtons();
   bindTokenChecking();
   initIPFetcher();
+  if (typeof window.applyI18n === "function") window.applyI18n();
 
   // Đảm bảo luôn tự động chọn tài khoản nếu đã có tài khoản lưu trong máy
   if (state.accounts.length > 0 && (!state.activeAccId || !state.accounts.some(a => a.id === state.activeAccId))) {

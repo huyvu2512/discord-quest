@@ -92,12 +92,12 @@
           <div class="stat-item" title="Tổng số Nhiệm Vụ Discord đã hoàn thành">
             <img id="nav-quest-badge-icon" class="stat-badge-icon" alt="" style="display:none">
             <svg id="nav-quest-badge-fallback" class="stat-badge-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10l-1 7a4 4 0 0 1-8 0L7 4z"/><path d="M5 5H3v2a3 3 0 0 0 3 3h1"/><path d="M19 5h2v2a3 3 0 0 1-3 3h-1"/></svg>
-            <span class="stat-lbl">Đã xong:</span>
+            <span class="stat-lbl" data-i18n="stat_done">Đã xong:</span>
             <span class="stat-val font-mono" id="nav-completed-quests">—</span>
           </div>
           <div class="stat-item">
             <video src="assets/videos/orb.webm" autoplay loop muted playsinline class="stat-video-icon"></video>
-            <span class="stat-lbl">Số dư:</span>
+            <span class="stat-lbl" data-i18n="stat_balance">Số dư:</span>
             <span class="stat-val font-mono" id="nav-orbs">—</span>
           </div>
         </div>
@@ -105,14 +105,14 @@
 
       <div class="header-actions">
         <div class="divider-v"></div>
-        <button class="btn btn-secondary" id="btn-refresh">Quét Quest</button>
+        <button class="btn btn-secondary" id="btn-refresh" data-i18n="btn_scan">Quét Quest</button>
         <button class="btn btn-secondary" id="btn-reload-page" onclick="window.location.reload()" title="Làm mới trang web">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0;"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-          <span>Làm mới</span>
+          <span data-i18n="btn_reload">Làm mới</span>
         </button>
-        <button class="btn btn-primary" id="btn-run-all">Chạy Tất Cả</button>
-        <button class="btn btn-danger hidden" id="btn-stop-all">Dừng Lại</button>
-        <button class="btn btn-secondary btn-icon-only" onclick="window.shareApp()" title="Chia sẻ ứng dụng / Thêm vào màn hình chính" style="padding: 7px 11px;">
+        <button class="btn btn-primary" id="btn-run-all" data-i18n="btn_run_all">Chạy Tất Cả</button>
+        <button class="btn btn-danger hidden" id="btn-stop-all" data-i18n="btn_stop_all">Dừng Lại</button>
+        <button class="btn btn-secondary btn-icon-only" onclick="window.shareApp()" data-i18n-title="share_title" title="Chia sẻ ứng dụng / Thêm vào màn hình chính" style="padding: 7px 11px;">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="18" cy="5" r="3"></circle>
             <circle cx="6" cy="12" r="3"></circle>
@@ -121,6 +121,13 @@
             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
           </svg>
         </button>
+        <select id="lang-switcher" class="lang-select" onchange="window.setAppLang(this.value)" data-i18n-title="lang_title" title="Đổi ngôn ngữ giao diện" aria-label="Language">
+          <option value="vi">VI</option>
+          <option value="en">EN</option>
+          <option value="ja">JA</option>
+          <option value="ko">KO</option>
+          <option value="zh">ZH</option>
+        </select>
       </div>
     </header>
 
@@ -132,57 +139,57 @@
             <div class="nav-icon-box">
               <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             </div>
-            <span class="nav-text">Trang chủ</span>
+            <span class="nav-text" data-i18n="nav_home">Trang chủ</span>
           </button>
           <button class="nav-btn" data-tab="accounts" id="nav-btn-accounts" title="Tài khoản">
             <div class="nav-icon-box">
               <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             </div>
-            <span class="nav-text">Tài khoản</span>
+            <span class="nav-text" data-i18n="nav_accounts">Tài khoản</span>
           </button>
           <button class="nav-btn" data-tab="quests" id="nav-btn-quests" title="Quest">
             <div class="nav-icon-box">
               <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
               <span class="nav-count" id="count-all">0</span>
             </div>
-            <span class="nav-text">Quest</span>
+            <span class="nav-text" data-i18n="nav_quests">Quest</span>
           </button>
           <button class="nav-btn" data-tab="rewards" id="nav-btn-rewards" title="Mã Code / Quà">
             <div class="nav-icon-box">
               <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76V14h2V8.76L15.38 12 17 10.83 14.92 8H20v6z"/></svg>
               <span class="nav-count" id="count-rewards">0</span>
             </div>
-            <span class="nav-text">Mã quà</span>
+            <span class="nav-text" data-i18n="nav_rewards">Mã quà</span>
           </button>
           <button class="nav-btn" data-tab="badges" id="nav-btn-badges" title="Lấy huy hiệu">
             <div class="nav-icon-box">
               <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9.68 13.69L12 11.93l2.31 1.76-.88-2.85L15.75 9h-2.84L12 6.19 11.09 9H8.25l2.31 1.84-.88 2.85zM20 10c0-4.42-3.58-8-8-8s-8 3.58-8 8c0 2.03.76 3.87 2 5.28V23l6-2 6 2v-7.72c1.24-1.41 2-3.25 2-5.28zm-8-6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6zm0 15l-4 1.02v-3.1c1.18.68 2.54 1.08 4 1.08s2.82-.4 4-1.08v3.1L12 19z"/></svg>
             </div>
-            <span class="nav-text">Lấy huy hiệu</span>
+            <span class="nav-text" data-i18n="nav_badges">Lấy huy hiệu</span>
           </button>
           <button class="nav-btn" data-tab="playtime" id="nav-btn-playtime" title="Chạy huy hiệu">
             <div class="nav-icon-box">
               <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             </div>
-            <span class="nav-text">Chạy huy hiệu</span>
+            <span class="nav-text" data-i18n="nav_playtime">Chạy huy hiệu</span>
           </button>
           <button class="nav-btn" data-tab="logs" id="nav-btn-logs" title="Nhật ký">
             <div class="nav-icon-box">
               <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 4H4c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10zm-2-1h-6v-2h6v2zM7.5 17l-1.41-1.41L8.67 13l-2.58-2.59L7.5 9l4 4-4 4z"/></svg>
             </div>
-            <span class="nav-text">Nhật ký</span>
+            <span class="nav-text" data-i18n="nav_logs">Nhật ký</span>
           </button>
           <button class="nav-btn" data-tab="settings" id="nav-btn-settings" title="Cài đặt">
             <div class="nav-icon-box">
               <svg class="nav-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
             </div>
-            <span class="nav-text">Cài đặt</span>
+            <span class="nav-text" data-i18n="nav_settings">Cài đặt</span>
           </button>
           <button type="button" class="mobile-nav-more-btn" id="btn-mobile-nav-more" title="Mở rộng menu">
             <div class="nav-icon-box">
               <svg class="nav-icon mobile-more-arrow" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
             </div>
-            <span class="nav-text" id="mobile-nav-more-text">Thêm</span>
+            <span class="nav-text" id="mobile-nav-more-text" data-i18n="nav_more">Thêm</span>
           </button>
         </nav>
 
@@ -438,8 +445,8 @@
         <section class="tab-content" id="tab-accounts">
           <div class="top-row">
             <div>
-              <h2 class="page-title">Quản Lý Tài Khoản</h2>
-              <p class="page-sub">Nhập và kiểm tra Token Discord để bắt đầu quét nhiệm vụ.</p>
+              <h2 class="page-title" data-i18n="page_accounts_title">Quản Lý Tài Khoản</h2>
+              <p class="page-sub" data-i18n="page_accounts_sub">Nhập và kiểm tra Token Discord để bắt đầu quét nhiệm vụ.</p>
             </div>
             <button class="btn btn-primary btn-sm" id="btn-open-add-account">+ Thêm & Check Token</button>
           </div>
@@ -465,8 +472,8 @@
         <section class="tab-content" id="tab-quests">
           <div class="top-row">
             <div>
-              <h2 class="page-title">Quest</h2>
-              <p class="page-sub">Các nhiệm vụ đang gửi tiến trình hoặc chờ nhận thưởng.</p>
+              <h2 class="page-title" data-i18n="page_quests_title">Quest</h2>
+              <p class="page-sub" data-i18n="page_quests_sub">Các nhiệm vụ đang gửi tiến trình hoặc chờ nhận thưởng.</p>
             </div>
             <div class="summary-pill">
               <span id="summary-progress-text">0 đang chạy • 0 trong hàng đợi • 0/0 xong</span>
@@ -495,8 +502,8 @@
         <section class="tab-content" id="tab-rewards">
           <div class="top-row">
             <div>
-              <h2 class="page-title">Mã Quà Tặng & Gift Code</h2>
-              <p class="page-sub">Danh sách các nhiệm vụ có mã Gift Code từ Discord và đối tác.</p>
+              <h2 class="page-title" data-i18n="page_rewards_title">Mã Quà Tặng & Gift Code</h2>
+              <p class="page-sub" data-i18n="page_rewards_sub">Danh sách các nhiệm vụ có mã Gift Code từ Discord và đối tác.</p>
             </div>
           </div>
 
@@ -521,8 +528,8 @@
         <section class="tab-content" id="tab-badges">
           <div class="top-row">
             <div>
-              <h2 class="page-title">Lấy Huy Hiệu Discord</h2>
-              <p class="page-sub">Nhận hoặc chuyển đổi nhanh huy hiệu HypeSquad House và kiểm tra các huy hiệu hiện có trên hồ sơ.</p>
+              <h2 class="page-title" data-i18n="page_badges_title">Lấy Huy Hiệu Discord</h2>
+              <p class="page-sub" data-i18n="page_badges_sub">Nhận hoặc chuyển đổi nhanh huy hiệu HypeSquad House và kiểm tra các huy hiệu hiện có trên hồ sơ.</p>
             </div>
           </div>
           <div id="badges-view-root"></div>
@@ -532,8 +539,8 @@
         <section class="tab-content" id="tab-playtime">
           <div class="top-row">
             <div>
-              <h2 class="page-title">Chạy Huy Hiệu Game</h2>
-              <p class="page-sub">Tăng cấp huy hiệu Thời gian chơi và Trò chơi đa dạng cho tài khoản đang chọn.</p>
+              <h2 class="page-title" data-i18n="page_playtime_title">Chạy Huy Hiệu Game</h2>
+              <p class="page-sub" data-i18n="page_playtime_sub">Tăng cấp huy hiệu Thời gian chơi và Trò chơi đa dạng cho tài khoản đang chọn.</p>
             </div>
           </div>
           <div id="playtime-view-root"></div>
@@ -543,15 +550,15 @@
         <section class="tab-content" id="tab-logs">
           <div class="top-row">
             <div>
-              <h2 class="page-title">Nhật Ký Request</h2>
-              <p class="page-sub">Dòng sự kiện gọi Discord API và cập nhật tiến trình ngầm.</p>
+              <h2 class="page-title" data-i18n="page_logs_title">Nhật Ký Request</h2>
+              <p class="page-sub" data-i18n="page_logs_sub">Dòng sự kiện gọi Discord API và cập nhật tiến trình ngầm.</p>
             </div>
             <div class="filter-bar">
               <div class="custom-select" id="log-filter-select">
                 <button class="custom-select-trigger" type="button" id="log-filter-btn" aria-haspopup="listbox" aria-expanded="false">
                   <span class="custom-select-val">
                     <span class="log-dot all"></span>
-                    <span class="custom-select-text">Tất cả log</span>
+                    <span class="custom-select-text" data-i18n="log_all">Tất cả log</span>
                   </span>
                   <svg class="custom-select-arrow" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"></polyline>
@@ -560,7 +567,7 @@
                 <div class="custom-select-menu" id="log-filter-menu">
                   <div class="custom-select-option selected" data-value="all">
                     <span class="log-dot all"></span>
-                    <span>Tất cả log</span>
+                    <span data-i18n="log_all">Tất cả log</span>
                   </div>
                   <div class="custom-select-option" data-value="info">
                     <span class="log-dot info"></span>
@@ -582,13 +589,13 @@
                 <input type="hidden" id="select-log-level" value="all">
               </div>
 
-              <button class="btn btn-secondary btn-sm" id="btn-download-logs" title="Tải toàn bộ nhật ký về máy (.txt)">
+              <button class="btn btn-secondary btn-sm" id="btn-download-logs" data-i18n-title="log_download_title" title="Tải toàn bộ nhật ký về máy (.txt)">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-right: 4px;">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                <span>Tải log</span>
+                <span data-i18n="log_download">Tải log</span>
               </button>
             </div>
           </div>
@@ -600,8 +607,8 @@
         <section class="tab-content" id="tab-settings">
           <div class="top-row">
             <div>
-              <h2 class="page-title">Cài Đặt Hệ Thống</h2>
-              <p class="page-sub">Tùy chỉnh tự động hóa, chu kỳ gửi tiến trình và an toàn tài khoản.</p>
+              <h2 class="page-title" data-i18n="page_settings_title">Cài Đặt Hệ Thống</h2>
+              <p class="page-sub" data-i18n="page_settings_sub">Tùy chỉnh tự động hóa, chu kỳ gửi tiến trình và an toàn tài khoản.</p>
             </div>
             <div class="filter-bar">
               <button class="btn btn-secondary btn-sm" id="btn-reset-settings" title="Khôi phục thông số khuyến nghị">
@@ -869,6 +876,7 @@
   <script src="js/controllers/queue.js"></script>
 
   <script src="js/utils/ip.js"></script>
+  <script src="js/utils/i18n.js"></script>
   <script src="js/utils/pwa.js"></script>
   <script src="js/main.js"></script>
 </body>

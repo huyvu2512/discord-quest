@@ -10,9 +10,12 @@ function renderLogs() {
   const filtered = lvl === "all" ? state.logs : state.logs.filter(l => l.level === lvl);
 
   if (filtered.length === 0) {
+    const emptyMsg = typeof window.t === "function"
+      ? window.t("log_empty", { lvl: lvl.toUpperCase() })
+      : `Không có dòng nhật ký nào phù hợp với bộ lọc [${lvl.toUpperCase()}].`;
     el.innerHTML = `
       <div style="padding: 24px; text-align: center; color: var(--text-muted); font-family: var(--font-sans);">
-        Không có dòng nhật ký nào phù hợp với bộ lọc [${lvl.toUpperCase()}].
+        ${escapeHtml(emptyMsg)}
       </div>
     `;
     return;
@@ -86,7 +89,7 @@ function initLogControls() {
  */
 function downloadLogs() {
   if (!state.logs || state.logs.length === 0) {
-    toast("Không có nhật ký nào để tải về!", "warn");
+    toast(typeof window.t === "function" ? window.t("log_empty_export") : "Không có nhật ký nào để tải về!", "warn");
     return;
   }
 
@@ -94,20 +97,21 @@ function downloadLogs() {
   const logsToExport = lvl === "all" ? state.logs : state.logs.filter(l => l.level === lvl);
 
   if (logsToExport.length === 0) {
-    toast(`Không có dòng log nào thuộc bộ lọc [${lvl.toUpperCase()}]!`, "warn");
+    toast(typeof window.t === "function" ? window.t("log_empty_filter_export", { lvl: lvl.toUpperCase() }) : `Không có dòng log nào thuộc bộ lọc [${lvl.toUpperCase()}]!`, "warn");
     return;
   }
 
   const now = new Date();
-  const timeStr = now.toLocaleString("vi-VN");
+  const timeStr = now.toLocaleString(document.documentElement.lang || "vi-VN");
   const dateStr = now.toISOString().slice(0, 10);
 
+  const tr = typeof window.t === "function" ? window.t : (k, v) => k;
   const lines = [
     `=============================================================`,
-    `DISCORD QUEST TOOL - NHẬT KÝ REQUEST CONSOLE`,
-    `Thời gian xuất: ${timeStr}`,
-    `Bộ lọc cấp độ: ${lvl.toUpperCase()}`,
-    `Tổng số sự kiện: ${logsToExport.length}`,
+    tr("log_export_title"),
+    tr("log_export_time", { time: timeStr }),
+    tr("log_export_level", { lvl: lvl.toUpperCase() }),
+    tr("log_export_total", { count: logsToExport.length }),
     `=============================================================\r\n`
   ];
 

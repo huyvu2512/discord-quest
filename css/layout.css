@@ -166,6 +166,27 @@
   margin: 0 4px;
 }
 
+.lang-select {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.lang-select:hover,
+.lang-select:focus {
+  border-color: var(--blurple);
+  background: #2b2d31;
+}
+
 /* App Body Layout */
 .layout {
   display: flex;
@@ -509,6 +530,13 @@
     font-size: 13px;
     font-weight: 600;
     justify-content: center;
+  }
+
+  .header-actions .lang-select {
+    height: 38px;
+    padding: 0 8px;
+    font-size: 12px;
+    flex-shrink: 0;
   }
 
   /* Layout chính: hiển thị dạng cột */
