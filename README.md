@@ -17,7 +17,7 @@
 [![Last Commit](https://img.shields.io/github/last-commit/huyvu2512/discord-quest?style=flat-square&label=Last%20Commit&color=3fb950)](https://github.com/huyvu2512/discord-quest/commits/main)
 ![Visitors](https://visitor-badge.laobi.icu/badge?page_id=huyvu2512.discord-quest&left_text=Visitors&left_color=6e7681&right_color=5865F2)
 
-[Live Website](https://discord.huyvu2512.io.vn/) · [Report Bug](https://github.com/huyvu2512/discord-quest/issues) · [Request Feature](https://github.com/huyvu2512/discord-quest/issues) · [Tiếng Việt](README.vi.md)
+[Live Website](https://discord.huyvu2512.io.vn/) · [Report Bug](https://github.com/huyvu2512/discord-quest/issues) · [Request Feature](https://github.com/huyvu2512/discord-quest/issues)
 
 </div>
 
@@ -110,8 +110,7 @@ discord-quest/
 ├── vite.config.js                # Dev server, API middleware, and logger config
 ├── SECURITY.md                   # Security policy and vulnerability reporting
 ├── LICENSE                       # MIT License
-├── README.md                     # Project documentation (English)
-└── README.vi.md                  # Project documentation (Vietnamese)
+└── README.md                     # Project documentation
 ```
 
 ---

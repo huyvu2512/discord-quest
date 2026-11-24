@@ -1,45 +1,45 @@
 # API Reference
 
-Hệ thống cung cấp **12 endpoint** API Serverless chạy trên nền tảng Vercel Functions (hoặc Vite middleware khi chạy local). Tất cả các endpoint sử dụng module `discord-client.js` dùng chung để tự động cào Build Number mới nhất từ Discord (cache 6 tiếng) và sinh ra 4 bộ Headers giả lập chuẩn xác: Desktop Client, Web Browser, Mobile Android và Mobile iOS.
+The system exposes **12** Serverless API endpoints running on Vercel Functions (or Vite middleware during local development). All endpoints use the shared `discord-client.js` helper to automatically scrape the latest Discord Build Number (cached for 6 hours) and generate accurate header sets for Desktop Client, Web Browser, Mobile Android, and Mobile iOS.
 
-> **Lưu ý chung:** Mọi endpoint trả về `{ "success": false, "error": "..." }` khi gặp lỗi. Các endpoint tương tác với Discord API đều hỗ trợ phát hiện và xử lý Rate Limit (HTTP 429) với trường `isRateLimited: true` và `retryAfter` (giây).
+> **General Note:** Every endpoint returns `{ "success": false, "error": "..." }` on error. Endpoints interacting with Discord APIs handle Rate Limits (HTTP 429) by returning `isRateLimited: true` and `retryAfter` (seconds).
 
 ---
 
-## 1. Thông tin mạng
+## 1. Network Info
 
 **`GET /api/ip`**
 
-Trả về địa chỉ IP công cộng thật của client. Trên Vercel đọc từ header `x-forwarded-for` / `x-real-ip`; khi chạy local tự động fallback qua `api.ipify.org`.
+Returns the client's public IP address. Reads `x-forwarded-for` / `x-real-ip` headers on Vercel, and falls back to `api.ipify.org` in local development.
 
-**Phản hồi thành công:**
+**Success Response:**
 ```json
 { "ip": "42.117.xx.xx" }
 ```
 
 ---
 
-## 2. Xác thực tài khoản
+## 2. Account Verification
 
 **`POST /api/auth/verify`**
 
-Xác thực Discord User Token bằng cách gọi `GET https://discord.com/api/v9/users/@me` và trả về hồ sơ người dùng đã xử lý.
+Validates a Discord User Token via `GET https://discord.com/api/v9/users/@me` and returns the normalized user profile.
 
 **Body:**
 ```json
 { "token": "YOUR_DISCORD_TOKEN" }
 ```
 
-**Phản hồi thành công (200):**
+**Success Response (200):**
 ```json
 {
   "success": true,
-  "message": "Xác thực tài khoản thành công",
+  "message": "Account verified successfully",
   "user": {
     "id": "123456789012345678",
-    "username": "Tên hiển thị",
-    "rawUsername": "username_gốc",
-    "tag": "@username_gốc",
+    "username": "Display Name",
+    "rawUsername": "raw_username",
+    "tag": "@raw_username",
     "avatar": "https://cdn.discordapp.com/avatars/.../...png?size=128",
     "email": "user@example.com",
     "phone": "+84xxxxxxxxx",
@@ -48,27 +48,27 @@ Xác thực Discord User Token bằng cách gọi `GET https://discord.com/api/v
 }
 ```
 
-**Lỗi phổ biến:**
-| HTTP Status | Ý nghĩa |
+**Common Errors:**
+| HTTP Status | Meaning |
 | :--- | :--- |
-| `400` | Thiếu trường `token` trong body |
-| `401` | Token không hợp lệ hoặc đã bị Discord thu hồi |
-| `500` | Lỗi kết nối máy chủ Discord |
+| `400` | Missing `token` field in request body |
+| `401` | Invalid or revoked Discord token |
+| `500` | Failed to reach Discord servers |
 
 ---
 
-## 3. Làm mới tài khoản
+## 3. Refresh Account
 
 **`POST /api/auth/refresh`**
 
-Kiểm tra tính hợp lệ của token đã lưu và cập nhật thông tin hồ sơ mới nhất. Khác với `/verify`: khi token hết hạn trả về `{ "success": false, "valid": false, "expired": true }` thay vì HTTP 401, giúp frontend phân biệt giữa lỗi token và lỗi mạng.
+Checks whether a stored token is still valid and fetches the latest profile metadata. Unlike `/verify`, expired tokens return HTTP 200 with `{ "success": false, "valid": false, "expired": true }` so the frontend can distinguish token expiration from network failures.
 
 **Body:**
 ```json
 { "token": "YOUR_DISCORD_TOKEN" }
 ```
 
-**Phản hồi thành công (200):**
+**Success Response (200):**
 ```json
 {
   "success": true,
@@ -80,41 +80,41 @@ Kiểm tra tính hợp lệ của token đã lưu và cập nhật thông tin h�
 }
 ```
 
-**Phản hồi khi token hết hạn (200):**
+**Expired Token Response (200):**
 ```json
 {
   "success": false,
   "valid": false,
   "expired": true,
-  "error": "Phiên đăng nhập đã hết hạn. Vui lòng kết nối lại tài khoản."
+  "error": "Session expired. Please reconnect your account."
 }
 ```
 
 ---
 
-## 4. Đăng xuất phiên
+## 4. Logout Session
 
 **`POST /api/auth/logout`**
 
-Endpoint xác nhận đăng xuất phía server. Phiên dữ liệu thực tế được xóa trên client (LocalStorage).
+Server-side logout acknowledgment endpoint. Client-side session data is cleared from `localStorage`.
 
-**Phản hồi (200):**
+**Response (200):**
 ```json
 {
   "success": true,
-  "message": "Đăng xuất tài khoản thành công."
+  "message": "Logged out successfully."
 }
 ```
 
 ---
 
-## 5. Quét danh sách nhiệm vụ
+## 5. Scan Quests
 
-**`GET /api/quests?token=TOKEN`** hoặc **`POST /api/quests`** (body: `{ "token": "..." }`)
+**`GET /api/quests?token=TOKEN`** or **`POST /api/quests`** (body: `{ "token": "..." }`)
 
-Endpoint lõi của hệ thống. Thực hiện **quét song song 6 nguồn dữ liệu** từ Discord API và hợp nhất thông minh:
+Core scanning endpoint. Runs **6 parallel data fetches** against Discord APIs and merges the results:
 
-| # | Nguồn | Discord API | Headers |
+| # | Source | Discord API | Headers |
 | :--- | :--- | :--- | :--- |
 | 1 | Desktop Active | `GET /quests/@me` | Desktop Client |
 | 2 | Web Active | `GET /quests/@me` | Web Browser |
@@ -123,20 +123,20 @@ Endpoint lõi của hệ thống. Thực hiện **quét song song 6 nguồn dữ
 | 5 | Claimed/Completed | `GET /quests/@me/claimed` | Desktop Client |
 | 6 | Orbs Balance | `GET /users/@me/virtual-currency/balance` | Desktop Client |
 
-Sau đó quét thêm **Decision Engine** qua `GET /quests/get-decisions` trên **44 request song song** (11 placements × 4 platform headers) để phát hiện 100% nhiệm vụ tài trợ.
+It then queries **Decision Engine** via `GET /quests/get-decisions` across **44 parallel requests** (11 placements × 4 platform headers) to discover all sponsored quests.
 
-**Xử lý đặc biệt:**
-- **Hydrate incomplete:** Tự động truy vấn `GET /quests/{id}` cho mỗi quest thiếu config/tasks (thử lần lượt Desktop → Web → Android → iOS).
-- **Smart Deduplication:** Loại bỏ quest "bóng ma" (pending trùng với quest đã enrolled/claimed), hợp nhất bản ghi trùng theo campaign key.
-- **Auto Gift Code:** Tự động gọi `GET /quests/{id}/reward-code` cho tối đa 10 quest đã claimed có gift code.
-- **Lọc quest rác:** Loại bỏ quest không có tên, quest đã hết hạn mà chưa làm.
+**Special Handling:**
+- **Hydrate Incomplete:** Automatically queries `GET /quests/{id}` for any quest missing config/tasks (trying Desktop → Web → Android → iOS).
+- **Smart Deduplication:** Removes phantom pending entries that duplicate enrolled/claimed quests and merges records by campaign key.
+- **Auto Gift Code:** Automatically fetches `GET /quests/{id}/reward-code` for up to 10 claimed quests with gift code rewards.
+- **Noise Filtering:** Excludes unnamed quests and unstarted expired quests.
 
-**Query params tùy chọn:**
-| Param | Mô tả |
+**Optional Query Params:**
+| Param | Description |
 | :--- | :--- |
-| `customIds` | Danh sách ID quest thêm thủ công, phân cách bởi dấu phẩy |
+| `customIds` | Comma-separated list of manually added quest IDs |
 
-**Phản hồi thành công (200):**
+**Success Response (200):**
 ```json
 {
   "success": true,
@@ -145,10 +145,10 @@ Sau đó quét thêm **Decision Engine** qua `GET /quests/get-decisions` trên *
   "quests": [
     {
       "id": "1551234567890",
-      "name": "Tên nhiệm vụ",
-      "publisher": "Tên game / nhà phát hành",
+      "name": "Quest Name",
+      "publisher": "Game / Publisher Name",
       "taskType": "WATCH_VIDEO",
-      "typeName": "Xem Video",
+      "typeName": "Watch Video",
       "applicationId": "123456789",
       "targetSec": 60,
       "progSec": 45,
@@ -171,38 +171,38 @@ Sau đó quét thêm **Decision Engine** qua `GET /quests/get-decisions` trên *
 }
 ```
 
-**Các giá trị `status`:**
-| Status | Ý nghĩa |
+**`status` Values:**
+| Status | Meaning |
 | :--- | :--- |
-| `pending` | Chưa đăng ký tham gia |
-| `queued` | Đã đăng ký, đang chờ/đang chạy |
-| `completed` | Đã hoàn thành 100%, chờ nhận thưởng |
-| `claimed` | Đã nhận thưởng |
+| `pending` | Not enrolled yet |
+| `queued` | Enrolled, waiting or in progress |
+| `completed` | 100% completed, ready to claim |
+| `claimed` | Reward claimed |
 
-**Các giá trị `taskType` được hỗ trợ:**
-| Task Type | Tên hiển thị |
+**Supported `taskType` Values:**
+| Task Type | Display Name |
 | :--- | :--- |
-| `WATCH_VIDEO` | Xem Video |
-| `WATCH_VIDEO_ON_MOBILE` | Xem Video (Mobile) |
-| `WATCH_STREAM` | Xem Livestream |
-| `PLAY_ON_DESKTOP` | Chơi trên PC |
-| `STREAM_ON_DESKTOP` | Stream trên PC |
-| `PLAY_ON_XBOX` | Chơi (Xbox) |
-| `PLAY_ON_PLAYSTATION` | Chơi (PS5) |
-| `PLAY_ON_NINTENDO` | Chơi (Nintendo) |
-| `PLAY_ON_MOBILE` | Chơi Mobile |
-| `PLAY_ACTIVITY` | Hoạt động Discord |
-| `FOLLOW_SOCIAL` | Theo dõi MXH |
-| `SHARE_CONTENT` | Chia sẻ nội dung |
-| `JOIN_COMMUNITY` | Tham gia nhóm |
+| `WATCH_VIDEO` | Watch Video |
+| `WATCH_VIDEO_ON_MOBILE` | Watch Video (Mobile) |
+| `WATCH_STREAM` | Watch Stream |
+| `PLAY_ON_DESKTOP` | Play on PC |
+| `STREAM_ON_DESKTOP` | Stream on PC |
+| `PLAY_ON_XBOX` | Play (Xbox) |
+| `PLAY_ON_PLAYSTATION` | Play (PS5) |
+| `PLAY_ON_NINTENDO` | Play (Nintendo) |
+| `PLAY_ON_MOBILE` | Play Mobile |
+| `PLAY_ACTIVITY` | Discord Activity |
+| `FOLLOW_SOCIAL` | Follow Social |
+| `SHARE_CONTENT` | Share Content |
+| `JOIN_COMMUNITY` | Join Community |
 
 ---
 
-## 6. Ghi danh nhiệm vụ
+## 6. Enroll in Quest
 
 **`POST /api/quests/enroll`**
 
-Gửi yêu cầu đăng ký tham gia nhiệm vụ tới Discord. Tự động nạp `traffic_metadata_sealed` từ Decision Engine nếu chưa có. Thử gửi lần lượt qua 4 bộ headers (Desktop/Web/Android/iOS) cho đến khi thành công.
+Enrolls the account in a Discord Quest. Automatically resolves `traffic_metadata_sealed` from Decision Engine if omitted, and tries all 4 header profiles (Desktop/Web/Android/iOS) until accepted.
 
 **Body:**
 ```json
@@ -215,38 +215,38 @@ Gửi yêu cầu đăng ký tham gia nhiệm vụ tới Discord. Tự động n�
 }
 ```
 
-> Chỉ `token` và `questId` là bắt buộc. Các trường còn lại tự động nạp nếu thiếu.
+> Only `token` and `questId` are required; remaining fields are resolved automatically when omitted.
 
-**Phản hồi thành công (200):**
+**Success Response (200):**
 ```json
 {
   "success": true,
-  "message": "Nhận Quest thành công",
+  "message": "Quest enrolled successfully",
   "user_status": { ... }
 }
 ```
 
-**Phản hồi khi đã đăng ký trước đó (200):**
+**Already Enrolled Response (200):**
 ```json
 {
   "success": true,
-  "message": "Quest đã được nhận từ trước",
+  "message": "Quest already enrolled",
   "alreadyEnrolled": true
 }
 ```
 
-**Phản hồi khi bị Rate Limit (200):**
+**Rate Limited Response (200):**
 ```json
 {
   "success": false,
   "status": 429,
   "retryAfter": 5,
   "isRateLimited": true,
-  "error": "Bạn đang bị Discord giới hạn tốc độ thao tác (Rate Limit)..."
+  "error": "Rate limited by Discord..."
 }
 ```
 
-**Phản hồi khi quest hết hạn (200):**
+**Expired Quest Response (200):**
 ```json
 {
   "success": false,
@@ -259,23 +259,23 @@ Gửi yêu cầu đăng ký tham gia nhiệm vụ tới Discord. Tự động n�
 
 ---
 
-## 7. Gửi tiến trình nhiệm vụ
+## 7. Send Quest Progress
 
 **`POST /api/quests/progress`**
 
-Gửi tiến trình giả lập nhịp tim tới Discord. Tự động chọn đúng endpoint và payload dựa trên `taskType`:
+Dispatches heartbeat or video milestone progress to Discord, automatically choosing the right endpoint and payload for the given `taskType`:
 
-| Task Type | Discord Endpoint | Payload chính |
+| Task Type | Discord Endpoint | Primary Payload |
 | :--- | :--- | :--- |
 | `WATCH_VIDEO` / `WATCH_VIDEO_ON_MOBILE` | `POST /quests/{id}/video-progress` | `{ timestamp, traffic_metadata_sealed }` |
 | `PLAY_ON_XBOX` / `PLAY_ON_PLAYSTATION` / `PLAY_ON_NINTENDO` | `POST /quests/{id}/console-heartbeat` | `{ application_id, terminal }` |
 | `STREAM_ON_DESKTOP` / `WATCH_STREAM` / `PLAY_ACTIVITY` | `POST /quests/{id}/heartbeat` | `{ stream_key, application_id, terminal }` |
-| `PLAY_ON_DESKTOP` / mặc định | `POST /quests/{id}/heartbeat` | `{ application_id, terminal }` |
+| `PLAY_ON_DESKTOP` / default | `POST /quests/{id}/heartbeat` | `{ application_id, terminal }` |
 
-**Cơ chế đặc biệt:**
-- **JIT Enroll (Video):** Nếu `video-progress` trả về 404, tự động gọi `POST /quests/{id}/enroll` rồi thử lại.
-- **Multi-header fallback (Video):** Nếu Desktop headers thất bại, tự động thử lại với Web headers → Mobile headers.
-- **Auto `traffic_metadata_sealed`:** Tự động nạp từ Decision Engine nếu chưa có (chỉ cho nhiệm vụ Video).
+**Special Mechanisms:**
+- **JIT Enroll (Video):** If `video-progress` returns 404, automatically calls `POST /quests/{id}/enroll` and retries.
+- **Multi-Header Fallback (Video):** If Desktop headers fail, retries with Web → Mobile headers.
+- **Auto `traffic_metadata_sealed`:** Automatically fetched from Decision Engine if missing (Video quests only).
 
 **Body:**
 ```json
@@ -290,9 +290,9 @@ Gửi tiến trình giả lập nhịp tim tới Discord. Tự động chọn đ
 }
 ```
 
-> Chỉ `token` và `questId` là bắt buộc. `timestamp` dùng cho Video (giây thực). `terminal` đặt `true` khi gửi gói tin cuối cùng (kết thúc phiên).
+> Only `token` and `questId` are required. `timestamp` is used for Video quests (in seconds). Set `terminal: true` on the final packet to flush session progress.
 
-**Phản hồi thành công (200):**
+**Success Response (200):**
 ```json
 {
   "success": true,
@@ -307,7 +307,7 @@ Gửi tiến trình giả lập nhịp tim tới Discord. Tự động chọn đ
 }
 ```
 
-**Phản hồi khi bị Rate Limit (200):**
+**Rate Limited Response (200):**
 ```json
 {
   "success": false,
@@ -320,11 +320,11 @@ Gửi tiến trình giả lập nhịp tim tới Discord. Tự động chọn đ
 
 ---
 
-## 8. Tra cứu nhiệm vụ bằng Link / ID
+## 8. Quest Lookup by Link / ID
 
 **`POST /api/quests/lookup`**
 
-Tra cứu thông tin chi tiết của bất kỳ Quest nào qua đường link Discord hoặc Snowflake ID. Tự động làm sạch URL thành ID thuần số. Thử lần lượt 4 bộ headers (Desktop → Web → Android → iOS).
+Fetches details for any quest by Discord Quest URL or Snowflake ID. Strips URL prefixes automatically and tries all 4 header profiles (Desktop → Web → Android → iOS).
 
 **Body:**
 ```json
@@ -334,21 +334,21 @@ Tra cứu thông tin chi tiết của bất kỳ Quest nào qua đường link D
 }
 ```
 
-> `questId` chấp nhận cả URL đầy đủ lẫn ID thuần số.
+> `questId` accepts both a full Discord URL and a numeric ID.
 
-**Phản hồi thành công (200):**
+**Success Response (200):**
 ```json
 {
   "success": true,
   "quest": {
     "id": "1551234567890",
-    "name": "Tên nhiệm vụ",
-    "publisher": "Tên nhà phát hành",
+    "name": "Quest Name",
+    "publisher": "Publisher Name",
     "taskType": "PLAY_ON_DESKTOP",
-    "typeName": "Chơi trên PC",
+    "typeName": "Play on PC",
     "targetSec": 900,
     "progSec": 0,
-    "reward": "Gift Code Game",
+    "reward": "Game Gift Code",
     "code": null,
     "hasGiftCode": false,
     "status": "pending",
@@ -365,11 +365,11 @@ Tra cứu thông tin chi tiết của bất kỳ Quest nào qua đường link D
 
 ---
 
-## 9. Trích xuất Gift Code
+## 9. Extract Gift Code
 
-**`POST /api/quests/reward-code`** hoặc **`GET /api/quests/reward-code?token=TOKEN&questId=ID`**
+**`POST /api/quests/reward-code`** or **`GET /api/quests/reward-code?token=TOKEN&questId=ID`**
 
-Lấy mã quà tặng Gift Code từ Discord API (`GET /quests/{id}/reward-code`) cho các quest đã nhận thưởng có phần thưởng dạng mã đổi thưởng game.
+Retrieves the gift code from Discord (`GET /quests/{id}/reward-code`) for claimed quests that issue redeemable game codes.
 
 **Body (POST):**
 ```json
@@ -379,7 +379,7 @@ Lấy mã quà tặng Gift Code từ Discord API (`GET /quests/{id}/reward-code`
 }
 ```
 
-**Phản hồi thành công (200):**
+**Success Response (200):**
 ```json
 {
   "success": true,
@@ -394,35 +394,35 @@ Lấy mã quà tặng Gift Code từ Discord API (`GET /quests/{id}/reward-code`
 
 ---
 
-## 10. Quản lý Huy hiệu & HypeSquad
+## 10. Badges & HypeSquad Management
 
 **`GET /api/badges/hypesquad?token=TOKEN`**
 
-Lấy thông tin tài khoản, ngôi nhà HypeSquad hiện tại, danh sách huy hiệu trên hồ sơ (`/users/{id}/profile`) và danh mục huy hiệu chi tiết kèm tiến trình (`/users/@me/badges`).
+Fetches account info, current HypeSquad House, profile badges (`/users/{id}/profile`), and full badge directory progress (`/users/@me/badges`).
 
 **`POST /api/badges/hypesquad`**
 
-Gắn hoặc đổi ngôi nhà HypeSquad (`houseId`: `1` = Bravery, `2` = Brilliance, `3` = Balance).
+Joins or switches HypeSquad House (`houseId`: `1` = Bravery, `2` = Brilliance, `3` = Balance).
 
 **`DELETE /api/badges/hypesquad`**
 
-Rời khỏi HypeSquad House hiện tại.
+Leaves the current HypeSquad House.
 
 ---
 
-## 11. Danh sách Game hợp lệ (Discord CDN)
+## 11. Detectable Windows Games (Discord CDN)
 
 **`GET /api/badges/games?limit=10&random=true&q=...`**
 
-Tải và cache (12 giờ) danh sách game từ `https://cdn.discordapp.com/detectables/games.json`, chỉ lọc các game có executable hệ `win32` thật để phục vụ chạy huy hiệu.
+Fetches and caches (12 hours) the detectable games catalog from `https://cdn.discordapp.com/detectables/games.json`, filtering only entries with valid `win32` executables.
 
 ---
 
-## 12. Gửi Telemetry Huy hiệu Playtime / Variety
+## 12. Playtime / Variety Badge Telemetry
 
 **`POST /api/badges/science`**
 
-Tự động nạp `analytics_token` từ `GET /users/@me?with_analytics_token=true` (nếu chưa có), lấy thông số client Windows mới nhất từ `cordapi.dolfi.es/api/v2/properties/windows` (đồng bộ `client_launch_id`, `launch_signature`, `client_heartbeat_session_id` trong `X-Super-Properties`), tạo `executable_fingerprint` 146 byte gắn với `userId`, và gửi chuỗi sự kiện `running_game_heartbeat` (initial, `start = now - durationMs`) ➔ `launch_game` ➔ `running_game_heartbeat` (final, `now`) tới `https://discord.com/api/v9/science`.
+Automatically fetches `analytics_token` from `GET /users/@me?with_analytics_token=true` (when omitted), retrieves up-to-date Windows client properties from `cordapi.dolfi.es/api/v2/properties/windows` (syncing `client_launch_id`, `launch_signature`, `client_heartbeat_session_id` in `X-Super-Properties`), builds a 146-byte `executable_fingerprint` bound to `userId`, and posts `running_game_heartbeat` (initial, `start = now - durationMs`) ➔ `launch_game` ➔ `running_game_heartbeat` (final, `now`) to `https://discord.com/api/v9/science`.
 
 **Body:**
 ```json
@@ -431,30 +431,30 @@ Tự động nạp `analytics_token` từ `GET /users/@me?with_analytics_token=t
   "games": [{ "id": "...", "name": "...", "exe": "..." }],
   "hoursPerGame": 10,
   "mode": "both",
-  "analyticsToken": "(tùy chọn - tái sử dụng trong phiên)",
-  "heartbeatSession": "(tùy chọn - UUID phiên heartbeat)",
-  "launchSignature": "(tùy chọn - UUID launch_signature)",
-  "clientLaunchId": "(tùy chọn - UUID client_launch_id)",
-  "executableFingerprint": "(tùy chọn - mặc định tự sinh theo userId)"
+  "analyticsToken": "(optional - reused within session)",
+  "heartbeatSession": "(optional - heartbeat session UUID)",
+  "launchSignature": "(optional - launch_signature UUID)",
+  "clientLaunchId": "(optional - client_launch_id UUID)",
+  "executableFingerprint": "(optional - auto-generated from userId by default)"
 }
 ```
 
 ---
 
-## Module chia sẻ: Discord Client (`lib/discord-client.js`)
+## Shared Module: Discord Client (`lib/discord-client.js`)
 
-Module nội bộ không phải endpoint công khai, được sử dụng bởi tất cả các API Serverless. Cung cấp:
+Internal helper module (not a public endpoint) used across serverless APIs. Provides:
 
-| Chức năng | Mô tả |
+| Helper | Description |
 | :--- | :--- |
-| `fetchLatestBuildNumber()` | Tự động cào Build Number mới nhất từ `discord.com/app` bằng cách quét 15 script cuối cùng. Cache 6 tiếng, fallback mặc định `626571`. |
-| `getDesktopSuperProperties(buildNum)` | Sinh `X-Super-Properties` Base64 chuẩn Discord Desktop Client (Windows, Electron 37.6.0). |
-| `getWebSuperProperties(buildNum)` | Sinh `X-Super-Properties` Base64 chuẩn Web Browser (Chrome 138). |
-| `SUPER_PROPERTIES_MOBILE_ANDROID` | `X-Super-Properties` Base64 tĩnh cho Android (Samsung Galaxy S24, v225.0). |
-| `SUPER_PROPERTIES_MOBILE_IOS` | `X-Super-Properties` Base64 tĩnh cho iOS (iPhone 15 Pro, v225.0). |
-| `DISCORD_HEADERS(token, buildNum)` | Bộ headers đầy đủ giả lập Discord Desktop Client. |
-| `DISCORD_WEB_HEADERS(token, buildNum)` | Bộ headers đầy đủ giả lập Web Browser truy cập Discord. |
-| `DISCORD_MOBILE_HEADERS(token)` | Bộ headers giả lập Discord Android App. |
-| `DISCORD_IOS_HEADERS(token)` | Bộ headers giả lập Discord iOS App. |
-| `detectTaskType(config)` | Nhận diện loại nhiệm vụ từ `task_config_v2` hoặc `task_config` theo thứ tự ưu tiên chuẩn. |
-| `getTaskTypeName(taskType)` | Chuyển đổi mã task type sang tên hiển thị tiếng Việt. |
+| `fetchLatestBuildNumber()` | Scrapes the latest Discord Build Number from `discord.com/app` (last 15 scripts), cached for 6 hours with fallback `626571`. |
+| `getDesktopSuperProperties(buildNum)` | Builds Base64 `X-Super-Properties` for Discord Desktop Client (Windows). |
+| `getWebSuperProperties(buildNum)` | Builds Base64 `X-Super-Properties` for Web Browser (Chrome). |
+| `SUPER_PROPERTIES_MOBILE_ANDROID` | Static Base64 `X-Super-Properties` for Android (Samsung Galaxy S24). |
+| `SUPER_PROPERTIES_MOBILE_IOS` | Static Base64 `X-Super-Properties` for iOS (iPhone 15 Pro). |
+| `DISCORD_HEADERS(token, buildNum)` | Full header set emulating Discord Desktop Client. |
+| `DISCORD_WEB_HEADERS(token, buildNum)` | Full header set emulating Web Browser access. |
+| `DISCORD_MOBILE_HEADERS(token)` | Header set emulating Discord Android App. |
+| `DISCORD_IOS_HEADERS(token)` | Header set emulating Discord iOS App. |
+| `detectTaskType(config)` | Extracts quest task type from `task_config_v2` or `task_config` in priority order. |
+| `getTaskTypeName(taskType)` | Maps task type codes to display labels. |
