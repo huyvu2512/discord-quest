@@ -190,7 +190,7 @@ function renderHomeLogs() {
     <div class="home-log-row">
       <span class="log-time">[${l.time}]</span>
       <span class="log-lvl-${l.level}">[${l.level.toUpperCase()}]</span>
-      <span class="log-msg">${escapeHtml(l.text)}</span>
+      <span class="log-msg">${escapeHtml(typeof window.translateDynamicText === "function" ? window.translateDynamicText(l.text) : l.text)}</span>
     </div>
   `).join('');
 

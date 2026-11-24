@@ -19,7 +19,8 @@ function toast(msg, type = "info") {
     iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
   }
 
-  el.innerHTML = `${iconSvg}<span class="toast-msg">${escapeHtml(msg)}</span>`;
+  const text = typeof window.translateDynamicText === "function" ? window.translateDynamicText(msg) : msg;
+  el.innerHTML = `${iconSvg}<span class="toast-msg">${escapeHtml(text)}</span>`;
   wrap.appendChild(el);
 
   setTimeout(() => {

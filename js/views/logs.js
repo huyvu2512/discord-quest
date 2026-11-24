@@ -21,11 +21,12 @@ function renderLogs() {
     return;
   }
 
+  const trText = typeof window.translateDynamicText === "function" ? window.translateDynamicText : (s => s);
   el.innerHTML = filtered.map(l => `
     <div class="log-entry">
       <span class="log-time">[${l.time}]</span>
       <span class="log-lvl-${l.level}">[${l.level.toUpperCase()}]</span>
-      <span class="log-msg">${escapeHtml(l.text)}</span>
+      <span class="log-msg">${escapeHtml(trText(l.text))}</span>
     </div>
   `).join("");
 
@@ -116,7 +117,8 @@ function downloadLogs() {
   ];
 
   logsToExport.forEach(l => {
-    lines.push(`[${l.time}] [${l.level.toUpperCase()}] ${l.text}`);
+    const lineText = typeof window.translateDynamicText === "function" ? window.translateDynamicText(l.text) : l.text;
+    lines.push(`[${l.time}] [${l.level.toUpperCase()}] ${lineText}`);
   });
 
   const blob = new Blob([lines.join("\r\n")], { type: "text/plain;charset=utf-8" });

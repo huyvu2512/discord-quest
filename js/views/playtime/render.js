@@ -337,6 +337,7 @@ function renderBadgeRunner() {
   `;
 
   renderBadgeRunnerLogsOnly();
+  if (typeof window.translateDomTree === 'function') window.translateDomTree(root);
   setTimeout(() => {
     if (typeof window.autoScrollRunnerTiers === 'function') {
       window.autoScrollRunnerTiers();

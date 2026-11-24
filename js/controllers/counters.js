@@ -189,4 +189,5 @@ function renderAll() {
   }
   if (typeof renderLogs === "function") renderLogs();
   if (typeof renderHome === "function") renderHome();
+  if (typeof window.translateDomTree === "function") window.translateDomTree(document.body);
 }

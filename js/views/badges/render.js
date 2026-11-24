@@ -254,6 +254,7 @@ function renderBadges() {
       </div>
     </div>
   `;
+  if (typeof window.translateDomTree === 'function') window.translateDomTree(root);
 }
 
 window.renderBadges = renderBadges;

@@ -18,11 +18,12 @@ function pushRunnerLog(level, text) {
 function renderBadgeRunnerLogsOnly() {
   const box = document.getElementById('badge-runner-console');
   if (!box) return;
+  const trText = typeof window.translateDynamicText === 'function' ? window.translateDynamicText : (s => s);
   box.innerHTML = badgeRunnerState.logs.map(l => `
     <div class="log-entry">
       <span class="log-time">[${l.time}]</span>
       <span class="log-lvl-${l.level}">[${l.level.toUpperCase()}]</span>
-      <span class="log-msg">${escapeHtml(l.text)}</span>
+      <span class="log-msg">${escapeHtml(trText(l.text))}</span>
     </div>
   `).join('');
   box.scrollTop = box.scrollHeight;
