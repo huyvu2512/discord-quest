@@ -37,7 +37,7 @@ export async function getDetectableGames() {
     parsed.push({
       id,
       name,
-      exe: winExe
+      exe: String(winExe).replace(/^>/, '')
     });
   }
 

@@ -146,14 +146,15 @@ async function fetchAnalyticsToken(token, headers) {
   return data.analytics_token;
 }
 
-function buildGameSessionEvents(game, durationMs, heartbeatSession, launchSignature, executableFingerprint, seqState) {
+function buildGameSessionEvents(game, durationMs, heartbeatSession, launchSignature, executableFingerprint, seqState, staggerIndex = 0) {
   const sessionId = crypto.randomUUID();
-  const now = Date.now();
+  const staggerMs = staggerIndex * 25 * 60 * 1000;
+  const now = Date.now() - staggerMs;
   let start = now - durationMs;
   if (start < 0) start = now;
   const gameId = String(game.id);
   const gameName = String(game.name || 'Game');
-  const gameExe = String(game.exe || 'game.exe');
+  const gameExe = String(game.exe || 'game.exe').replace(/^>/, '');
 
   const nextSeq = () => {
     seqState.val += 1;
@@ -317,13 +318,14 @@ export default async function handler(req, res) {
     const batchGames = games.slice(0, 16);
     const events = [];
     let totalDurationMs = 0;
-    for (const g of batchGames) {
+    for (let idx = 0; idx < batchGames.length; idx++) {
+      const g = batchGames[idx];
       const perGameMs = mode === 'games_played'
         ? (45 + Math.floor(Math.random() * 76)) * 1000 // Random 45s - 120s cho mỗi game
         : durationMs;
       totalDurationMs += perGameMs;
       const fp = customFingerprint || buildExecutableFingerprint(userId, g);
-      events.push(...buildGameSessionEvents(g, perGameMs, heartbeatSession, launchSignature, fp, seqState));
+      events.push(...buildGameSessionEvents(g, perGameMs, heartbeatSession, launchSignature, fp, seqState, idx));
     }
 
     const sciRes = await fetch('https://discord.com/api/v9/science', {
