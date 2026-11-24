@@ -99,7 +99,13 @@ function renderCounters() {
     if (!hasAcc || state.isSyncingQuests) {
       countAll.style.display = "none";
     } else {
-      const val = state.quests.length;
+      const now = Date.now();
+      const val = state.quests.filter(q => {
+        if (q.name === 'Nhiệm vụ Discord' && (!q.publisher || q.publisher === 'Discord')) return false;
+        const isExpired = q.isExpired || (q.expiresAt && new Date(q.expiresAt).getTime() <= now);
+        if (isExpired) return false;
+        return q.status !== "completed" && q.status !== "claimed";
+      }).length;
       countAll.textContent = val;
       countAll.style.display = val > 0 ? "inline-flex" : "none";
     }

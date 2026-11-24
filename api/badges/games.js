@@ -32,7 +32,7 @@ export async function getDetectableGames() {
     const name = g?.name ? String(g.name).trim() : '';
     const execs = Array.isArray(g?.executables) ? g.executables : [];
     const winExe = execs.find(e => e?.os === 'win32' && e?.name)?.name;
-    if (!id || !name || !winExe || seen.has(id)) continue;
+    if (!id || !/^\d+$/.test(id) || !name || !winExe || seen.has(id)) continue;
     seen.add(id);
     parsed.push({
       id,

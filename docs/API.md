@@ -422,7 +422,7 @@ Tải và cache (12 giờ) danh sách game từ `https://cdn.discordapp.com/dete
 
 **`POST /api/badges/science`**
 
-Tự động nạp `analytics_token` từ `GET /users/@me?with_analytics_token=true` (nếu chưa có) và gửi chuỗi sự kiện `running_game_heartbeat` (initial) ➔ `launch_game` ➔ `running_game_heartbeat` (final) tới `https://discord.com/api/v9/science`.
+Tự động nạp `analytics_token` từ `GET /users/@me?with_analytics_token=true` (nếu chưa có), lấy thông số client Windows mới nhất từ `cordapi.dolfi.es/api/v2/properties/windows` (đồng bộ `client_launch_id`, `launch_signature`, `client_heartbeat_session_id` trong `X-Super-Properties`), tạo `executable_fingerprint` 146 byte gắn với `userId`, và gửi chuỗi sự kiện `running_game_heartbeat` (initial, `start = now - durationMs`) ➔ `launch_game` ➔ `running_game_heartbeat` (final, `now`) tới `https://discord.com/api/v9/science`.
 
 **Body:**
 ```json
@@ -430,7 +430,12 @@ Tự động nạp `analytics_token` từ `GET /users/@me?with_analytics_token=t
   "token": "YOUR_DISCORD_TOKEN",
   "games": [{ "id": "...", "name": "...", "exe": "..." }],
   "hoursPerGame": 10,
-  "mode": "both"
+  "mode": "both",
+  "analyticsToken": "(tùy chọn - tái sử dụng trong phiên)",
+  "heartbeatSession": "(tùy chọn - UUID phiên heartbeat)",
+  "launchSignature": "(tùy chọn - UUID launch_signature)",
+  "clientLaunchId": "(tùy chọn - UUID client_launch_id)",
+  "executableFingerprint": "(tùy chọn - mặc định tự sinh theo userId)"
 }
 ```
 

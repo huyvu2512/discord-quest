@@ -94,6 +94,7 @@ window.startBadgeRunner = async function() {
     let analyticsToken = '';
     let heartbeatSession = '';
     let launchSignature = '';
+    let clientLaunchId = '';
     let seqOffset = 0;
 
     for (let i = 0; i < selectedGames.length; i++) {
@@ -119,6 +120,7 @@ window.startBadgeRunner = async function() {
           analyticsToken,
           heartbeatSession,
           launchSignature,
+          clientLaunchId,
           seqOffset
         })
       });
@@ -139,6 +141,7 @@ window.startBadgeRunner = async function() {
       analyticsToken = sciData.analyticsToken || analyticsToken;
       heartbeatSession = sciData.heartbeatSession || heartbeatSession;
       launchSignature = sciData.launchSignature || launchSignature;
+      clientLaunchId = sciData.clientLaunchId || clientLaunchId;
       seqOffset = sciData.nextSeq || seqOffset;
 
       badgeRunnerState.progressCurrent += (sciData.gamesProcessed || 1);
