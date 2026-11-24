@@ -177,6 +177,15 @@ function renderBadgeRunner() {
               <span class="runner-chip-lbl">Kho game</span>
               <span class="runner-chip-val font-mono">${(badgeRunnerState.totalGamesAvailable || 25388).toLocaleString('vi-VN')}</span>
             </span>
+            ${(() => {
+              const usedCount = typeof getPlaytimeUsedGames === 'function' ? getPlaytimeUsedGames(token).length : 0;
+              return usedCount > 0 ? `
+                <button type="button" class="runner-summary-chip" onclick="resetPlaytimeUsedGames()" title="Số game đã chạy trên tài khoản này (tự động tránh trùng). Bấm để đặt lại." style="cursor: pointer; border: 1px solid rgba(255,255,255,0.08);">
+                  <span class="runner-chip-lbl">Đã lọc</span>
+                  <span class="runner-chip-val font-mono">${usedCount.toLocaleString('vi-VN')}</span>
+                </button>
+              ` : '';
+            })()}
           </div>
           <div>
             ${badgeRunnerState.isRunning ? `

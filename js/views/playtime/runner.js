@@ -79,17 +79,28 @@ window.startBadgeRunner = async function() {
   if (typeof renderAll === 'function') renderAll();
 
   try {
-    const gamesRes = await fetch(`/api/badges/games?limit=${gameCount}&random=true`);
+    const usedIds = new Set(getPlaytimeUsedGames(token));
+    const fetchLimit = Math.min(500, Math.max(gameCount + Math.min(usedIds.size, 250), gameCount * 2));
+    const gamesRes = await fetch(`/api/badges/games?limit=${fetchLimit}&random=true`);
     const gamesData = await gamesRes.json();
     if (!gamesRes.ok || !gamesData.success || !Array.isArray(gamesData.games) || gamesData.games.length === 0) {
       throw new Error(gamesData.error || 'Không thể tải danh sách game từ Discord');
     }
 
     badgeRunnerState.totalGamesAvailable = gamesData.total || gamesData.games.length;
-    const selectedGames = gamesData.games.slice(0, gameCount);
+    const freshGames = gamesData.games.filter(g => !usedIds.has(String(g.id)));
+    const fallbackUsedGames = gamesData.games.filter(g => usedIds.has(String(g.id)));
+    const selectedGames = [...freshGames, ...fallbackUsedGames].slice(0, gameCount);
     badgeRunnerState.progressTotal = selectedGames.length;
 
-    pushRunnerLog('info', `Bắt đầu cày ${selectedGames.length} game...`);
+    const skippedCount = Math.max(0, selectedGames.length - freshGames.length);
+    if (usedIds.size > 0 && skippedCount === 0) {
+      pushRunnerLog('info', `Bắt đầu cày ${selectedGames.length} game mới (đã lọc ${usedIds.size} game từng chạy)...`);
+    } else if (skippedCount > 0) {
+      pushRunnerLog('info', `Bắt đầu cày ${selectedGames.length} game (${freshGames.length} game mới, ${skippedCount} game bổ sung)...`);
+    } else {
+      pushRunnerLog('info', `Bắt đầu cày ${selectedGames.length} game...`);
+    }
 
     let analyticsToken = '';
     let heartbeatSession = '';
@@ -143,6 +154,8 @@ window.startBadgeRunner = async function() {
       launchSignature = sciData.launchSignature || launchSignature;
       clientLaunchId = sciData.clientLaunchId || clientLaunchId;
       seqOffset = sciData.nextSeq || seqOffset;
+
+      addPlaytimeUsedGames(token, [game.id]);
 
       badgeRunnerState.progressCurrent += (sciData.gamesProcessed || 1);
       badgeRunnerState.claimedHours = Number((badgeRunnerState.claimedHours + (sciData.hoursAdded || (badgeRunnerState.mode === 'games_played' ? 0.016 : hoursPerGame))).toFixed(2));

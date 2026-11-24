@@ -65,6 +65,64 @@ function getBadgeRunnerToken() {
   return acc?.token || '';
 }
 
+const PLAYTIME_USED_GAMES_STORAGE_KEY = 'dq_playtime_used_games_v1';
+
+function getPlaytimeAccountKey(token) {
+  try {
+    const raw = String(token || '').trim().split('.')[0];
+    if (raw) {
+      const b64 = raw.replace(/-/g, '+').replace(/_/g, '/');
+      const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+      const uid = atob(b64 + pad).trim();
+      if (/^\d+$/.test(uid)) return uid;
+    }
+  } catch {}
+  return state.activeAccId || 'default';
+}
+
+function readAllPlaytimeUsedGames() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PLAYTIME_USED_GAMES_STORAGE_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function getPlaytimeUsedGames(token) {
+  const key = getPlaytimeAccountKey(token || getBadgeRunnerToken());
+  const map = readAllPlaytimeUsedGames();
+  return Array.isArray(map[key]) ? map[key] : [];
+}
+
+function addPlaytimeUsedGames(token, gameIds) {
+  if (!Array.isArray(gameIds) || gameIds.length === 0) return;
+  const key = getPlaytimeAccountKey(token || getBadgeRunnerToken());
+  const map = readAllPlaytimeUsedGames();
+  const current = new Set(Array.isArray(map[key]) ? map[key].map(String) : []);
+  for (const id of gameIds) {
+    if (id != null && String(id)) current.add(String(id));
+  }
+  map[key] = Array.from(current);
+  try {
+    localStorage.setItem(PLAYTIME_USED_GAMES_STORAGE_KEY, JSON.stringify(map));
+  } catch {}
+}
+
+window.resetPlaytimeUsedGames = function() {
+  if (badgeRunnerState.isRunning) return;
+  const token = getBadgeRunnerToken();
+  const key = getPlaytimeAccountKey(token);
+  const map = readAllPlaytimeUsedGames();
+  const prevCount = Array.isArray(map[key]) ? map[key].length : 0;
+  delete map[key];
+  try {
+    localStorage.setItem(PLAYTIME_USED_GAMES_STORAGE_KEY, JSON.stringify(map));
+  } catch {}
+  toast(prevCount > 0 ? `Đã đặt lại danh sách ${prevCount} game đã cày!` : 'Danh sách game đã cày đang trống.', 'info');
+  if (typeof renderBadgeRunner === 'function') renderBadgeRunner();
+};
+
 window.isPlaytimeRunning = function() {
   return Boolean(typeof badgeRunnerState !== 'undefined' && badgeRunnerState.isRunning);
 };
