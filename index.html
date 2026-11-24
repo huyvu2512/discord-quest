@@ -758,8 +758,8 @@
 
               <div style="padding: 12px 14px; background: var(--bg-surface); border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 12px; color: var(--text-sub); line-height: 1.6;">
                 <div style="font-weight: 600; color: var(--text-main); margin-bottom: 4px;">📌 Hướng dẫn ghim ra màn hình chính:</div>
-                <div style="margin-bottom: 4px;">• <strong>iPhone / iPad (iOS Safari):</strong> Bấm nút <strong>Chia sẻ</strong> (biểu tượng mũi tên trỏ lên ở cạnh dưới Safari) ➔ Kéo xuống chọn <strong>"Thêm vào MH chính" (Add to Home Screen)</strong>.</div>
-                <div>• <strong>Android (Chrome):</strong> Bấm nút <strong>Menu 3 chấm (⋮)</strong> góc trên cùng ➔ Chọn <strong>"Cài đặt ứng dụng"</strong> hoặc <strong>"Thêm vào màn hình chính"</strong>.</div>
+                <div style="margin-bottom: 4px;" data-i18n-html="pwa_ios_guide">• <strong>iPhone / iPad (iOS Safari):</strong> Bấm nút <strong>Chia sẻ</strong> (biểu tượng mũi tên trỏ lên ở cạnh dưới Safari) ➔ Kéo xuống chọn <strong>"Thêm vào MH chính" (Add to Home Screen)</strong>.</div>
+                <div data-i18n-html="pwa_android_guide">• <strong>Android (Chrome):</strong> Bấm nút <strong>Menu 3 chấm (⋮)</strong> góc trên cùng ➔ Chọn <strong>"Cài đặt ứng dụng"</strong> hoặc <strong>"Thêm vào màn hình chính"</strong>.</div>
               </div>
             </div>
           </div>
@@ -792,7 +792,7 @@
             </svg>
             <span>Cách 1: Chạy Console (Nhanh nhất – 1 click):</span>
           </div>
-          <div class="guide-desc">Mở Discord web, nhấn <code>F12</code> ➔ tab <strong>Console</strong> ➔ dán lệnh:</div>
+          <div class="guide-desc" data-i18n-html="token_guide_console_desc">Mở Discord web, nhấn <code>F12</code> ➔ tab <strong>Console</strong> ➔ dán lệnh:</div>
           <div class="guide-code-row">
             <input type="text" readonly class="guide-code-input" id="code-token-snippet" value="window.webpackChunkdiscord_app.push([[Symbol()],{},r=>{for(let m in r.c){try{let t=r.c[m]?.exports?.default?.getToken?.()||r.c[m]?.exports?.getToken?.();if(typeof t==='string'&&t.length>40){copy(t);console.log('✅ Đã copy token!');break;}}catch{}}}]);" title="Bấm để sao chép">
             <button type="button" class="btn-copy-code" id="btn-copy-token-snippet">Sao chép</button>
@@ -809,8 +809,8 @@
             <span>Cách 2: Lấy qua Network (Thủ công):</span>
           </div>
           <ol class="guide-steps">
-            <li>Nhấn <code>F12</code> trên Discord ➔ chọn tab <strong>Network</strong> ➔ lọc <code>api/</code></li>
-            <li>Bấm 1 request bất kỳ ➔ chọn tab <strong>Headers</strong> ➔ copy chuỗi sau <strong>authorization:</strong></li>
+            <li data-i18n-html="token_guide_net_1">Nhấn <code>F12</code> trên Discord ➔ chọn tab <strong>Network</strong> ➔ lọc <code>api/</code></li>
+            <li data-i18n-html="token_guide_net_2">Bấm 1 request bất kỳ ➔ chọn tab <strong>Headers</strong> ➔ copy chuỗi sau <strong>authorization:</strong></li>
           </ol>
         </div>
       </div>
@@ -832,7 +832,7 @@
         <div class="form-field">
           <label class="form-lbl">Link hoặc ID Quest Discord</label>
           <input type="text" id="input-custom-quest" class="input-text font-mono" placeholder="https://discord.com/quests/155... hoặc 155..." autocomplete="off">
-          <p class="form-hint" style="margin-top: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+          <p class="form-hint" data-i18n-html="quest_modal_hint" style="margin-top: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.5;">
             💡 <strong>Mẹo:</strong> Trong Discord, bấm vào dấu 3 chấm (•••) ở góc trên thẻ Quest ➔ chọn <strong>"Sao chép liên kết"</strong> rồi dán vào đây để công cụ tự động quét và nạp ngay lập tức!
           </p>
         </div>
