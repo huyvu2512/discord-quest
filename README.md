@@ -2,7 +2,7 @@
 
 # Discord Quest
 
-**Automate Discord Quest progress, sync Orbs balance, and manage rewards**
+**Automate Discord Quests, sync Orbs balance, save gift codes, claim HypeSquad badges, and boost game playtime badges**
 
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
