@@ -248,5 +248,6 @@ function renderBadgesModal() {
       </div>
     </div>
   `;
+  if (typeof window.translateDomTree === 'function') window.translateDomTree(modal);
   modal.classList.add('open');
 }

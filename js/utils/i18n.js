@@ -224,9 +224,170 @@ const I18N_DICT = {
   }
 };
 
-// Bảng dịch cụm từ động cho toàn bộ UI, bảng, card, modal, toast và nhật ký (Logs)
-// Format: [vietnamesePhrase, { en, ja, ko, zh }]
+// Sắp xếp các cụm dài trước, ngắn sau để tránh thay thế chồng chéo
 const PHRASE_MAP = [
+  // Settings & PWA Guide
+  ['Bảng điều khiển tự động cày nhiệm vụ Discord, tính giờ chơi ngầm, nhận Orbs và lưu mã Gift Code an toàn.', {
+    en: 'Dashboard to automate Discord Quests, farm background playtime, earn Orbs, and safely store Gift Codes.',
+    ja: 'Discordクエストの自動化、プレイ時間計測、Orbs獲得、ギフトコード管理を一括で行うダッシュボード。',
+    ko: 'Discord 퀘스트 자동화, 백그라운드 플레이 시간 누적, Orbs 획득 및 기프트 코드 보관을 위한 대시보드.',
+    zh: '自动化完成 Discord 任务、挂机累计游戏时长、获取 Orbs 并安全保存礼品码的控制台。'
+  }],
+  ['Tự động chuyển sang nhiệm vụ tiếp theo trong hàng đợi khi đạt 100%.', {
+    en: 'Automatically advance to the next queued quest upon reaching 100%.',
+    ja: '100%達成時に次のキューのクエストへ自動で進みます。',
+    ko: '100% 달성 시 대기열의 다음 퀘스트로 자동 이동합니다.',
+    zh: '任务达到 100% 时自动切换至队列中的下一个任务。'
+  }],
+  ['Tự gửi yêu cầu ghi danh nhiệm vụ nếu tài khoản chưa bắt đầu.', {
+    en: 'Automatically enroll in quests before sending progress.',
+    ja: '未開始のクエストに自動で参加リクエストを送信します。',
+    ko: '시작하지 않은 퀘스트에 자동으로 참여 요청을 보냅니다.',
+    zh: '如果账号尚未开始，自动发送任务接取请求。'
+  }],
+  ['Khoảng nghỉ giữa các lần cập nhật xem video (Khuyến nghị: 7s).', {
+    en: 'Delay between video watch progress updates (Recommended: 7s).',
+    ja: '動画視聴進捗の更新間隔（推奨: 7秒）。',
+    ko: '동영상 시청 진행률 업데이트 간격 (권장: 7초).',
+    zh: '每次视频进度更新之间的间隔（建议: 7秒）。'
+  }],
+  ['Tần suất gửi heartbeat chơi game ngầm (Chuẩn Discord: 20s, khuyến nghị: 15-20s).', {
+    en: 'Background game heartbeat frequency (Discord standard: 20s, recommended: 15-20s).',
+    ja: 'バックグラウンドゲーム心拍の頻度（Discord標準: 20秒、推奨: 15〜20秒）。',
+    ko: '백그라운드 게임 하트비트 주기 (Discord 표준: 20초, 권장: 15-20초).',
+    zh: '后台游戏心跳发送频率（Discord 标准: 20秒，建议: 15-20秒）。'
+  }],
+  ['Lệch ngẫu nhiên ±1-3 giây để giả lập người thật, tránh pattern máy móc.', {
+    en: 'Add ±1–3s random variance to mimic real human activity.',
+    ja: '±1〜3秒のランダムな揺らぎを追加し機械的なパターンを回避します。',
+    ko: '±1~3초의 무작위 지연을 추가해 실제 사용자처럼 동작합니다.',
+    zh: '增加 ±1-3 秒随机偏差以模拟真人操作，避免机械规律。'
+  }],
+  ['Mở web dạng app độc lập, full màn hình với logo Discord Quest chính chủ.', {
+    en: 'Launch as a standalone fullscreen app with the official Discord Quest icon.',
+    ja: '公式ロゴ付きの独立した全画面アプリとして起動します。',
+    ko: '공식 로고가 포함된 독립형 전체 화면 앱으로 실행합니다.',
+    zh: '以独立全屏应用模式打开，带官方 Discord Quest 图标。'
+  }],
+  ['Thêm ứng dụng ra màn hình chính điện thoại (Android & iOS)', {
+    en: 'Install web app to mobile Home Screen (Android & iOS)',
+    ja: 'スマホのホーム画面にアプリとして追加 (Android & iOS)',
+    ko: '모바일 홈 화면에 앱 추가 (Android & iOS)',
+    zh: '将应用添加到手机主屏幕 (Android & iOS)'
+  }],
+  ['Điều chỉnh chu kỳ gửi tiến trình để mô phỏng tự nhiên', {
+    en: 'Adjust heartbeat intervals for natural simulation',
+    ja: '自然な進行を再現するため送信間隔を調整します',
+    ko: '자연스러운 시뮬레이션을 위해 전송 주기를 조정합니다',
+    zh: '调整进度上报周期以自然模拟'
+  }],
+  ['Cơ chế tự động đăng ký và nhận phần thưởng', {
+    en: 'Auto-enrollment and queue progression',
+    ja: '自動参加とキュー進行設定',
+    ko: '자동 등록 및 대기열 진행 설정',
+    zh: '自动接取与队列推进机制'
+  }],
+  ['Tự động chuyển tiếp (Auto Next)', { en: 'Auto Next Quest', ja: '自動次へ (Auto Next)', ko: '자동 다음 퀘스트 (Auto Next)', zh: '自动切换下一任务 (Auto Next)' }],
+  ['Tự động tham gia Quest (Auto Enroll)', { en: 'Auto Enroll Quest', ja: '自動クエスト参加 (Auto Enroll)', ko: '자동 퀘스트 등록 (Auto Enroll)', zh: '自动接取任务 (Auto Enroll)' }],
+  ['Ngẫu nhiên độ trễ (Random Jitter)', { en: 'Random Jitter', ja: 'ランダム遅延 (Jitter)', ko: '랜덤 지터 (Random Jitter)', zh: '随机延迟抖动 (Random Jitter)' }],
+  ['Chu kỳ gửi tiến trình Chơi Game', { en: 'Game Heartbeat Interval', ja: 'ゲーム心拍の送信間隔', ko: '게임 하트비트 전송 주기', zh: '游戏心跳上报周期' }],
+  ['Chu kỳ gửi tiến trình Video', { en: 'Video Progress Interval', ja: '動画進捗の送信間隔', ko: '동영상 진행 전송 주기', zh: '视频进度上报周期' }],
+  ['Cài Đặt Màn Hình Chính & Chia Sẻ', { en: 'Home Screen & Sharing', ja: 'ホーム画面 & 共有設定', ko: '홈 화면 및 공유 설정', zh: '主屏幕与分享设置' }],
+  ['Thêm vào màn hình chính (PWA)', { en: 'Add to Home Screen (PWA)', ja: 'ホーム画面に追加 (PWA)', ko: '홈 화면에 추가 (PWA)', zh: '添加到主屏幕 (PWA)' }],
+  ['📌 Hướng dẫn ghim ra màn hình chính:', { en: '📌 How to pin to Home Screen:', ja: '📌 ホーム画面への追加方法:', ko: '📌 홈 화면에 고정하는 방법:', zh: '📌 添加到主屏幕指南：' }],
+  ['Tự Động Hóa Nhiệm Vụ', { en: 'Quest Automation', ja: 'クエスト自動化', ko: '퀘스트 자동화', zh: '任务自动化' }],
+  ['Tần Suất & Tiến Trình', { en: 'Intervals & Progress', ja: '送信間隔 & 進捗', ko: '전송 주기 및 진행', zh: '频率与进度' }],
+
+  // Badges & HypeSquad
+  ['Chọn nhà HypeSquad yêu thích để gắn hoặc đổi huy hiệu trực tiếp trên hồ sơ Discord.', {
+    en: 'Pick a HypeSquad House to claim or switch the badge directly on your Discord profile.',
+    ja: '好きなHypeSquadハウスを選択してDiscordプロフィールにバッジを付与・変更します。',
+    ko: '원하는 HypeSquad 하우스를 선택해 Discord 프로필에 배지를 바로 장착하거나 변경하세요.',
+    zh: '选择喜欢的 HypeSquad 学院，一键在 Discord 个人资料中领取或切换徽章。'
+  }],
+  ['Dũng cảm, quyết đoán và không bao giờ chùn bước trước thử thách.', {
+    en: 'Brave, decisive, and never backing down from a challenge.',
+    ja: '勇敢で決断力があり、どんな挑戦にもひるみません。',
+    ko: '용감하고 결단력 있으며 어떤 도전 앞에서도 물러서지 않습니다.',
+    zh: '勇敢果断，面对任何挑战绝不退缩。'
+  }],
+  ['Sáng tạo, đầy ý tưởng đột phá và tham vọng bền bỉ.', {
+    en: 'Creative, full of breakthrough ideas, and relentlessly ambitious.',
+    ja: '創造的で革新的なアイデアと揺るぎない野心に満ちています。',
+    ko: '창의적이고 혁신적인 아이디어와 끈기 있는 야망이 넘칩니다.',
+    zh: '富有创造力，充满突破性的想法和持久的雄心。'
+  }],
+  ['Điềm tĩnh, hòa hợp và luôn duy trì trật tự trong mọi tình huống.', {
+    en: 'Calm, harmonious, and always maintaining order in every situation.',
+    ja: '冷静で調和を重んじ、あらゆる状況で秩序を保ちます。',
+    ko: '차분하고 조화로우며 어떤 상황에서도 질서를 유지합니다.',
+    zh: '沉着冷静、注重和谐，在任何情况下都保持秩序。'
+  }],
+  ['Chạy huy hiệu Thời gian chơi & Trò chơi đa dạng', {
+    en: 'Run Game Time & Game Variety Badges',
+    ja: 'プレイ時間 & ゲーム数バッジを実行',
+    ko: '플레이 시간 & 게임 다양성 배지 실행',
+    zh: '运行游戏时长与游戏数量徽章'
+  }],
+  ['Mở khóa mốc 5.000+ giờ chơi và 100+ trò chơi tự động', {
+    en: 'Automatically unlock the 5,000+ hours and 100+ games milestones',
+    ja: '5,000時間以上＆100ゲーム以上の目標を自動解除',
+    ko: '5,000시간 이상 및 100개 이상 게임 목표를 자동으로 달성',
+    zh: '自动解锁 5,000+ 小时游玩时长与 100+ 款游戏目标'
+  }],
+  ['Mở Chạy Huy Hiệu ➔', { en: 'Open Badge Runner ➔', ja: 'バッジ実行を開く ➔', ko: '배지 러너 열기 ➔', zh: '打开刷徽章 ➔' }],
+  ['Chạy huy hiệu Trò chơi đa dạng ➔', { en: 'Run Game Variety Badge ➔', ja: 'ゲーム数バッジを実行 ➔', ko: '게임 다양성 배지 실행 ➔', zh: '运行游戏数量徽章 ➔' }],
+  ['Chạy huy hiệu Thời gian chơi ➔', { en: 'Run Game Time Badge ➔', ja: 'プレイ時間バッジを実行 ➔', ko: '플레이 시간 배지 실행 ➔', zh: '运行游戏时长徽章 ➔' }],
+  ['Duyệt huy hiệu của bạn và khám phá những món mới mà bạn có thể mở khóa.', {
+    en: 'Browse your badges and discover new ones you can unlock.',
+    ja: '所持バッジとこれから解除できる新しいバッジを確認します。',
+    ko: '보유 중인 배지와 새로 잠금 해제할 수 있는 배지를 살펴보세요.',
+    zh: '浏览你的徽章并探索可解锁的新徽章。'
+  }],
+  ['Đang tải danh mục huy hiệu từ Discord...', { en: 'Loading badge directory from Discord...', ja: 'Discordからバッジ一覧を読み込み中...', ko: 'Discord에서 배지 목록을 불러오는 중...', zh: '正在从 Discord 加载徽章目录...' }],
+  ['Tài khoản này chưa có dữ liệu Danh Mục Huy Hiệu từ Discord.', { en: 'No badge directory data available for this account.', ja: 'このアカウントのバッジ一覧データがありません。', ko: '이 계정의 배지 디렉토리 데이터가 없습니다.', zh: '此账号暂无 Discord 徽章目录数据。' }],
+  ['Tài khoản này chưa mở khóa huy hiệu nào.', { en: 'This account has not unlocked any badges yet.', ja: 'このアカウントはまだバッジを解除していません。', ko: '이 계정은 아직 잠금 해제한 배지가 없습니다.', zh: '此账号尚未解锁任何徽章。' }],
+  ['Huy hiệu của bạn', { en: 'Your Badges', ja: 'あなたのバッジ', ko: '내 배지', zh: '你的徽章' }],
+  ['Có thể mở khóa', { en: 'Available to Unlock', ja: '解除可能', ko: '잠금 해제 가능', zh: '可解锁' }],
+  ['Tiến trình của bạn', { en: 'Your Progress', ja: '進捗状況', ko: '진행 상황', zh: '你的进度' }],
+  ['Huy Hiệu Kiểu Cũ', { en: 'Legacy Badge', ja: 'レガシーバッジ', ko: '레거시 배지', zh: '绝版徽章' }],
+  ['Chưa được mở khóa', { en: 'Locked', ja: '未解除', ko: '잠김', zh: '未解锁' }],
+  ['Đã mở khóa', { en: 'Unlocked', ja: '解除済み', ko: '잠금 해제됨', zh: '已解锁' }],
+  ['Rời HypeSquad', { en: 'Leave HypeSquad', ja: 'HypeSquadを離脱', ko: 'HypeSquad 탈퇴', zh: '退出 HypeSquad' }],
+  ['Lấy huy hiệu', { en: 'Claim Badge', ja: 'バッジを取得', ko: '배지 받기', zh: '领取徽章' }],
+  ['Đang sở hữu', { en: 'Owned', ja: '所持中', ko: '보유 중', zh: '已拥有' }],
+  ['Huy hiệu trên hồ sơ', { en: 'Profile Badges', ja: 'プロフィールバッジ', ko: '프로필 배지', zh: '个人资料徽章' }],
+  ['Xem tất cả huy hiệu', { en: 'View All Badges', ja: 'すべてのバッジを見る', ko: '모든 배지 보기', zh: '查看全部徽章' }],
+  ['Trang chủ Nhiệm Vụ', { en: 'Quests Home', ja: 'クエストホーム', ko: '퀘스트 홈', zh: '任务主页' }],
+  ['Cửa Hàng Orb', { en: 'Orbs Shop', ja: 'Orbsショップ', ko: 'Orbs 상점', zh: 'Orbs 商店' }],
+  ['Quả Cảm', { en: 'Bravery', ja: 'ブレイブ', ko: '용기', zh: '无畏' }],
+  ['Lỗi Lạc', { en: 'Brilliance', ja: 'ブリリアンス', ko: '탁월함', zh: '卓越' }],
+  ['Cân Bằng', { en: 'Balance', ja: 'バランス', ko: '균형', zh: '平衡' }],
+
+  // Accounts, Quests, Rewards Empty States & Actions
+  ['Bạn cần thêm và xác thực ít nhất 1 Token tài khoản Discord để mở khóa các mục Tiến độ, Quests và Quà tặng.', {
+    en: 'Add and verify at least 1 Discord account token to unlock Progress, Quests, and Rewards.',
+    ja: '進捗・クエスト・報酬機能を利用するには、少なくとも1つのDiscordトークンを追加して検証してください。',
+    ko: '진행률, 퀘스트 및 보상 기능을 사용하려면 최소 1개의 Discord 토큰을 추가하고 인증하세요.',
+    zh: '请至少添加并验证 1 个 Discord 账号 Token 以解锁进度、任务与礼品码功能。'
+  }],
+  ['Chưa có tài khoản Discord nào', { en: 'No Discord Accounts', ja: 'アカウント未登録', ko: '등록된 계정 없음', zh: '暂无 Discord 账号' }],
+  ['Khi tài khoản có nhiệm vụ tặng Gift Code (Roblox, Apex, Star Wars, NBA...), nhiệm vụ sẽ xuất hiện tại đây để bạn bấm lấy mã.', {
+    en: 'When your account has quests awarding Gift Codes (Roblox, Apex, Star Wars, NBA...), they will appear here.',
+    ja: 'ギフトコード付きのクエスト（Roblox、Apex、Star Warsなど）があるとここに表示されます。',
+    ko: '기프트 코드를 주는 퀘스트(Roblox, Apex, Star Wars 등)가 있으면 여기에 표시됩니다.',
+    zh: '当账号有赠送礼品码的任务（Roblox、Apex、Star Wars 等）时，会显示在此处供领取。'
+  }],
+  ['Chưa có nhiệm vụ có mã quà', { en: 'No Gift Code Quests', ja: 'コード付きクエストなし', ko: '기프트 코드 퀘스트 없음', zh: '暂无礼品码任务' }],
+  ['Quét Nhiệm Vụ Ngay', { en: 'Scan Quests Now', ja: '今すぐスキャン', ko: '지금 퀘스트 스캔', zh: '立即扫描任务' }],
+  ['Lấy Mã trên Discord', { en: 'Claim Code on Discord', ja: 'Discordでコード取得', ko: 'Discord에서 코드 받기', zh: '在 Discord 领取代码' }],
+  ['Xem trên Discord', { en: 'View on Discord', ja: 'Discordで見る', ko: 'Discord에서 보기', zh: '在 Discord 查看' }],
+  ['Lấy Mã Thất Bại', { en: 'Failed to Fetch Code', ja: '取得失敗', ko: '코드 가져오기 실패', zh: '获取失败' }],
+  ['Chờ lấy mã', { en: 'Ready to Claim Code', ja: 'コード受取待ち', ko: '코드 수령 대기', zh: '待领取代码' }],
+  ['Đã nhận mã', { en: 'Code Claimed', ja: 'コード取得済み', ko: '코드 수령 완료', zh: '已领取代码' }],
+  ['Còn hạn dùng', { en: 'Valid', ja: '有効', ko: '유효함', zh: '有效' }],
+  ['Đã chép', { en: 'Copied', ja: 'コピー済み', ko: '복사됨', zh: '已复制' }],
+
   // Header & Common Buttons
   ['+ Thêm & Check Token', { en: '+ Add & Verify Token', ja: '+ トークン追加・検証', ko: '+ 토큰 추가 및 확인', zh: '+ 添加并验证 Token' }],
   ['Mặc định', { en: 'Defaults', ja: 'デフォルト', ko: '기본값', zh: '默认' }],
@@ -242,12 +403,6 @@ const PHRASE_MAP = [
 
   // Home Dashboard
   ['Hệ thống sẵn sàng', { en: 'System Ready', ja: 'システム準備完了', ko: '시스템 준비 완료', zh: '系统就绪' }],
-  ['Bảng điều khiển tự động cày nhiệm vụ Discord, tính giờ chơi ngầm, nhận Orbs và lưu mã Gift Code an toàn.', {
-    en: 'Dashboard to automate Discord Quests, farm background playtime, earn Orbs, and safely store Gift Codes.',
-    ja: 'Discordクエストの自動化、プレイ時間計測、Orbs獲得、ギフトコード管理を一括で行うダッシュボード。',
-    ko: 'Discord 퀘스트 자동화, 백그라운드 플레이 시간 누적, Orbs 획득 및 기프트 코드 보관을 위한 대시보드.',
-    zh: '自动化完成 Discord 任务、挂机累计游戏时长、获取 Orbs 并安全保存礼品码的控制台。'
-  }],
   ['Quét Nhiệm Vụ', { en: 'Scan Quests', ja: 'クエスト取得', ko: '퀘스트 스캔', zh: '扫描任务' }],
   ['Thêm Token', { en: 'Add Token', ja: 'トークン追加', ko: '토큰 추가', zh: '添加 Token' }],
   ['NHIỆM VỤ KHẢ DỤNG', { en: 'AVAILABLE QUESTS', ja: '利用可能なクエスト', ko: '사용 가능한 퀘스트', zh: '可用任务' }],
@@ -269,8 +424,9 @@ const PHRASE_MAP = [
   ['Quản lý tài khoản', { en: 'Manage accounts', ja: 'アカウント管理', ko: '계정 관리', zh: '管理账号' }],
   ['Nhật Ký Hoạt Động Trực Tiếp', { en: 'Live Activity Logs', ja: 'リアルタイム活動ログ', ko: '실시간 활동 로그', zh: '实时活动日志' }],
   ['Mở Console', { en: 'Open Console', ja: 'コンソールを開く', ko: '콘솔 열기', zh: '打开控制台' }],
+  ['Hệ thống Discord Quest đã sẵn sàng kết nối.', { en: 'Discord Quest system is ready to connect.', ja: 'Discord Questシステムは接続準備完了です。', ko: 'Discord Quest 시스템 연결 준비 완료.', zh: 'Discord Quest 系统已就绪。' }],
 
-  // Table Headers (Accounts, Quests, Rewards)
+  // Table Headers
   ['Tài khoản', { en: 'Account', ja: 'アカウント', ko: '계정', zh: '账号' }],
   ['Nhiệm vụ', { en: 'Quest', ja: 'クエスト', ko: '퀘스트', zh: '任务' }],
   ['Số dư Orbs', { en: 'Orbs Balance', ja: 'Orbs残高', ko: 'Orbs 잔액', zh: 'Orbs 余额' }],
@@ -285,7 +441,7 @@ const PHRASE_MAP = [
   ['Trạng thái', { en: 'Status', ja: 'ステータス', ko: '상태', zh: '状态' }],
   ['Mã Code', { en: 'Gift Code', ja: 'ギフトコード', ko: '기프트 코드', zh: '礼品码' }],
 
-  // Quests & Rewards Status/Types/Actions
+  // Quests Status/Types
   ['Xem Video (Mobile)', { en: 'Watch Video (Mobile)', ja: '動画視聴 (モバイル)', ko: '동영상 시청 (모바일)', zh: '观看视频 (移动端)' }],
   ['Xem Video', { en: 'Watch Video', ja: '動画視聴', ko: '동영상 시청', zh: '观看视频' }],
   ['Chơi trên PC', { en: 'Play on PC', ja: 'PCでプレイ', ko: 'PC에서 플레이', zh: 'PC 游玩' }],
@@ -302,19 +458,12 @@ const PHRASE_MAP = [
   ['Tạm dừng', { en: 'Pause', ja: '一時停止', ko: '일시정지', zh: '暂停' }],
   ['Nhận thưởng', { en: 'Claim', ja: '受け取る', ko: '보상 받기', zh: '领取奖励' }],
   ['Mở trên Discord', { en: 'Open on Discord', ja: 'Discordで開く', ko: 'Discord에서 열기', zh: '在 Discord 中打开' }],
+  ['Chưa làm', { en: 'Not Started', ja: '未開始', ko: '미시작', zh: '未开始' }],
+  ['Thử lại', { en: 'Retry', ja: '再試行', ko: '재시도', zh: '重试' }],
   ['Chạy', { en: 'Run', ja: '実行', ko: '실행', zh: '运行' }],
   ['Xong', { en: 'Done', ja: '完了', ko: '완료', zh: '完成' }],
   ['Chuyển', { en: 'Switch', ja: '切替', ko: '전환', zh: '切换' }],
   ['Xóa', { en: 'Delete', ja: '削除', ko: '삭제', zh: '删除' }],
-
-  // Badges & HypeSquad
-  ['Rời HypeSquad', { en: 'Leave HypeSquad', ja: 'HypeSquadを離脱', ko: 'HypeSquad 탈퇴', zh: '退出 HypeSquad' }],
-  ['Đang sở hữu', { en: 'Owned', ja: '所持中', ko: '보유 중', zh: '已拥有' }],
-  ['Huy hiệu trên hồ sơ', { en: 'Profile Badges', ja: 'プロフィールバッジ', ko: '프로필 배지', zh: '个人资料徽章' }],
-  ['Xem tất cả huy hiệu', { en: 'View All Badges', ja: 'すべてのバッジを見る', ko: '모든 배지 보기', zh: '查看全部徽章' }],
-  ['Quả Cảm', { en: 'Bravery', ja: 'ブレイブ', ko: '용기', zh: '无畏' }],
-  ['Lỗi Lạc', { en: 'Brilliance', ja: 'ブリリアンス', ko: '탁월함', zh: '卓越' }],
-  ['Cân Bằng', { en: 'Balance', ja: 'バランス', ko: '균형', zh: '平衡' }],
 
   // Playtime Runner
   ['Cấu Hình Chạy', { en: 'Run Configuration', ja: '実行設定', ko: '실행 설정', zh: '运行配置' }],
@@ -323,6 +472,8 @@ const PHRASE_MAP = [
   ['Giờ chơi + Số game', { en: 'Hours + Games', ja: '時間 + ゲーム数', ko: '시간 + 게임 수', zh: '时长 + 游戏数' }],
   ['Mốc 5.000+ giờ', { en: '5,000+ Hours Tier', ja: '5,000+時間目標', ko: '5,000+시간 달성', zh: '5,000+ 小时目标' }],
   ['Mốc 100+ game', { en: '100+ Games Tier', ja: '100+ゲーム目標', ko: '100+게임 달성', zh: '100+ 游戏目标' }],
+  ['Thời gian chơi', { en: 'Game Time', ja: 'プレイ時間', ko: '플레이 시간', zh: '游戏时长' }],
+  ['Trò chơi đa dạng', { en: 'Game Variety', ja: 'ゲーム数', ko: '게임 다양성', zh: '游戏多样性' }],
   ['Số lượng game', { en: 'Game Count', ja: 'ゲーム数', ko: '게임 수', zh: '游戏数量' }],
   ['Số giờ mỗi game', { en: 'Hours Per Game', ja: 'ゲーム毎の時間', ko: '게임당 시간', zh: '每款游戏时长' }],
   ['Kho game', { en: 'Catalog', ja: 'ゲーム数', ko: '카탈로그', zh: '游戏库' }],
@@ -337,57 +488,7 @@ const PHRASE_MAP = [
     ko: '준비 완료. 모드를 선택하고 실행 시작을 누르세요.',
     zh: '就绪。请选择模式并点击开始运行。'
   }],
-
-  // Settings
-  ['Tự Động Hóa Nhiệm Vụ', { en: 'Quest Automation', ja: 'クエスト自動化', ko: '퀘스트 자동화', zh: '任务自动化' }],
-  ['Cơ chế tự động đăng ký và nhận phần thưởng', { en: 'Auto-enrollment and queue progression', ja: '自動参加とキュー進行設定', ko: '자동 등록 및 대기열 진행 설정', zh: '自动接取与队列推进机制' }],
-  ['Tự động chuyển tiếp (Auto Next)', { en: 'Auto Next Quest', ja: '自動次へ (Auto Next)', ko: '자동 다음 퀘스트 (Auto Next)', zh: '自动切换下一任务 (Auto Next)' }],
-  ['Tự động chuyển sang nhiệm vụ tiếp theo trong hàng đợi khi đạt 100%.', {
-    en: 'Automatically advance to the next queued quest upon reaching 100%.',
-    ja: '100%達成時に次のキューのクエストへ自動で進みます。',
-    ko: '100% 달성 시 대기열의 다음 퀘스트로 자동 이동합니다.',
-    zh: '任务达到 100% 时自动切换至队列中的下一个任务。'
-  }],
-  ['Tự động tham gia Quest (Auto Enroll)', { en: 'Auto Enroll Quest', ja: '自動クエスト参加 (Auto Enroll)', ko: '자동 퀘스트 등록 (Auto Enroll)', zh: '自动接取任务 (Auto Enroll)' }],
-  ['Tự gửi yêu cầu ghi danh nhiệm vụ nếu tài khoản chưa bắt đầu.', {
-    en: 'Automatically enroll in quests before sending progress.',
-    ja: '未開始のクエストに自動で参加リクエストを送信します。',
-    ko: '시작하지 않은 퀘스트에 자동으로 참여 요청을 보냅니다.',
-    zh: '如果账号尚未开始，自动发送任务接取请求。'
-  }],
-  ['Tần Suất & Tiến Trình', { en: 'Intervals & Progress', ja: '送信間隔 & 進捗', ko: '전송 주기 및 진행', zh: '频率与进度' }],
-  ['Điều chỉnh chu kỳ gửi tiến trình để mô phỏng tự nhiên', { en: 'Adjust heartbeat intervals for natural simulation', ja: '自然な進行を再現するため送信間隔を調整します', ko: '자연스러운 시뮬레이션을 위해 전송 주기를 조정합니다', zh: '调整进度上报周期以自然模拟' }],
-  ['Chu kỳ gửi tiến trình Video', { en: 'Video Progress Interval', ja: '動画進捗の送信間隔', ko: '동영상 진행 전송 주기', zh: '视频进度上报周期' }],
-  ['Khoảng nghỉ giữa các lần cập nhật xem video (Khuyến nghị: 7s).', {
-    en: 'Delay between video watch progress updates (Recommended: 7s).',
-    ja: '動画視聴進捗の更新間隔（推奨: 7秒）。',
-    ko: '동영상 시청 진행률 업데이트 간격 (권장: 7초).',
-    zh: '每次视频进度更新之间的间隔（建议: 7秒）。'
-  }],
-  ['Chu kỳ gửi tiến trình Chơi Game', { en: 'Game Heartbeat Interval', ja: 'ゲーム心拍の送信間隔', ko: '게임 하트비트 전송 주기', zh: '游戏心跳上报周期' }],
-  ['Tần suất gửi heartbeat chơi game ngầm (Chuẩn Discord: 20s, khuyến nghị: 15-20s).', {
-    en: 'Background game heartbeat frequency (Discord standard: 20s, recommended: 15-20s).',
-    ja: 'バックグラウンドゲーム心拍の頻度（Discord標準: 20秒、推奨: 15〜20秒）。',
-    ko: '백그라운드 게임 하트비트 주기 (Discord 표준: 20초, 권장: 15-20초).',
-    zh: '后台游戏心跳发送频率（Discord 标准: 20秒，建议: 15-20秒）。'
-  }],
-  ['Ngẫu nhiên độ trễ (Random Jitter)', { en: 'Random Jitter', ja: 'ランダム遅延 (Jitter)', ko: '랜덤 지터 (Random Jitter)', zh: '随机延迟抖动 (Random Jitter)' }],
-  ['Lệch ngẫu nhiên ±1-3 giây để giả lập người thật, tránh pattern máy móc.', {
-    en: 'Add ±1–3s random variance to mimic real human activity.',
-    ja: '±1〜3秒のランダムな揺らぎを追加し機械的なパターンを回避します。',
-    ko: '±1~3초의 무작위 지연을 추가해 실제 사용자처럼 동작합니다.',
-    zh: '增加 ±1-3 秒随机偏差以模拟真人操作，避免机械规律。'
-  }],
   ['giây', { en: 'sec', ja: '秒', ko: '초', zh: '秒' }],
-  ['Cài Đặt Màn Hình Chính & Chia Sẻ', { en: 'Home Screen & Sharing', ja: 'ホーム画面 & 共有設定', ko: '홈 화면 및 공유 설정', zh: '主屏幕与分享设置' }],
-  ['Thêm ứng dụng ra màn hình chính điện thoại (Android & iOS)', { en: 'Install web app to mobile Home Screen (Android & iOS)', ja: 'スマホのホーム画面にアプリとして追加 (Android & iOS)', ko: '모바일 홈 화면에 앱 추가 (Android & iOS)', zh: '将应用添加到手机主屏幕 (Android & iOS)' }],
-  ['Thêm vào màn hình chính (PWA)', { en: 'Add to Home Screen (PWA)', ja: 'ホーム画面に追加 (PWA)', ko: '홈 화면에 추가 (PWA)', zh: '添加到主屏幕 (PWA)' }],
-  ['Mở web dạng app độc lập, full màn hình với logo Discord Quest chính chủ.', {
-    en: 'Launch as a standalone fullscreen app with the official Discord Quest icon.',
-    ja: '公式ロゴ付きの独立した全画面アプリとして起動します。',
-    ko: '공식 로고가 포함된 독립형 전체 화면 앱으로 실행합니다.',
-    zh: '以独立全屏应用模式打开，带官方 Discord Quest 图标。'
-  }],
 
   // Modals
   ['Thêm & Xác Thực Token Discord', { en: 'Add & Verify Discord Token', ja: 'Discordトークンの追加と検証', ko: 'Discord 토큰 추가 및 인증', zh: '添加并验证 Discord Token' }],
@@ -398,10 +499,13 @@ const PHRASE_MAP = [
   ['Thêm Nhiệm Vụ Bằng Link / ID', { en: 'Add Quest by Link / ID', ja: 'リンク / ID でクエスト追加', ko: '링크 / ID로 퀘스트 추가', zh: '通过链接 / ID 添加任务' }],
   ['Link hoặc ID Quest Discord', { en: 'Discord Quest Link or ID', ja: 'DiscordクエストリンクまたはID', ko: 'Discord 퀘스트 링크 또는 ID', zh: 'Discord 任务链接或 ID' }],
 
-  // Logs & Toasts prefixes / common messages
+  // Logs & Toasts
   ['[Đồng bộ]', { en: '[Sync]', ja: '[同期]', ko: '[동기화]', zh: '[同步]' }],
   ['[Hàng đợi]', { en: '[Queue]', ja: '[キュー]', ko: '[대기열]', zh: '[队列]' }],
   ['[Huy hiệu]', { en: '[Badges]', ja: '[バッジ]', ko: '[배지]', zh: '[徽章]' }],
+  ['[Mã quà]', { en: '[Rewards]', ja: '[報酬]', ko: '[보상]', zh: '[奖励]' }],
+  ['[Bắt đầu]', { en: '[Start]', ja: '[開始]', ko: '[시작]', zh: '[开始]' }],
+  ['[Tạm dừng]', { en: '[Pause]', ja: '[一時停止]', ko: '[일시정지]', zh: '[暂停]' }],
   ['Đang quét danh sách nhiệm vụ...', { en: 'Scanning quest list...', ja: 'クエスト一覧をスキャン中...', ko: '퀘스트 목록 스캔 중...', zh: '正在扫描任务列表...' }],
   ['Đã dừng theo yêu cầu.', { en: 'Stopped by user request.', ja: 'ユーザー要求により停止しました。', ko: '사용자 요청으로 중지되었습니다.', zh: '已按要求停止。' }],
   ['Đang yêu cầu dừng sau đợt gửi hiện tại...', { en: 'Stopping after current batch...', ja: '現在のバッチ完了後に停止します...', ko: '현재 작업 완료 후 중지합니다...', zh: '正在请求于当前批次后停止...' }],
@@ -448,9 +552,12 @@ window.translateDynamicText = function(text) {
   const lang = getAppLang();
   if (!text || lang === 'vi') return text;
 
-  let out = String(text);
+  const raw = String(text);
+  const leadingSpace = /^\s/.test(raw) ? ' ' : '';
+  const trailingSpace = /\s$/.test(raw) ? ' ' : '';
+  let out = raw.replace(/\s+/g, ' ').trim();
+  if (!out) return raw;
 
-  // Các mẫu câu log động phổ biến
   const regexRules = [
     [
       /^(\[.*?\])?\s*Gửi GET \/api\/quests \((.+?)\)\.\.\.$/,
@@ -523,6 +630,42 @@ window.translateDynamicText = function(text) {
         ko: '최대 ($1)',
         zh: '上限 ($1)'
       }
+    ],
+    [
+      /^(\d+)\/(\d+) nhiệm vụ$/,
+      {
+        en: '$1/$2 quests',
+        ja: '$1/$2 クエスト',
+        ko: '$1/$2 퀘스트',
+        zh: '$1/$2 任务'
+      }
+    ],
+    [
+      /^Đã mở khóa (\d+\/\d+\/\d+)$/,
+      {
+        en: 'Unlocked $1',
+        ja: '$1 解除済み',
+        ko: '$1 잠금 해제',
+        zh: '解锁于 $1'
+      }
+    ],
+    [
+      /^Bấm để xem tất cả huy hiệu \((\d+)\)$/,
+      {
+        en: 'Click to view all badges ($1)',
+        ja: 'クリックして全バッジを表示 ($1)',
+        ko: '클릭하여 모든 배지 보기 ($1)',
+        zh: '点击查看全部徽章 ($1)'
+      }
+    ],
+    [
+      /^Tất cả các mốc (.+?) \((\d+) Cấp\):$/,
+      {
+        en: 'All $1 Tiers ($2 Levels):',
+        ja: '$1 全ティア ($2 段階):',
+        ko: '$1 전체 등급 ($2단계):',
+        zh: '$1 全部等级 ($2 级):'
+      }
     ]
   ];
 
@@ -538,7 +681,7 @@ window.translateDynamicText = function(text) {
     }
   }
 
-  return out;
+  return `${leadingSpace}${out}${trailingSpace}`;
 };
 
 /**

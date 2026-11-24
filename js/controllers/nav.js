@@ -34,6 +34,7 @@ window.switchTabTo = function(tab, updateHistory = true) {
   }
 
   renderSidebarUser();
+  if (typeof window.translateDomTree === "function") window.translateDomTree(document.body);
 
   // Kích hoạt Skeleton loading cho bảng tương ứng
   if (tab === "accounts") showTableSkeleton("accounts-tbody", 2, 6);
@@ -53,7 +54,10 @@ function bindNavigation() {
   const setExpanded = (expanded) => {
     if (!sidebar) return;
     sidebar.classList.toggle("mobile-nav-expanded", expanded);
-    if (moreText) moreText.textContent = expanded ? "Thu gọn" : "Thêm";
+    if (moreText) {
+      const label = expanded ? "Thu gọn" : "Thêm";
+      moreText.textContent = typeof window.translateDynamicText === "function" ? window.translateDynamicText(label) : label;
+    }
   };
 
   moreBtn?.addEventListener("click", (e) => {
