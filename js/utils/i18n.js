@@ -256,6 +256,43 @@ const I18N_DICT = {
 
 // Sắp xếp cụm dài trước, ngắn sau để tránh thay thế chồng chéo
 const PHRASE_MAP = [
+  // Home Safety & Quick Steps Cards
+  ['Cơ Chế Vận Hành An Toàn', { en: 'Safe Operation Mechanism', ja: '安全動作メカニズム', ko: '안전 작동 메커니즘', zh: '安全运行机制' }],
+  ['Treo Tiến Độ Tự Động', { en: 'Auto Background Progress', ja: '自動バックグラウンド進行', ko: '자동 백그라운드 진행', zh: '全自动后台挂机进度' }],
+  ['Tự động tính giờ chơi ngầm, không cần cài hay mở game', {
+    en: 'Tracks playtime in background without installing or launching games',
+    ja: 'ゲームをインストール・起動せずにバックグラウンドでプレイ時間を計測',
+    ko: '게임을 설치하거나 실행하지 않고 백그라운드에서 플레이 시간 자동 누적',
+    zh: '后台自动累计游戏时长，无需安装或打开游戏'
+  }],
+  ['Hàng Đợi Đơn Luồng', { en: 'Single-Thread Queue', ja: 'シングルスレッドキュー', ko: '단일 스레드 대기열', zh: '单线程队列' }],
+  ['Chạy tuần tự 1 quest, chống rate-limit & ban', {
+    en: 'Runs 1 quest at a time sequentially to avoid rate-limits & bans',
+    ja: '1件ずつ順番に実行し、レート制限やBANを防止します',
+    ko: '한 번에 1개씩 순차 실행하여 속도 제한 및 차단을 방지합니다',
+    zh: '依次单线程运行任务，防速率限制与封号'
+  }],
+  ['Tự Động Claim Quà', { en: 'Auto Reward Tracking', ja: '自動報酬トラッキング', ko: '자동 보상 추적', zh: '自动领取追踪' }],
+  ['Nhận Orbs & lưu mã Gift Code khi đạt 100%', {
+    en: 'Sync Orbs & save Gift Codes upon reaching 100%',
+    ja: '100%達成時にOrbs獲得＆ギフトコードを自動保存',
+    ko: '100% 달성 시 Orbs 적립 및 기프트 코드 저장',
+    zh: '达到 100% 时获取 Orbs 并保存礼品码'
+  }],
+  ['Bảo Mật Cục Bộ 100%', { en: '100% Local Security', ja: '100% ローカル保護', ko: '100% 로컬 보안', zh: '100% 本地安全' }],
+  ['Token lưu trữ trong LocalStorage máy của bạn', {
+    en: 'Tokens are stored strictly in your browser LocalStorage',
+    ja: 'トークンはお使いのブラウザのLocalStorageにのみ保存されます',
+    ko: '토큰은 사용자 브라우저의 LocalStorage에만 안전하게 저장됩니다',
+    zh: 'Token 仅保存在您本地浏览器的 LocalStorage 中'
+  }],
+  ['3 Bước Thao Tác Nhanh', { en: '3 Quick Steps', ja: '3ステップ・クイックガイド', ko: '3단계 빠른 시작', zh: '3 步快速开始' }],
+  ['Thêm & kiểm tra Token Discord', { en: 'Add & verify Discord Token', ja: 'Discordトークンを追加・検証', ko: 'Discord 토큰 추가 및 확인', zh: '添加并验证 Discord Token' }],
+  ['Bấm "Quét Quest" để tải dữ liệu', { en: 'Click "Scan Quests" to load data', ja: '「クエスト取得」をクリックしてデータを読み込む', ko: '"퀘스트 스캔"을 눌러 데이터 불러오기', zh: '点击“扫描任务”加载数据' }],
+  ['Bấm "Chạy Tất Cả" để bắt đầu auto', { en: 'Click "Run All" to start automation', ja: '「すべて実行」をクリックして自動化を開始', ko: '"모두 실행"을 눌러 자동화 시작', zh: '点击“全部运行”开始自动挂机' }],
+  ['Đang chọn', { en: 'Selected', ja: '選択中', ko: '선택됨', zh: '当前选中' }],
+  ['Đăng xuất', { en: 'Log Out', ja: 'ログアウト', ko: '로그아웃', zh: '退出登录' }],
+  ['Chọn', { en: 'Select', ja: '選択', ko: '선택', zh: '选择' }],
   ['Bảng điều khiển tự động cày nhiệm vụ Discord, tính giờ chơi ngầm, nhận Orbs và lưu mã Gift Code an toàn.', {
     en: 'Dashboard to automate Discord Quests, farm background playtime, earn Orbs, and safely store Gift Codes.',
     ja: 'Discordクエストの自動化、プレイ時間計測、Orbs獲得、ギフトコード管理を一括で行うダッシュボード。',
@@ -733,6 +770,7 @@ window.translateDynamicText = function(text) {
     [/^(\d+) đang chạy • (\d+) trong hàng đợi • (\d+)\/(\d+) xong$/, { en: '$1 running • $2 queued • $3/$4 done', ja: '実行中 $1 • 待機 $2 • 完了 $3/$4', ko: '실행 $1 • 대기 $2 • 완료 $3/$4', zh: '$1 运行中 • $2 排队 • $3/$4 已完成' }],
     [/^Còn thiếu:\s*(.+)$/, { en: 'Remaining: $1', ja: '残り: $1', ko: '남은 목표: $1', zh: '还差: $1' }],
     [/^Mốc cuối \((.+)\)$/, { en: 'Max ($1)', ja: '最大 ($1)', ko: '최대 ($1)', zh: '上限 ($1)' }],
+    [/^Còn (\d+)\/(\d+) nhiệm vụ$/, { en: '$1/$2 left', ja: '残り $1/$2', ko: '남음 $1/$2', zh: '剩余 $1/$2' }],
     [/^(\d+)\/(\d+) nhiệm vụ$/, { en: '$1/$2 quests', ja: '$1/$2 クエスト', ko: '$1/$2 퀘스트', zh: '$1/$2 任务' }],
     [/^Đã mở khóa (\d+\/\d+\/\d+)$/, { en: 'Unlocked $1', ja: '$1 解除済み', ko: '$1 잠금 해제', zh: '解锁于 $1' }],
     [/^Bấm để xem tất cả huy hiệu \((\d+)\)$/, { en: 'Click to view all badges ($1)', ja: 'クリックして全バッジを表示 ($1)', ko: '클릭하여 모든 배지 보기 ($1)', zh: '点击查看全部徽章 ($1)' }],
