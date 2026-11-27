@@ -24,6 +24,12 @@ window.setBadgeRunnerMode = function(mode) {
   renderBadgeRunner();
 };
 
+window.toggleBadgeRunnerRealtime = function() {
+  if (badgeRunnerState.isRunning) return;
+  badgeRunnerState.realtimeMode = !badgeRunnerState.realtimeMode;
+  renderBadgeRunner();
+};
+
 window.setBadgeRunnerGames = function(val) {
   if (badgeRunnerState.isRunning) return;
   badgeRunnerState.gameCount = Math.max(1, Math.min(parseInt(val, 10) || 1, 500));

@@ -109,63 +109,128 @@ window.startBadgeRunner = async function() {
     let clientLaunchId = '';
     let seqOffset = 0;
 
-    for (let i = 0; i < selectedGames.length; i++) {
+    const postScience = async (payload) => {
+      while (true) {
+        const sciRes = await fetch('/api/badges/science', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token,
+            analyticsToken,
+            heartbeatSession,
+            launchSignature,
+            clientLaunchId,
+            seqOffset,
+            ...payload
+          })
+        });
+        const sciData = await sciRes.json();
+        if (sciRes.ok && sciData.success) {
+          analyticsToken = sciData.analyticsToken || analyticsToken;
+          heartbeatSession = sciData.heartbeatSession || heartbeatSession;
+          launchSignature = sciData.launchSignature || launchSignature;
+          clientLaunchId = sciData.clientLaunchId || clientLaunchId;
+          seqOffset = sciData.nextSeq || seqOffset;
+          return sciData;
+        }
+        if (sciData.isRateLimited) {
+          const waitSec = Math.ceil(sciData.retryAfter || 5);
+          pushRunnerLog('warn', `Bị giới hạn tốc độ, tạm chờ ${waitSec}s...`);
+          await new Promise(r => setTimeout(r, waitSec * 1000));
+          continue;
+        }
+        throw new Error(sciData.error || `Lỗi HTTP ${sciRes.status}`);
+      }
+    };
+
+    const useRealtime = badgeRunnerState.mode !== 'games_played' && Boolean(badgeRunnerState.realtimeMode);
+    const burstGames = useRealtime
+      ? (badgeRunnerState.mode === 'both' ? selectedGames.slice(0, -1) : [])
+      : selectedGames;
+
+    for (let i = 0; i < burstGames.length; i++) {
       if (badgeRunnerState.shouldStop) {
         pushRunnerLog('warn', 'Đã dừng theo yêu cầu.');
         break;
       }
 
-      const game = selectedGames[i];
+      const game = burstGames[i];
       const gameIdx = i + 1;
       const totalGames = selectedGames.length;
       const gameTitle = game.name || `Game #${gameIdx}`;
-      const hourTag = badgeRunnerState.mode === 'games_played' ? '' : ` (+${hoursPerGame}h)`;
+      const burstMode = useRealtime ? 'games_played' : badgeRunnerState.mode;
+      const hourTag = burstMode === 'games_played' ? '' : ` (+${hoursPerGame}h)`;
 
-      const sciRes = await fetch('/api/badges/science', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          games: [game],
-          hoursPerGame,
-          mode: badgeRunnerState.mode,
-          analyticsToken,
-          heartbeatSession,
-          launchSignature,
-          clientLaunchId,
-          seqOffset
-        })
+      const sciData = await postScience({
+        action: 'burst',
+        games: [game],
+        hoursPerGame,
+        mode: burstMode
       });
-
-      const sciData = await sciRes.json();
-
-      if (!sciRes.ok || !sciData.success) {
-        if (sciData.isRateLimited) {
-          const waitSec = Math.ceil(sciData.retryAfter || 5);
-          pushRunnerLog('warn', `Bị giới hạn tốc độ, tạm chờ ${waitSec}s...`);
-          await new Promise(r => setTimeout(r, waitSec * 1000));
-          i--;
-          continue;
-        }
-        throw new Error(sciData.error || `Lỗi HTTP ${sciRes.status}`);
-      }
-
-      analyticsToken = sciData.analyticsToken || analyticsToken;
-      heartbeatSession = sciData.heartbeatSession || heartbeatSession;
-      launchSignature = sciData.launchSignature || launchSignature;
-      clientLaunchId = sciData.clientLaunchId || clientLaunchId;
-      seqOffset = sciData.nextSeq || seqOffset;
 
       addPlaytimeUsedGames(token, [game.id]);
 
       badgeRunnerState.progressCurrent += (sciData.gamesProcessed || 1);
-      badgeRunnerState.claimedHours = Number((badgeRunnerState.claimedHours + (sciData.hoursAdded || (badgeRunnerState.mode === 'games_played' ? 0.016 : hoursPerGame))).toFixed(2));
+      badgeRunnerState.claimedHours = Number((badgeRunnerState.claimedHours + (sciData.hoursAdded || (burstMode === 'games_played' ? 0.016 : hoursPerGame))).toFixed(2));
       pushRunnerLog('success', `[${gameIdx}/${totalGames}] Hoàn tất: ${gameTitle}${hourTag}`);
       renderBadgeRunner();
 
-      if (i < selectedGames.length - 1 && !badgeRunnerState.shouldStop) {
+      if (i < burstGames.length - 1 && !badgeRunnerState.shouldStop) {
         await new Promise(r => setTimeout(r, 1000));
       }
+    }
+
+    if (useRealtime && !badgeRunnerState.shouldStop) {
+      const rtGame = selectedGames[selectedGames.length - 1];
+      const targetSec = Math.max(60, Math.round(hoursPerGame * 3600));
+      const startRes = await postScience({
+        action: 'start',
+        games: [rtGame],
+        mode: badgeRunnerState.mode
+      });
+      const sessionId = startRes.sessionId;
+      addPlaytimeUsedGames(token, [rtGame.id]);
+
+      pushRunnerLog('info', `Bắt đầu treo heartbeat thật (60s/nhịp) cho "${rtGame.name}" (mục tiêu ${hoursPerGame}h)...`);
+
+      let elapsedSec = 0;
+      let sinceLastHbSec = 0;
+      const HEARTBEAT_INTERVAL_SEC = 60;
+
+      while (elapsedSec < targetSec && !badgeRunnerState.shouldStop) {
+        await new Promise(r => setTimeout(r, 1000));
+        elapsedSec += 1;
+        sinceLastHbSec += 1;
+
+        if (sinceLastHbSec >= HEARTBEAT_INTERVAL_SEC && elapsedSec < targetSec && !badgeRunnerState.shouldStop) {
+          await postScience({
+            action: 'heartbeat',
+            games: [rtGame],
+            sessionId,
+            durationMs: sinceLastHbSec * 1000,
+            mode: badgeRunnerState.mode
+          });
+          badgeRunnerState.claimedHours = Number((badgeRunnerState.claimedHours + (sinceLastHbSec / 3600)).toFixed(2));
+          pushRunnerLog('success', `[Heartbeat] ${rtGame.name}: +${Math.round(elapsedSec / 60)} phút`);
+          sinceLastHbSec = 0;
+          renderBadgeRunner();
+        }
+      }
+
+      if (sinceLastHbSec > 0) {
+        await postScience({
+          action: 'stop',
+          games: [rtGame],
+          sessionId,
+          durationMs: sinceLastHbSec * 1000,
+          mode: badgeRunnerState.mode
+        });
+        badgeRunnerState.claimedHours = Number((badgeRunnerState.claimedHours + (sinceLastHbSec / 3600)).toFixed(2));
+      }
+
+      badgeRunnerState.progressCurrent += 1;
+      pushRunnerLog('success', `Đã kết thúc phiên treo "${rtGame.name}" (+${(elapsedSec / 3600).toFixed(2)}h).`);
+      renderBadgeRunner();
     }
 
     if (!badgeRunnerState.shouldStop) {

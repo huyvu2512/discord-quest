@@ -30,6 +30,7 @@ const FALLBACK_VARIETY_TIERS = [
 
 let badgeRunnerState = {
   mode: 'both', // 'both' | 'playtime' | 'games_played'
+  realtimeMode: true, // true = heartbeat 60s/nhịp thật; false = gửi nhanh (chủ yếu cho Trò chơi đa dạng)
   gameCount: 10,
   hoursPerGame: 50,
   customToken: '',

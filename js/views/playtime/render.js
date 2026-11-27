@@ -80,6 +80,11 @@ function renderBadgeRunner() {
             <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" style="color: var(--text-sub);"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             <span>Cấu Hình Chạy</span>
           </div>
+          ${!isVarietyOnly ? `
+            <button type="button" class="preset-chip ${badgeRunnerState.realtimeMode ? 'active' : ''}" onclick="toggleBadgeRunnerRealtime()" ${badgeRunnerState.isRunning ? 'disabled' : ''} title="Chạy heartbeat 60s/nhịp theo thời gian thực để Discord tính giờ chơi chuẩn">
+              ${badgeRunnerState.realtimeMode ? '● Heartbeat thật (60s)' : '⚡ Gửi nhanh'}
+            </button>
+          ` : ''}
         </div>
 
         ${isBothMaxed ? `

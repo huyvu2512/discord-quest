@@ -257,6 +257,105 @@ function buildGameSessionEvents(game, durationMs, heartbeatSession, launchSignat
   return [initialHb, launchEvt, finalHb];
 }
 
+function buildRealtimeEvents(action, game, durationMs, sessionId, heartbeatSession, launchSignature, executableFingerprint, seqState) {
+  const now = Date.now();
+  const gameId = String(game.id);
+  const gameName = String(game.name || 'Game');
+  const gameExe = String(game.exe || 'game.exe').replace(/^>/, '');
+  const nextSeq = () => {
+    seqState.val += 1;
+    return seqState.val;
+  };
+
+  if (action === 'start') {
+    const initialHb = {
+      type: 'running_game_heartbeat',
+      properties: {
+        client_track_timestamp: now,
+        client_heartbeat_session_id: heartbeatSession,
+        event_sequence_number: nextSeq(),
+        game_id: gameId,
+        game_name: gameName,
+        game_metadata: null,
+        game_executable: gameExe,
+        game_detection_enabled: true,
+        initial_heartbeat: true,
+        final_heartbeat: false,
+        game_session_id: sessionId,
+        duration_tracked_ms: 0,
+        rtc_connection_id: null,
+        media_session_id: null,
+        launch_signature: launchSignature,
+        client_app_state: 'focused',
+        client_send_timestamp: now
+      }
+    };
+    const launchProps = {
+      client_track_timestamp: now + 50,
+      client_heartbeat_session_id: heartbeatSession,
+      event_sequence_number: nextSeq(),
+      game: gameName,
+      game_id: gameId,
+      verified: true,
+      elevated: false,
+      is_launcher: false,
+      game_platform: 'desktop',
+      detection_method: 'verified_game',
+      is_overlay_enabled: false,
+      is_overlay_game_enabled: true,
+      is_overlay_game_source: 'OOP_DEFAULT_DATABASE',
+      fullscreen_type: 'UNKNOWN',
+      hardware_display_count: 1,
+      overlay_method: 'Disabled',
+      activity_status_enabled: true,
+      activity_status_shared_guilds: [],
+      current_user_status: 'online',
+      game_detection_enabled: true,
+      executable_path: gameExe,
+      voice_channel_id: null,
+      voice_channel_type: null,
+      voice_channel_bitrate: null,
+      voice_channel_guild_id: null,
+      hidden_by_distributor: false,
+      game_metadata: null,
+      client_performance_cpu: null,
+      client_performance_memory: null,
+      cpu_core_count: null,
+      accessibility_features: 0,
+      rendered_locale: 'vi',
+      launch_signature: launchSignature,
+      client_rtc_state: null,
+      client_app_state: 'focused',
+      client_send_timestamp: now
+    };
+    if (executableFingerprint) launchProps.executable_fingerprint = executableFingerprint;
+    return [initialHb, { type: 'launch_game', properties: launchProps }];
+  }
+
+  return [{
+    type: 'running_game_heartbeat',
+    properties: {
+      client_track_timestamp: now,
+      client_heartbeat_session_id: heartbeatSession,
+      event_sequence_number: nextSeq(),
+      game_id: gameId,
+      game_name: gameName,
+      game_metadata: null,
+      game_executable: gameExe,
+      game_detection_enabled: true,
+      initial_heartbeat: false,
+      final_heartbeat: action === 'stop',
+      game_session_id: sessionId,
+      duration_tracked_ms: Math.max(0, Math.round(durationMs)),
+      rtc_connection_id: null,
+      media_session_id: null,
+      launch_signature: launchSignature,
+      client_app_state: 'focused',
+      client_send_timestamp: now
+    }
+  }];
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -310,22 +409,35 @@ export default async function handler(req, res) {
       analyticsToken = await fetchAnalyticsToken(token, headers);
     }
 
+    const action = String(body.action || 'burst'); // 'burst' | 'start' | 'heartbeat' | 'stop'
     const userId = getUserIdFromToken(token);
     const customFingerprint = String(body.executableFingerprint || '').trim();
     const seqState = { val: Number(body.seqOffset) || 0 };
+    const sessionId = String(body.sessionId || crypto.randomUUID());
 
     // Giới hạn tối đa 16 game/batch (48 events < BATCH_SIZE 50 của Discord Science)
     const batchGames = games.slice(0, 16);
     const events = [];
     let totalDurationMs = 0;
-    for (let idx = 0; idx < batchGames.length; idx++) {
-      const g = batchGames[idx];
-      const perGameMs = mode === 'games_played'
-        ? (45 + Math.floor(Math.random() * 76)) * 1000 // Random 45s - 120s cho mỗi game
-        : durationMs;
-      totalDurationMs += perGameMs;
+
+    if (action === 'start' || action === 'heartbeat' || action === 'stop') {
+      const g = batchGames[0];
+      const rtDurationMs = action === 'start'
+        ? 0
+        : Math.max(1000, Math.min(Number(body.durationMs) || 60000, 600000));
+      totalDurationMs = rtDurationMs;
       const fp = customFingerprint || buildExecutableFingerprint(userId, g);
-      events.push(...buildGameSessionEvents(g, perGameMs, heartbeatSession, launchSignature, fp, seqState, idx));
+      events.push(...buildRealtimeEvents(action, g, rtDurationMs, sessionId, heartbeatSession, launchSignature, fp, seqState));
+    } else {
+      for (let idx = 0; idx < batchGames.length; idx++) {
+        const g = batchGames[idx];
+        const perGameMs = mode === 'games_played'
+          ? (45 + Math.floor(Math.random() * 76)) * 1000 // Random 45s - 120s cho mỗi game
+          : durationMs;
+        totalDurationMs += perGameMs;
+        const fp = customFingerprint || buildExecutableFingerprint(userId, g);
+        events.push(...buildGameSessionEvents(g, perGameMs, heartbeatSession, launchSignature, fp, seqState, idx));
+      }
     }
 
     const sciRes = await fetch('https://discord.com/api/v9/science', {
@@ -347,6 +459,7 @@ export default async function handler(req, res) {
         heartbeatSession,
         launchSignature,
         clientLaunchId,
+        sessionId,
         nextSeq: seqState.val,
         eventsSent: events.length,
         gamesProcessed: batchGames.length,
